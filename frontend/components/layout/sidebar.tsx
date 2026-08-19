@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
 import {
   LayoutDashboard,
   Briefcase,
@@ -9,6 +12,7 @@ import {
   FileText,
   Video,
   BarChart3,
+  TrendingUp,
   Cpu,
   Settings,
   ChevronLeft,
@@ -19,9 +23,9 @@ import {
 export interface NavItem {
   id: string;
   label: string;
+  href: string;
   icon: React.ReactNode;
   badge?: string;
-  href?: string;
 }
 
 export interface SidebarProps {
@@ -29,42 +33,38 @@ export interface SidebarProps {
   onNavigate?: (id: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  onMobileClose?: () => void;
   className?: string;
 }
 
-export const defaultNavItems: { section: string; items: NavItem[] }[] = [
-  {
-    section: "Platform",
-    items: [
-      { id: "dashboard", label: "Dashboard Overview", icon: <LayoutDashboard className="h-4 w-4" /> },
-      { id: "jobs", label: "Job Postings", icon: <Briefcase className="h-4 w-4" /> },
-      { id: "candidates", label: "Candidates & Resumes", icon: <Users className="h-4 w-4" /> },
-      { id: "applications", label: "Pipeline Applications", icon: <FileText className="h-4 w-4" /> },
-    ],
-  },
-  {
-    section: "Intelligence",
-    items: [
-      { id: "interviews", label: "AI Interviews", icon: <Video className="h-4 w-4" /> },
-      { id: "evaluations", label: "Scorecards & Evidence", icon: <BarChart3 className="h-4 w-4" /> },
-      { id: "ai_runs", label: "AI Agent Runs", icon: <Cpu className="h-4 w-4" />, badge: "Active" },
-    ],
-  },
-  {
-    section: "System",
-    items: [
-      { id: "settings", label: "Platform Settings", icon: <Settings className="h-4 w-4" /> },
-    ],
-  },
+export const mainNavItems: NavItem[] = [
+  { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4.5 w-4.5" /> },
+  { id: "jobs", label: "Jobs", href: "/jobs", icon: <Briefcase className="h-4.5 w-4.5" /> },
+  { id: "candidates", label: "Candidates", href: "/candidates", icon: <Users className="h-4.5 w-4.5" /> },
+  { id: "applications", label: "Applications", href: "/applications", icon: <FileText className="h-4.5 w-4.5" /> },
+  { id: "interviews", label: "Interviews", href: "/interviews", icon: <Video className="h-4.5 w-4.5" /> },
+  { id: "evaluations", label: "Evaluations", href: "/evaluations", icon: <BarChart3 className="h-4.5 w-4.5" /> },
+  { id: "analytics", label: "Analytics", href: "/analytics", icon: <TrendingUp className="h-4.5 w-4.5" /> },
+];
+
+export const secondaryNavItems: NavItem[] = [
+  { id: "ai-activity", label: "AI Activity", href: "/ai-activity", icon: <Cpu className="h-4.5 w-4.5" />, badge: "Active" },
+  { id: "settings", label: "Settings", href: "/settings", icon: <Settings className="h-4.5 w-4.5" /> },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  activeId = "dashboard",
-  onNavigate,
   isCollapsed = false,
   onToggleCollapse,
+  onMobileClose,
   className,
 }) => {
+  const pathname = usePathname();
+
+  const isItemActive = (href: string) => {
+    if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/";
+    return pathname.startsWith(href);
+  };
+
   return (
     <aside
       className={cn(
@@ -74,14 +74,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
     >
       {/* Brand Header */}
-      <div className="flex h-14 items-center justify-between px-4 border-b border-[#242932]">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#39D9FF] to-[#12151A] text-[#08090B] shadow-[0_0_12px_rgba(57,217,255,0.3)]">
-            <Sparkles className="h-4 w-4 text-[#08090B]" />
+      <div className="flex h-16 items-center justify-between px-4 border-b border-[#242932]">
+        <Link href="/dashboard" onClick={onMobileClose} className="flex items-center gap-3 overflow-hidden">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#12151A] border border-[#39D9FF]/40 text-[#39D9FF] shadow-[0_0_12px_rgba(57,217,255,0.25)]">
+            <Sparkles className="h-5 w-5 text-[#39D9FF]" />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-[#F5F7FA]">
+              <span className="text-sm font-bold tracking-tight text-[#F5F7FA] font-display">
                 AI-Recruit<span className="text-[#39D9FF]">360</span>
               </span>
               <span className="text-[10px] text-[#68717E] tracking-wider uppercase font-semibold">
@@ -89,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
           )}
-        </div>
+        </Link>
 
         {onToggleCollapse && !isCollapsed && (
           <button
@@ -104,50 +104,78 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-        {defaultNavItems.map((group) => (
-          <div key={group.section} className="space-y-1">
-            {!isCollapsed && (
-              <h4 className="px-2 text-[10px] font-bold tracking-widest text-[#68717E] uppercase mb-2">
-                {group.section}
-              </h4>
-            )}
-            {group.items.map((item) => {
-              const isActive = activeId === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate?.(item.id)}
-                  title={isCollapsed ? item.label : undefined}
+        {/* Main Nav Items */}
+        <div className="space-y-1">
+          {mainNavItems.map((item) => {
+            const isActive = isItemActive(item.href);
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={onMobileClose}
+                title={isCollapsed ? item.label : undefined}
+                className={cn(
+                  "relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  isActive
+                    ? "bg-[#39D9FF]/10 text-[#39D9FF] font-semibold border-l-2 border-[#39D9FF]"
+                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA]"
+                )}
+              >
+                <span
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
-                    isActive
-                      ? "bg-[#171B21] text-[#39D9FF] font-semibold border border-[#242932] shadow-xs"
-                      : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA]"
+                    "shrink-0 transition-micro",
+                    isActive ? "text-[#39D9FF]" : "text-[#68717E] group-hover:text-[#F5F7FA]"
                   )}
                 >
-                  <span
-                    className={cn(
-                      "shrink-0 transition-micro",
-                      isActive ? "text-[#39D9FF]" : "text-[#68717E] group-hover:text-[#F5F7FA]"
-                    )}
-                  >
-                    {item.icon}
+                  {item.icon}
+                </span>
+
+                {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Separator */}
+        <div className="my-3 h-px bg-[#242932]" />
+
+        {/* Secondary Nav Items */}
+        <div className="space-y-1">
+          {secondaryNavItems.map((item) => {
+            const isActive = isItemActive(item.href);
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={onMobileClose}
+                title={isCollapsed ? item.label : undefined}
+                className={cn(
+                  "relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  isActive
+                    ? "bg-[#39D9FF]/10 text-[#39D9FF] font-semibold border-l-2 border-[#39D9FF]"
+                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA]"
+                )}
+              >
+                <span
+                  className={cn(
+                    "shrink-0 transition-micro",
+                    isActive ? "text-[#39D9FF]" : "text-[#68717E] group-hover:text-[#F5F7FA]"
+                  )}
+                >
+                  {item.icon}
+                </span>
+
+                {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+
+                {!isCollapsed && item.badge && (
+                  <span className="rounded-full bg-[#39D9FF]/10 px-2 py-0.5 text-[10px] font-semibold text-[#39D9FF] border border-[#39D9FF]/30">
+                    {item.badge}
                   </span>
-
-                  {!isCollapsed && (
-                    <span className="truncate flex-1 text-left">{item.label}</span>
-                  )}
-
-                  {!isCollapsed && item.badge && (
-                    <span className="rounded-full bg-[#39D9FF]/10 px-2 py-0.5 text-[10px] font-semibold text-[#39D9FF] border border-[#39D9FF]/30">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Bottom Collapsed Toggle (if collapsed) */}
@@ -163,23 +191,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* Status Footer */}
+      {/* User Profile Section */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-[#242932] bg-[#08090B]/50">
-          <div className="flex items-center gap-2.5 rounded-lg border border-[#242932] bg-[#12151A] p-2.5">
-            <div className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#35D07F] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#35D07F]" />
-            </div>
+        <div className="p-3 border-t border-[#242932] bg-[#08090B]">
+          <Link href="/settings" onClick={onMobileClose} className="flex items-center gap-3 rounded-lg border border-[#242932] bg-[#12151A] p-2.5 hover:border-[#39D9FF]/40 transition-micro">
+            <Avatar fallback="AH" status="online" size="md" />
             <div className="flex flex-col overflow-hidden">
               <span className="text-xs font-semibold text-[#F5F7FA] truncate">
-                AI Engine Ready
+                Ameer Hamza
               </span>
-              <span className="text-[10px] text-[#68717E] truncate">
-                v0.1.0-alpha
+              <span className="text-[10px] text-[#A7AFBC] truncate">
+                AI Engineer
               </span>
             </div>
-          </div>
+          </Link>
         </div>
       )}
     </aside>

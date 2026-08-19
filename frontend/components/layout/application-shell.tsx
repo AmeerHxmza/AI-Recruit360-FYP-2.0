@@ -9,6 +9,7 @@ export interface ApplicationShellProps {
   children: React.ReactNode;
   activeNavId?: string;
   onNavigate?: (id: string) => void;
+  pageBreadcrumb?: string[];
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
   children,
   activeNavId = "dashboard",
   onNavigate,
+  pageBreadcrumb,
   className,
 }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
@@ -26,7 +28,7 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
       {/* Mobile Sidebar Overlay Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-[1250] bg-[#08090B]/80 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-[1250] bg-[#08090B]/80 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -34,7 +36,7 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
       {/* Mobile Drawer Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-[1260] w-64 transform transition-transform duration-200 ease-in-out md:hidden",
+          "fixed inset-y-0 left-0 z-[1260] w-64 transform transition-transform duration-200 ease-in-out md:hidden shadow-2xl",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -44,6 +46,7 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
             onNavigate?.(id);
             setIsMobileMenuOpen(false);
           }}
+          onMobileClose={() => setIsMobileMenuOpen(false)}
         />
       </div>
 
@@ -59,10 +62,13 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
 
       {/* Right Column: TopBar + Page Content */}
       <div className="flex flex-1 flex-col min-w-0">
-        <TopBar onMenuToggle={() => setIsMobileMenuOpen(true)} />
+        <TopBar
+          onMenuToggle={() => setIsMobileMenuOpen(true)}
+          pageBreadcrumb={pageBreadcrumb}
+        />
 
-        <main className={cn("flex-1 overflow-y-auto p-4 md:p-6 lg:p-8", className)}>
-          <div className="mx-auto max-w-7xl">{children}</div>
+        <main className={cn("flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8", className)}>
+          <div className="mx-auto max-w-[1440px]">{children}</div>
         </main>
       </div>
     </div>
