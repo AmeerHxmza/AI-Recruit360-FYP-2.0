@@ -8,6 +8,8 @@ import { Search, Bell, Sparkles, Menu, ChevronRight, X, ArrowRight, User, Briefc
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 
+import { useAuth } from "@/providers/auth-provider";
+
 export interface TopBarProps {
   onMenuToggle?: () => void;
   pageBreadcrumb?: string[];
@@ -20,8 +22,17 @@ export const TopBar: React.FC<TopBarProps> = ({
   className,
 }) => {
   const router = useRouter();
+  const { user, userMetadata } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase() || "AH";
+  };
 
   // Keyboard shortcut for Cmd+K / Ctrl+K command palette
   React.useEffect(() => {
@@ -130,10 +141,10 @@ export const TopBar: React.FC<TopBarProps> = ({
 
           {/* User Profile Avatar */}
           <Link href="/settings" className="pl-2 border-l border-[#242932] flex items-center gap-2 hover:opacity-80 transition-micro">
-            <Avatar fallback="AH" status="online" size="sm" />
+            <Avatar fallback={getInitials(userMetadata.fullName)} status="online" size="sm" />
             <div className="hidden xl:flex flex-col text-left">
-              <span className="text-xs font-semibold text-[#F5F7FA]">Ameer Hamza</span>
-              <span className="text-[10px] text-[#A7AFBC]">AI Engineer</span>
+              <span className="text-xs font-semibold text-[#F5F7FA]">{userMetadata.fullName}</span>
+              <span className="text-[10px] text-[#A7AFBC] truncate max-w-[120px]">{user?.email || userMetadata.organization}</span>
             </div>
           </Link>
         </div>

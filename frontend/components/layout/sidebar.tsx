@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
+import { useAuth } from "@/providers/auth-provider";
 import {
   LayoutDashboard,
   Briefcase,
@@ -18,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 
 export interface NavItem {
@@ -59,10 +61,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   className,
 }) => {
   const pathname = usePathname();
+  const { user, userMetadata, signOut } = useAuth();
 
   const isItemActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/";
     return pathname.startsWith(href);
+  };
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase() || "AH";
   };
 
   return (
@@ -193,20 +204,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* User Profile Section */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-[#242932] bg-[#08090B]">
-          <Link href="/settings" onClick={onMobileClose} className="flex items-center gap-3 rounded-lg border border-[#242932] bg-[#12151A] p-2.5 hover:border-[#39D9FF]/40 transition-micro">
-            <Avatar fallback="AH" status="online" size="md" />
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-xs font-semibold text-[#F5F7FA] truncate">
-                Ameer Hamza
-              </span>
-              <span className="text-[10px] text-[#A7AFBC] truncate">
-                AI Engineer
-              </span>
+        <div className="p-3 border-t border-[#242932] bg-[#08090B] space-y-2">
+          <div className="flex items-center justify-between rounded-lg border border-[#242932] bg-[#12151A] p-2.5">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <Avatar fallback={getInitials(userMetadata.fullName)} status="online" size="sm" />
+              <div className="flex flex-col overflow-hidden text-left">
+                <span className="text-xs font-semibold text-[#F5F7FA] truncate">
+                  {userMetadata.fullName}
+                </span>
+                <span className="text-[10px] text-[#A7AFBC] truncate">
+                  {user?.email || userMetadata.organization}
+                </span>
+              </div>
             </div>
-          </Link>
+
+            <button
+              onClick={() => signOut()}
+              title="Sign Out"
+              className="p-1.5 rounded-md text-[#A7AFBC] hover:text-[#FF5C67] hover:bg-[#171B21] transition-colors focus:outline-none"
+              aria-label="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
     </aside>
   );
 };
+

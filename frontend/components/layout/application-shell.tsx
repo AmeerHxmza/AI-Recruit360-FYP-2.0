@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
+import { useAuth } from "@/providers/auth-provider";
+import { Sparkles } from "lucide-react";
 
 export interface ApplicationShellProps {
   children: React.ReactNode;
@@ -20,8 +23,32 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
   pageBreadcrumb,
   className,
 }) => {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [loading, user, router, pathname]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-[#08090B] flex flex-col items-center justify-center p-6 text-[#F5F7FA]">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <div className="h-12 w-12 rounded-xl bg-[#12151A] border border-[#39D9FF]/40 text-[#39D9FF] flex items-center justify-center shadow-lg shadow-[#39D9FF]/20">
+            <Sparkles className="h-6 w-6 text-[#39D9FF]" />
+          </div>
+          <span className="text-xs font-mono text-[#A7AFBC] uppercase tracking-widest">
+            Authenticating Workspace...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex flex-col md:flex-row antialiased">

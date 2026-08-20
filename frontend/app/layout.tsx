@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist, Geist_Mono } from "next/font/google";
+import { AuthProvider } from "@/providers/auth-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,9 +35,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full bg-[#08090B] text-[#F5F7FA] font-sans flex flex-col selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]">
-        {children}
+      <body
+        className="min-h-full bg-[#08090B] text-[#F5F7FA] font-sans flex flex-col selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]"
+        suppressHydrationWarning
+      >
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
