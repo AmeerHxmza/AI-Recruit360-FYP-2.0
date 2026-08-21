@@ -61,19 +61,46 @@ export async function middleware(request: NextRequest) {
     pathname === "/signup" ||
     pathname === "/forgot-password";
 
-  // 1. Unauthenticated user trying to access protected route -> Redirect to /login
-  if (isProtectedRoute && !user) {
+  const isOnboardingRoute = pathname === "/onboarding/organization" || pathname.startsWith("/onboarding/");
+
+  // 1. Unauthenticated user trying to access protected route or onboarding route -> Redirect to /login
+  if ((isProtectedRoute || isOnboardingRoute) && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  // 2. Authenticated user trying to access /login or /signup -> Redirect to /dashboard
-  if (isAuthRoute && user) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
-    return NextResponse.redirect(redirectUrl);
+  // 2. Authenticated user checks organization membership status
+  if (user && (isProtectedRoute || isAuthRoute || isOnboardingRoute)) {
+    const { data: members } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .limit(1);
+
+    const hasOrg = Boolean(members && members.length > 0);
+
+    // Authenticated user on auth routes (/login, /signup)
+    if (isAuthRoute) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = hasOrg ? "/dashboard" : "/onboarding/organization";
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Authenticated user on onboarding route but already has an organization
+    if (isOnboardingRoute && hasOrg) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard";
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Authenticated user trying to access protected routes without an organization
+    if (isProtectedRoute && !hasOrg) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/onboarding/organization";
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return response;

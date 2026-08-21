@@ -22,7 +22,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   className,
 }) => {
   const router = useRouter();
-  const { user, userMetadata } = useAuth();
+  const { userMetadata } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -144,7 +144,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <Avatar fallback={getInitials(userMetadata.fullName)} status="online" size="sm" />
             <div className="hidden xl:flex flex-col text-left">
               <span className="text-xs font-semibold text-[#F5F7FA]">{userMetadata.fullName}</span>
-              <span className="text-[10px] text-[#A7AFBC] truncate max-w-[120px]">{user?.email || userMetadata.organization}</span>
+              <span className="text-[10px] text-[#A7AFBC] truncate max-w-[140px] font-mono">{userMetadata.organization}</span>
             </div>
           </Link>
         </div>

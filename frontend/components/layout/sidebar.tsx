@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   className,
 }) => {
   const pathname = usePathname();
-  const { user, userMetadata, signOut } = useAuth();
+  const { userMetadata, signOut } = useAuth();
 
   const isItemActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/";
@@ -212,8 +212,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="text-xs font-semibold text-[#F5F7FA] truncate">
                   {userMetadata.fullName}
                 </span>
-                <span className="text-[10px] text-[#A7AFBC] truncate">
-                  {user?.email || userMetadata.organization}
+                <span className="text-[10px] text-[#A7AFBC] truncate font-mono">
+                  {userMetadata.organization} ({userMetadata.role || "member"})
                 </span>
               </div>
             </div>

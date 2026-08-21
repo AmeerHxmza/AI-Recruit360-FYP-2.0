@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { AuthError, ForbiddenError, NotFoundError } from "@/lib/utils/errors";
 import { Database, OrganizationRole } from "@/types/database.types";
@@ -6,7 +8,15 @@ export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type OrganizationRow = Database["public"]["Tables"]["organizations"]["Row"];
 export type OrganizationMemberRow = Database["public"]["Tables"]["organization_members"]["Row"];
 
-export async function getCurrentUser() {
+export interface OrganizationContext {
+  user: User;
+  profile: ProfileRow;
+  organization: OrganizationRow;
+  membership: OrganizationMemberRow;
+  role: OrganizationRole;
+}
+
+export async function getCurrentUser(): Promise<User> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,7 +41,7 @@ export async function getCurrentProfile(): Promise<ProfileRow> {
     .single();
 
   if (error || !profile) {
-    // Graceful fallback if trigger has not fired yet
+    // Graceful fallback if profile trigger has not fired yet
     return {
       id: user.id,
       full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Recruiter",
@@ -71,59 +81,75 @@ export async function getUserOrganizations(): Promise<OrganizationRow[]> {
   return orgs;
 }
 
-export async function getCurrentOrganization(requestedOrgId?: string): Promise<OrganizationRow> {
-  const user = await getCurrentUser();
-  const supabase = await createClient();
+export async function getOrganizationContext(
+  requestedOrgId?: string
+): Promise<OrganizationContext | null> {
+  try {
+    const user = await getCurrentUser();
+    const supabase = await createClient();
 
-  if (requestedOrgId) {
-    // Validate that the user is actually a member of the requested organization
-    const { data: membership } = await supabase
-      .from("organization_members")
-      .select("id")
-      .eq("organization_id", requestedOrgId)
-      .eq("user_id", user.id)
-      .single();
+    let targetOrgId = requestedOrgId;
 
-    if (!membership) {
-      throw new ForbiddenError("You do not have access to this organization workspace.");
+    if (!targetOrgId) {
+      try {
+        const cookieStore = await cookies();
+        targetOrgId = cookieStore.get("air360_org_id")?.value;
+      } catch {
+        // cookies() call might fail in non-request contexts
+      }
     }
 
-    const { data: org, error } = await supabase
+    const { data: memberships } = await supabase
+      .from("organization_members")
+      .select("*")
+      .eq("user_id", user.id);
+
+    if (!memberships || memberships.length === 0) {
+      return null;
+    }
+
+    let activeMembership = targetOrgId
+      ? memberships.find((m) => m.organization_id === targetOrgId)
+      : undefined;
+
+    if (!activeMembership) {
+      activeMembership = memberships[0];
+    }
+
+    const { data: org } = await supabase
       .from("organizations")
       .select("*")
-      .eq("id", requestedOrgId)
+      .eq("id", activeMembership.organization_id)
       .single();
 
-    if (error || !org) {
-      throw new NotFoundError("Organization not found.");
+    if (!org) {
+      return null;
     }
 
-    return org;
+    const profile = await getCurrentProfile();
+
+    return {
+      user,
+      profile,
+      organization: org,
+      membership: activeMembership,
+      role: activeMembership.role,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getCurrentOrganization(requestedOrgId?: string): Promise<OrganizationRow> {
+  const ctx = await getOrganizationContext(requestedOrgId);
+
+  if (!ctx) {
+    throw new NotFoundError(
+      "No active organization membership found. Please create an organization workspace."
+    );
   }
 
-  // Default: Get the user's first available organization
-  const { data: firstMembership, error } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", user.id)
-    .limit(1)
-    .single();
-
-  if (error || !firstMembership) {
-    throw new NotFoundError("No active organization membership found. Please create an organization workspace.");
-  }
-
-  const { data: org, error: orgError } = await supabase
-    .from("organizations")
-    .select("*")
-    .eq("id", firstMembership.organization_id)
-    .single();
-
-  if (orgError || !org) {
-    throw new NotFoundError("Organization workspace record not found.");
-  }
-
-  return org;
+  return ctx.organization;
 }
 
 export async function getCurrentMembership(orgId: string): Promise<OrganizationMemberRow> {

@@ -4,17 +4,28 @@ import * as React from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { Database, OrganizationRole } from "@/types/database.types";
 
-interface AuthMetadata {
+export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+export type OrganizationRow = Database["public"]["Tables"]["organizations"]["Row"];
+export type OrganizationMemberRow = Database["public"]["Tables"]["organization_members"]["Row"];
+
+export interface AuthMetadata {
   fullName: string;
   organization: string;
   roleTitle: string;
+  role?: OrganizationRole;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profile: ProfileRow | null;
+  organization: OrganizationRow | null;
+  membership: OrganizationMemberRow | null;
+  organizations: OrganizationRow[];
+  role: OrganizationRole | null;
   userMetadata: AuthMetadata;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -28,6 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
+
+  const [profile, setProfile] = React.useState<ProfileRow | null>(null);
+  const [organization, setOrganization] = React.useState<OrganizationRow | null>(null);
+  const [membership, setMembership] = React.useState<OrganizationMemberRow | null>(null);
+  const [organizations, setOrganizations] = React.useState<OrganizationRow[]>([]);
+  const [role, setRole] = React.useState<OrganizationRole | null>(null);
+
   const router = useRouter();
 
   // Create a memoized Supabase browser client
@@ -38,6 +56,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   }, []);
+
+  const fetchContextData = React.useCallback(
+    async (currentUser: User | null) => {
+      if (!supabase || !currentUser) {
+        setProfile(null);
+        setOrganization(null);
+        setMembership(null);
+        setOrganizations([]);
+        setRole(null);
+        return;
+      }
+
+      try {
+        // 1. Fetch user profile
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", currentUser.id)
+          .single();
+
+        if (prof) setProfile(prof);
+
+        // 2. Fetch organization memberships
+        const { data: memberRows } = await supabase
+          .from("organization_members")
+          .select("*")
+          .eq("user_id", currentUser.id);
+
+        if (memberRows && memberRows.length > 0) {
+          const activeMember = memberRows[0];
+          setMembership(activeMember);
+          setRole(activeMember.role);
+
+          const orgIds = memberRows.map((m) => m.organization_id);
+          const { data: orgs } = await supabase
+            .from("organizations")
+            .select("*")
+            .in("id", orgIds);
+
+          if (orgs && orgs.length > 0) {
+            setOrganizations(orgs);
+            const activeOrg =
+              orgs.find((o) => o.id === activeMember.organization_id) || orgs[0];
+            setOrganization(activeOrg);
+          } else {
+            setOrganizations([]);
+            setOrganization(null);
+          }
+        } else {
+          setMembership(null);
+          setRole(null);
+          setOrganizations([]);
+          setOrganization(null);
+        }
+      } catch (err) {
+        console.error("Error fetching auth context data:", err);
+      }
+    },
+    [supabase]
+  );
 
   const refreshSession = React.useCallback(async () => {
     if (!supabase) {
@@ -50,13 +128,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: { session: currentSession },
       } = await supabase.auth.getSession();
       setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+      const currentUser = currentSession?.user ?? null;
+      setUser(currentUser);
+      await fetchContextData(currentUser);
     } catch (err) {
       console.error("Auth session retrieval error:", err);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, fetchContextData]);
 
   React.useEffect(() => {
     if (!supabase) {
@@ -66,20 +146,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isMounted = true;
 
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
       if (isMounted) {
         setSession(initialSession);
-        setUser(initialSession?.user ?? null);
+        const currentUser = initialSession?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          await fetchContextData(currentUser);
+        }
         setLoading(false);
       }
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       if (isMounted) {
         setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+        const currentUser = currentSession?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          await fetchContextData(currentUser);
+        } else {
+          setProfile(null);
+          setOrganization(null);
+          setMembership(null);
+          setOrganizations([]);
+          setRole(null);
+        }
         setLoading(false);
       }
     });
@@ -88,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, fetchContextData]);
 
   const signOut = React.useCallback(async () => {
     if (supabase) {
@@ -96,6 +190,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setSession(null);
+    setProfile(null);
+    setOrganization(null);
+    setMembership(null);
+    setOrganizations([]);
+    setRole(null);
     router.push("/");
     router.refresh();
   }, [supabase, router]);
@@ -104,9 +203,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const userMetadata = React.useMemo<AuthMetadata>(() => {
     if (!user) {
       return {
-        fullName: "Ameer Hamza",
-        organization: "AI-Recruit360 Workspace",
+        fullName: "Recruiter Workspace",
+        organization: "AI-Recruit360",
         roleTitle: "Recruitment Specialist",
+        role: "owner",
       };
     }
 
@@ -115,23 +215,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const formattedPrefix =
       emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
 
+    const fullUserTitle =
+      profile?.full_name || meta.full_name || meta.name || formattedPrefix || "Recruiter";
+    const activeOrgName = organization?.name || meta.organization || "AI-Recruit360 Workspace";
+    const formattedRole = role ? role.charAt(0).toUpperCase() + role.slice(1) : "Member";
+
     return {
-      fullName: meta.full_name || meta.name || formattedPrefix || "Ameer Hamza",
-      organization: meta.organization || "AI-Recruit360 Workspace",
-      roleTitle: meta.role_title || "Recruitment Specialist",
+      fullName: fullUserTitle,
+      organization: activeOrgName,
+      roleTitle: `${formattedRole} • ${activeOrgName}`,
+      role: role || undefined,
     };
-  }, [user]);
+  }, [user, profile, organization, role]);
 
   const value = React.useMemo(
     () => ({
       user,
       session,
       loading,
+      profile,
+      organization,
+      membership,
+      organizations,
+      role,
       userMetadata,
       signOut,
       refreshSession,
     }),
-    [user, session, loading, userMetadata, signOut, refreshSession]
+    [
+      user,
+      session,
+      loading,
+      profile,
+      organization,
+      membership,
+      organizations,
+      role,
+      userMetadata,
+      signOut,
+      refreshSession,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

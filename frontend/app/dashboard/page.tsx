@@ -16,10 +16,14 @@ import {
 } from "@/lib/mock/dashboard";
 import { mockRecentCandidates } from "@/lib/mock/candidates";
 
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/providers/auth-provider";
 import { Users, UserCheck, Video, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [activeNav, setActiveNav] = React.useState("dashboard");
+  const { userMetadata, organization } = useAuth();
 
   const getMetricIcon = (id: string) => {
     switch (id) {
@@ -40,12 +44,16 @@ export default function DashboardPage() {
     <ApplicationShell
       activeNavId={activeNav}
       onNavigate={setActiveNav}
-      pageBreadcrumb={["AI-Recruit360", "Command Center", "Overview"]}
+      pageBreadcrumb={[
+        organization?.name || "AI-Recruit360",
+        "Command Center",
+        "Overview",
+      ]}
     >
       {/* Dashboard Header */}
       <DashboardHeader
-        userName="Ameer"
-        onCreateJob={() => alert("Create Job workflow trigger")}
+        userName={userMetadata.fullName}
+        onCreateJob={() => router.push("/jobs/new")}
       />
 
       {/* Primary Metrics Editorial Row */}
