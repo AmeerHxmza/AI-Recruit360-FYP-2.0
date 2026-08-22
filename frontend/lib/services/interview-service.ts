@@ -2,11 +2,18 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrganization, getCurrentRole } from "@/lib/auth/session";
 import { canManageInterviews } from "@/lib/auth/permissions";
 import { ForbiddenError, NotFoundError, DatabaseError } from "@/lib/utils/errors";
-import { Database, InterviewType } from "@/types/database.types";
+import { Database, InterviewStatus, InterviewType } from "@/types/database.types";
 
 export type Interview = Database["public"]["Tables"]["interviews"]["Row"];
 export type InterviewQuestion = Database["public"]["Tables"]["interview_questions"]["Row"];
 export type InterviewResponse = Database["public"]["Tables"]["interview_responses"]["Row"];
+
+export interface InterviewItemWithDetails extends Interview {
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+  jobDepartment: string;
+}
 
 export async function getInterviewsForOrg(orgId: string, applicationId?: string): Promise<Interview[]> {
   await getCurrentOrganization(orgId);
@@ -16,7 +23,7 @@ export async function getInterviewsForOrg(orgId: string, applicationId?: string)
     .from("interviews")
     .select("*")
     .eq("organization_id", orgId)
-    .order("scheduled_at", { ascending: false });
+    .order("created_at", { ascending: false });
 
   if (applicationId) {
     query = query.eq("application_id", applicationId);
@@ -29,6 +36,88 @@ export async function getInterviewsForOrg(orgId: string, applicationId?: string)
   }
 
   return data || [];
+}
+
+export async function getInterviewsForOrgWithDetails(
+  orgId: string,
+  applicationId?: string
+): Promise<InterviewItemWithDetails[]> {
+  await getCurrentOrganization(orgId);
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("interviews")
+    .select(`
+      *,
+      applications (
+        candidates (
+          full_name,
+          email
+        ),
+        jobs (
+          title,
+          department
+        )
+      )
+    `)
+    .eq("organization_id", orgId)
+    .order("created_at", { ascending: false });
+
+  if (applicationId) {
+    query = query.eq("application_id", applicationId);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    return [];
+  }
+
+  interface InterviewJoinQueryResult {
+    id: string;
+    organization_id: string;
+    application_id: string;
+    status: InterviewStatus;
+    interview_type: InterviewType;
+    total_questions: number;
+    questions_answered: number;
+    overall_score: number | null;
+    started_at: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    applications: {
+      candidates: {
+        full_name: string;
+        email: string;
+      } | null;
+      jobs: {
+        title: string;
+        department: string | null;
+      } | null;
+    } | null;
+  }
+
+  const typedData = data as unknown as InterviewJoinQueryResult[];
+
+  return typedData.map((item) => ({
+    id: item.id,
+    organization_id: item.organization_id,
+    application_id: item.application_id,
+    status: item.status,
+    interview_type: item.interview_type,
+    total_questions: item.total_questions,
+    questions_answered: item.questions_answered,
+    overall_score: item.overall_score,
+    started_at: item.started_at,
+    completed_at: item.completed_at,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    candidateName: item.applications?.candidates?.full_name || "Interview Candidate",
+    candidateEmail: item.applications?.candidates?.email || "candidate@example.com",
+    jobTitle: item.applications?.jobs?.title || "Job Position",
+    jobDepartment: item.applications?.jobs?.department || "General",
+  }));
 }
 
 export async function getInterviewById(orgId: string, interviewId: string): Promise<Interview> {
@@ -49,13 +138,89 @@ export async function getInterviewById(orgId: string, interviewId: string): Prom
   return data;
 }
 
+export async function getInterviewByIdWithDetails(
+  orgId: string,
+  interviewId: string
+): Promise<InterviewItemWithDetails> {
+  await getCurrentOrganization(orgId);
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("interviews")
+    .select(`
+      *,
+      applications (
+        candidates (
+          full_name,
+          email
+        ),
+        jobs (
+          title,
+          department
+        )
+      )
+    `)
+    .eq("organization_id", orgId)
+    .eq("id", interviewId)
+    .single();
+
+  if (error || !data) {
+    throw new NotFoundError("Interview session record not found.");
+  }
+
+  interface InterviewSingleJoinQueryResult {
+    id: string;
+    organization_id: string;
+    application_id: string;
+    status: InterviewStatus;
+    interview_type: InterviewType;
+    total_questions: number;
+    questions_answered: number;
+    overall_score: number | null;
+    started_at: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    applications: {
+      candidates: {
+        full_name: string;
+        email: string;
+      } | null;
+      jobs: {
+        title: string;
+        department: string | null;
+      } | null;
+    } | null;
+  }
+
+  const item = data as unknown as InterviewSingleJoinQueryResult;
+
+  return {
+    id: item.id,
+    organization_id: item.organization_id,
+    application_id: item.application_id,
+    status: item.status,
+    interview_type: item.interview_type,
+    total_questions: item.total_questions,
+    questions_answered: item.questions_answered,
+    overall_score: item.overall_score,
+    started_at: item.started_at,
+    completed_at: item.completed_at,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    candidateName: item.applications?.candidates?.full_name || "Interview Candidate",
+    candidateEmail: item.applications?.candidates?.email || "candidate@example.com",
+    jobTitle: item.applications?.jobs?.title || "Job Position",
+    jobDepartment: item.applications?.jobs?.department || "General",
+  };
+}
+
 export async function createInterview(
   orgId: string,
   input: {
     application_id: string;
-    scheduled_at: string;
-    duration_minutes?: number;
     interview_type?: InterviewType;
+    total_questions?: number;
   }
 ): Promise<Interview> {
   await getCurrentOrganization(orgId);
@@ -71,16 +236,43 @@ export async function createInterview(
     .insert({
       organization_id: orgId,
       application_id: input.application_id,
-      scheduled_at: input.scheduled_at,
-      duration_minutes: input.duration_minutes || 45,
       interview_type: input.interview_type || "ai_adaptive",
-      status: "scheduled",
+      total_questions: input.total_questions || 8,
+      status: "pending",
     })
     .select("*")
     .single();
 
   if (error || !data) {
-    throw new DatabaseError("Failed to schedule interview session.");
+    throw new DatabaseError(error?.message || "Failed to schedule interview session.");
+  }
+
+  return data;
+}
+
+export async function updateInterviewStatus(
+  orgId: string,
+  interviewId: string,
+  newStatus: InterviewStatus
+): Promise<Interview> {
+  await getCurrentOrganization(orgId);
+  const role = await getCurrentRole(orgId);
+
+  if (!canManageInterviews(role)) {
+    throw new ForbiddenError("You do not have permission to update interview status.");
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("interviews")
+    .update({ status: newStatus })
+    .eq("organization_id", orgId)
+    .eq("id", interviewId)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new DatabaseError("Failed to update interview status.");
   }
 
   return data;
@@ -92,7 +284,7 @@ export async function getInterviewQuestions(interviewId: string): Promise<Interv
     .from("interview_questions")
     .select("*")
     .eq("interview_id", interviewId)
-    .order("question_order", { ascending: true });
+    .order("question_number", { ascending: true });
 
   if (error) {
     throw new DatabaseError("Failed to retrieve interview questions.");

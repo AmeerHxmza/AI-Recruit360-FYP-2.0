@@ -1,135 +1,92 @@
 "use client";
 
 import * as React from "react";
-import { FileText, Search, Cpu, BarChart2, CheckCheck, ArrowDown } from "lucide-react";
+import Image from "next/image";
+import { Sparkles, CheckCircle2 } from "lucide-react";
 
 export function ScreeningSection() {
-  const steps = [
-    {
-      count: "124",
-      label: "RESUMES INGESTED",
-      detail: "PDFs, Word docs & portfolio links uploaded",
-      icon: FileText,
-      badge: "Raw Applicants",
-    },
-    {
-      count: "02",
-      label: "DOCUMENT ANALYSIS",
-      detail: "Structural layout parsing & text extraction",
-      icon: Search,
-      badge: "Parsing Layer",
-    },
-    {
-      count: "03",
-      label: "EVIDENCE EXTRACTION",
-      detail: "Skill claims matched against experience context",
-      icon: Cpu,
-      badge: "Evidence Engine",
-    },
-    {
-      count: "04",
-      label: "SEMANTIC MATCHING",
-      detail: "Vector search alignment against target job requirements",
-      icon: BarChart2,
-      badge: "Vector Analysis",
-    },
-    {
-      count: "27",
-      label: "STRONG MATCHES",
-      detail: "High-confidence candidates ready for recruiter review",
-      icon: CheckCheck,
-      badge: "Shortlist Output",
-      highlight: true,
-    },
-  ];
-
   return (
-    <section className="py-20 md:py-28 bg-[#0D0F12] border-t border-[#242932]/60">
+    <section id="screening" className="py-20 md:py-28 bg-[#08090B] border-t border-[#242932]/60 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-mono text-[#39D9FF] uppercase tracking-widest bg-[#39D9FF]/10 px-3 py-1 rounded-full border border-[#39D9FF]/20 mb-4 inline-block">
-            Intelligent Screening
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#F5F7FA] font-display uppercase mt-2 mb-4">
-            Turn Hundreds Of Resumes <br />
-            Into Clear Signals.
-          </h2>
-          <p className="text-[#A7AFBC] text-base sm:text-lg leading-relaxed">
-            Eliminate manual resume parsing. AI-Recruit360 extracts evidence, evaluates role alignment, and surfaces top talent instantly.
-          </p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left Column: AI CV Screening Text & Scores */}
+          <div className="lg:col-span-6 space-y-6">
+            <span className="text-xs font-mono text-[#39D9FF] uppercase tracking-widest bg-[#39D9FF]/10 px-3.5 py-1 rounded-full border border-[#39D9FF]/20 inline-block">
+              01 — AUTOMATED CV SCREENING
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#F5F7FA] font-display">
+              Automatically compare candidate CVs against job requirements.
+            </h2>
+            <p className="text-[#A7AFBC] text-base leading-relaxed">
+              AI-Recruit360 extracts skills, work history, and educational qualifications, scoring each candidate objectively against the exact criteria of your position.
+            </p>
 
-        {/* Transformation Pipeline Grid */}
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
-            {steps.map((step, idx) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.label} className="flex flex-col items-center">
-                  <div
-                    className={`w-full p-5 rounded-xl border flex flex-col justify-between transition-all duration-300 h-full ${
-                      step.highlight
-                        ? "bg-[#12151A] border-[#39D9FF]/60 ai-glow-subtle"
-                        : "bg-[#12151A]/80 border-[#242932] hover:border-[#39D9FF]/30"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-mono text-[#68717E] uppercase bg-[#171B21] px-2 py-0.5 rounded border border-[#242932]">
-                          {step.badge}
-                        </span>
-                        <Icon
-                          className={`h-4 w-4 ${
-                            step.highlight ? "text-[#39D9FF]" : "text-[#A7AFBC]"
-                          }`}
-                        />
-                      </div>
-
-                      <div
-                        className={`text-2xl sm:text-3xl font-bold font-mono my-2 ${
-                          step.highlight ? "text-[#39D9FF]" : "text-[#F5F7FA]"
-                        }`}
-                      >
-                        {step.count}
-                      </div>
-
-                      <h3
-                        className={`text-xs font-bold font-mono tracking-wider uppercase mb-1.5 ${
-                          step.highlight ? "text-[#39D9FF]" : "text-[#F5F7FA]"
-                        }`}
-                      >
-                        {step.label}
-                      </h3>
-                      <p className="text-[11px] text-[#A7AFBC] leading-snug">
-                        {step.detail}
-                      </p>
-                    </div>
-
-                    {step.highlight && (
-                      <div className="mt-4 pt-2 border-t border-[#39D9FF]/20 text-center">
-                        <span className="text-[10px] font-mono text-[#35D07F] font-bold uppercase tracking-wider">
-                          Ready For Review
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Down Arrow for Mobile */}
-                  {idx < steps.length - 1 && (
-                    <div className="md:hidden py-2 text-[#39D9FF]/40">
-                      <ArrowDown className="h-4 w-4" />
-                    </div>
-                  )}
+            {/* AI Match Score Breakdown Card */}
+            <div className="p-5 rounded-2xl bg-[#12151A] border border-[#242932] space-y-4">
+              <div className="flex items-center justify-between border-b border-[#242932] pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[#39D9FF]" />
+                  <span className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+                    AI Match Evaluation
+                  </span>
                 </div>
-              );
-            })}
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold uppercase bg-[#35D07F]/10 text-[#35D07F] border border-[#35D07F]/30">
+                  STRONG MATCH
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div className="p-3 rounded-xl bg-[#0D0F12] border border-[#242932]">
+                  <div className="text-2xl font-extrabold text-[#39D9FF] font-display">92%</div>
+                  <div className="text-[10px] text-[#A7AFBC] font-mono uppercase mt-0.5">Overall Match</div>
+                </div>
+                <div className="p-3 rounded-xl bg-[#0D0F12] border border-[#242932]">
+                  <div className="text-2xl font-extrabold text-[#35D07F] font-display">96%</div>
+                  <div className="text-[10px] text-[#A7AFBC] font-mono uppercase mt-0.5">Skills</div>
+                </div>
+                <div className="p-3 rounded-xl bg-[#0D0F12] border border-[#242932]">
+                  <div className="text-2xl font-extrabold text-[#F5B942] font-display">88%</div>
+                  <div className="text-[10px] text-[#A7AFBC] font-mono uppercase mt-0.5">Experience</div>
+                </div>
+                <div className="p-3 rounded-xl bg-[#0D0F12] border border-[#242932]">
+                  <div className="text-2xl font-extrabold text-[#F5F7FA] font-display">91%</div>
+                  <div className="text-[10px] text-[#A7AFBC] font-mono uppercase mt-0.5">Education</div>
+                </div>
+              </div>
+
+              {/* Evidence match points */}
+              <div className="space-y-1.5 pt-2 border-t border-[#242932]/60 text-xs">
+                <span className="text-[10px] font-mono text-[#68717E] uppercase">Verified Requirement Evidence</span>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <span className="px-2.5 py-1 rounded bg-[#0D0F12] border border-[#242932] text-[#F5F7FA] text-[11px] font-mono flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3 w-3 text-[#35D07F]" /> Next.js — demonstrated
+                  </span>
+                  <span className="px-2.5 py-1 rounded bg-[#0D0F12] border border-[#242932] text-[#F5F7FA] text-[11px] font-mono flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3 w-3 text-[#35D07F]" /> FastAPI — demonstrated
+                  </span>
+                  <span className="px-2.5 py-1 rounded bg-[#0D0F12] border border-[#242932] text-[#F5F7FA] text-[11px] font-mono flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3 w-3 text-[#35D07F]" /> RAG — demonstrated
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <p className="text-center text-xs font-mono text-[#68717E] mt-8">
-            * Demonstration metrics based on illustrative sample candidate dataset.
-          </p>
+          {/* Right Column: Visual Image Container */}
+          <div className="lg:col-span-6">
+            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-[#08090B]">
+              <Image
+                src="/images/feature-cv-screening.png"
+                alt="AI CV Screening Visual Interface"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1000px) 100vw, 600px"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
+

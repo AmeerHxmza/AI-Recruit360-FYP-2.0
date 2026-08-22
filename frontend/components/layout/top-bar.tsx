@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 
 import { useAuth } from "@/providers/auth-provider";
+import { OrganizationSwitcher } from "./organization-switcher";
 
 export interface TopBarProps {
   onMenuToggle?: () => void;
@@ -81,7 +82,8 @@ export const TopBar: React.FC<TopBarProps> = ({
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1.5 text-xs text-[#A7AFBC]">
+          <OrganizationSwitcher className="hidden sm:block md:hidden" />
+          <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1.5 text-xs text-[#A7AFBC]">
             {pageBreadcrumb.map((item, index) => (
               <React.Fragment key={item}>
                 {index > 0 && <ChevronRight className="h-3.5 w-3.5 text-[#68717E]" />}

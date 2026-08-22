@@ -1,3 +1,0 @@
-"""
-AI RAG retrieval package.
-"""

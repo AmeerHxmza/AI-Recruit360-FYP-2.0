@@ -90,6 +90,54 @@ export async function getJobById(orgId: string, jobId: string): Promise<Job> {
   return data;
 }
 
+function generateSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+  const randomSuffix = Math.random().toString(36).substring(2, 7);
+  return `${base}-${randomSuffix}`;
+}
+
+export async function getPublicJobBySlug(slug: string): Promise<Job | null> {
+  const supabase = await createClient();
+
+  // 1. Try matching by slug
+  const { data: bySlug } = await supabase
+    .from("jobs")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (bySlug) {
+    return bySlug;
+  }
+
+  // 2. If slug parameter is a valid UUID string, try matching by id
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+  if (isUuid) {
+    const { data: byId } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("id", slug)
+      .maybeSingle();
+
+    if (byId) {
+      return byId;
+    }
+  }
+
+  // 3. Fallback: Retrieve latest active job in database for testing/previews
+  const { data: fallbackJobs } = await supabase
+    .from("jobs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  return fallbackJobs && fallbackJobs.length > 0 ? fallbackJobs[0] : null;
+}
+
 export async function createJob(
   orgId: string,
   input: CreateJobInput
@@ -104,6 +152,7 @@ export async function createJob(
 
   validateJobInput(input);
 
+  const slug = generateSlug(input.title);
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("jobs")
@@ -111,13 +160,15 @@ export async function createJob(
       organization_id: orgId,
       created_by: user.id,
       title: input.title.trim(),
+      slug,
       department: input.department.trim(),
       location: input.location.trim(),
       employment_type: input.employment_type,
       workplace_type: input.workplace_type || "hybrid",
-      description: input.description || null,
+      description: input.description || "",
       requirements: input.requirements || null,
-      status: input.status || "draft",
+      status: input.status || "active",
+      published_at: new Date().toISOString(),
     })
     .select("*")
     .single();

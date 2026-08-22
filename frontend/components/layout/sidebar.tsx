@@ -18,9 +18,11 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   LogOut,
 } from "lucide-react";
+
+import { OrganizationSwitcher } from "./organization-switcher";
+import { BrandLogo } from "@/components/brand/brand-logo";
 
 export interface NavItem {
   id: string;
@@ -87,19 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand Header */}
       <div className="flex h-16 items-center justify-between px-4 border-b border-[#242932]">
         <Link href="/dashboard" onClick={onMobileClose} className="flex items-center gap-3 overflow-hidden">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#12151A] border border-[#39D9FF]/40 text-[#39D9FF] shadow-[0_0_12px_rgba(57,217,255,0.25)]">
-            <Sparkles className="h-5 w-5 text-[#39D9FF]" />
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-[#F5F7FA] font-display">
-                AI-Recruit<span className="text-[#39D9FF]">360</span>
-              </span>
-              <span className="text-[10px] text-[#68717E] tracking-wider uppercase font-semibold">
-                Intelligence Platform
-              </span>
-            </div>
-          )}
+          <BrandLogo variant={isCollapsed ? "mark" : "full"} size="md" href="" />
         </Link>
 
         {onToggleCollapse && !isCollapsed && (
@@ -114,7 +104,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        {/* Workspace Switcher */}
+        <OrganizationSwitcher isCollapsed={isCollapsed} />
+
         {/* Main Nav Items */}
         <div className="space-y-1">
           {mainNavItems.map((item) => {

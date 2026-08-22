@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/providers/auth-provider";
+import { DataCacheProvider } from "@/providers/data-cache-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -22,8 +23,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI-Recruit360 | AI-Powered Recruitment Intelligence",
-  description: "Enterprise AI-powered recruitment intelligence platform",
+  title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
+  description:
+    "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",
+  icons: {
+    icon: "/images/air360-favicon.png",
+    shortcut: "/images/air360-favicon.png",
+    apple: "/images/air360-favicon.png",
+  },
+  openGraph: {
+    title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
+    description:
+      "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",
+    type: "website",
+    siteName: "AI-Recruit360",
+    images: [
+      {
+        url: "/images/dashboard-intelligence.png",
+        width: 1200,
+        height: 630,
+        alt: "AI-Recruit360 Enterprise Recruitment Intelligence Platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
+    description:
+      "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",
+  },
 };
 
 export default function RootLayout({
@@ -41,7 +69,9 @@ export default function RootLayout({
         className="min-h-full bg-[#08090B] text-[#F5F7FA] font-sans flex flex-col selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]"
         suppressHydrationWarning
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <DataCacheProvider>{children}</DataCacheProvider>
+        </AuthProvider>
       </body>
     </html>
   );

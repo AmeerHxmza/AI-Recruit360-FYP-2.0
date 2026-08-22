@@ -59,15 +59,15 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
       supabase.from("applications").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
       supabase.from("interviews").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
       supabase.from("applications").select("id", { count: "exact", head: true }).eq("organization_id", orgId).eq("status", "shortlisted"),
-      supabase.from("ai_candidate_analyses").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+      supabase.from("cv_screenings").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
       supabase.from("applications").select("status").eq("organization_id", orgId),
       supabase
         .from("applications")
-        .select("id, status, created_at, candidates(full_name, email), jobs(title)")
+        .select("id, status, applied_at, candidates(full_name, email), jobs(title)")
         .eq("organization_id", orgId)
-        .order("created_at", { ascending: false })
+        .order("applied_at", { ascending: false })
         .limit(5),
-      supabase.from("ai_candidate_analyses").select("overall_score, recommendation_verdict").eq("organization_id", orgId),
+      supabase.from("cv_screenings").select("match_score, recommendation").eq("organization_id", orgId),
     ]);
 
     const activeJobs = activeJobsRes.count || 0;
@@ -100,14 +100,18 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
     }
 
     // Format Recent Applications
-    const recentApplications = (recentAppsRes.data || []).map((app: any) => ({
-      id: app.id,
-      candidateName: app.candidates?.full_name || "Applicant",
-      candidateEmail: app.candidates?.email || "N/A",
-      jobTitle: app.jobs?.title || "Job Position",
-      status: app.status,
-      createdAt: app.created_at,
-    }));
+    const recentApplications = (recentAppsRes.data || []).map((app) => {
+      const cand = app.candidates as { full_name?: string; email?: string } | null;
+      const job = app.jobs as { title?: string } | null;
+      return {
+        id: app.id,
+        candidateName: cand?.full_name || "Applicant",
+        candidateEmail: cand?.email || "N/A",
+        jobTitle: job?.title || "Job Position",
+        status: app.status,
+        createdAt: app.applied_at,
+      };
+    });
 
     // Format AI Summary Metrics
     let averageScore = 0;
@@ -118,7 +122,7 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
     if (aiMetricsRes.data && aiMetricsRes.data.length > 0) {
       let totalScoreSum = 0;
       aiMetricsRes.data.forEach((row) => {
-        const score = row.overall_score || 0;
+        const score = row.match_score || 0;
         totalScoreSum += score;
         if (score >= 85) strongMatches++;
         else if (score >= 70) potentialMatches++;

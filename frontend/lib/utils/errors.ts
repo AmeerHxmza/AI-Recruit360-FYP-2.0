@@ -40,6 +40,24 @@ export class DatabaseError extends AppError {
   }
 }
 
+export class AIProviderError extends AppError {
+  constructor(message = "AI service provider unavailable or failed to generate output") {
+    super(message, 502, "AI_PROVIDER_ERROR");
+  }
+}
+
+export class AIValidationError extends AppError {
+  constructor(message = "AI model response failed schema validation checks") {
+    super(message, 422, "AI_VALIDATION_ERROR");
+  }
+}
+
+export class AIConfigError extends AppError {
+  constructor(message = "AI provider credentials or configuration missing") {
+    super(message, 500, "AI_CONFIG_ERROR");
+  }
+}
+
 export function handleServerError(error: unknown): { message: string; code: string; status: number } {
   if (error instanceof AppError) {
     return {

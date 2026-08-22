@@ -5,6 +5,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Database, OrganizationRole } from "@/types/database.types";
+import { switchOrganizationAction } from "@/app/actions/organization";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type OrganizationRow = Database["public"]["Tables"]["organizations"]["Row"];
@@ -29,6 +30,7 @@ export interface AuthContextType {
   userMetadata: AuthMetadata;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  switchOrganization: (orgId: string) => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(
@@ -85,10 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("user_id", currentUser.id);
 
         if (memberRows && memberRows.length > 0) {
-          const activeMember = memberRows[0];
-          setMembership(activeMember);
-          setRole(activeMember.role);
-
           const orgIds = memberRows.map((m) => m.organization_id);
           const { data: orgs } = await supabase
             .from("organizations")
@@ -97,8 +95,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (orgs && orgs.length > 0) {
             setOrganizations(orgs);
-            const activeOrg =
-              orgs.find((o) => o.id === activeMember.organization_id) || orgs[0];
+
+            // Determine active organization matching cookie preference if possible
+            const activeMember = memberRows[0];
+            const activeOrg = orgs.find((o) => o.id === activeMember.organization_id) || orgs[0];
+            setMembership(activeMember);
+            setRole(activeMember.role);
             setOrganization(activeOrg);
           } else {
             setOrganizations([]);
@@ -137,6 +139,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   }, [supabase, fetchContextData]);
+
+  const switchOrganization = React.useCallback(
+    async (orgId: string) => {
+      const res = await switchOrganizationAction(orgId);
+      if (res.success) {
+        await refreshSession();
+        router.refresh();
+      } else {
+        throw new Error(res.error || "Failed to switch organization workspace.");
+      }
+    },
+    [refreshSession, router]
+  );
 
   React.useEffect(() => {
     if (!supabase) {
@@ -241,6 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userMetadata,
       signOut,
       refreshSession,
+      switchOrganization,
     }),
     [
       user,
@@ -254,6 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userMetadata,
       signOut,
       refreshSession,
+      switchOrganization,
     ]
   );
 

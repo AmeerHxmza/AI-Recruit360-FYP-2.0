@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Sparkles, Menu, X, ArrowRight } from "lucide-react";
+import { BrandLogo } from "@/components/brand/brand-logo";
+import { Menu, X, ArrowRight } from "lucide-react";
 
 export function PublicNavbar() {
   const [scrolled, setScrolled] = React.useState(false);
@@ -49,22 +50,7 @@ export function PublicNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Brand Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 group focus-visible:outline-none"
-          >
-            <div className="h-8 w-8 rounded-lg bg-[#12151A] border border-[#242932] group-hover:border-[#39D9FF]/50 flex items-center justify-center transition-colors">
-              <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-base tracking-tight text-[#F5F7FA] font-display flex items-center gap-1.5">
-                AI-Recruit<span className="text-[#39D9FF]">360</span>
-              </span>
-              <span className="text-[10px] text-[#68717E] tracking-wider uppercase font-mono font-medium -mt-1">
-                Recruitment Intelligence
-              </span>
-            </div>
-          </Link>
+          <BrandLogo variant="full" size="md" href="/" />
 
           {/* Desktop Navigation Center Links */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-2">

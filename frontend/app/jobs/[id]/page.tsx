@@ -92,10 +92,10 @@ export default function JobDetailPage() {
   const openEditModal = () => {
     if (!job) return;
     setEditTitle(job.title);
-    setEditDepartment(job.department);
-    setEditLocation(job.location);
-    setEditEmploymentType(job.employment_type);
-    setEditWorkplaceType(job.workplace_type);
+    setEditDepartment(job.department || "");
+    setEditLocation(job.location || "");
+    setEditEmploymentType(job.employment_type || "full_time");
+    setEditWorkplaceType(job.workplace_type || "hybrid");
     setEditDescription(job.description || "");
     setEditRequirements(job.requirements || "");
     setEditErrorMsg(null);
@@ -148,7 +148,8 @@ export default function JobDetailPage() {
     }
   };
 
-  const formatEmploymentType = (type: EmploymentType) => {
+  const formatEmploymentType = (type: EmploymentType | null) => {
+    if (!type) return "Full-Time";
     switch (type) {
       case "full_time": return "Full-Time";
       case "part_time": return "Part-Time";
@@ -158,7 +159,8 @@ export default function JobDetailPage() {
     }
   };
 
-  const formatWorkplaceType = (type: WorkplaceType) => {
+  const formatWorkplaceType = (type: WorkplaceType | null) => {
+    if (!type) return "Hybrid";
     switch (type) {
       case "on_site": return "On-Site";
       case "hybrid": return "Hybrid";
@@ -342,6 +344,51 @@ export default function JobDetailPage() {
 
         {/* Right Column: Metadata & System Information */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Public Application Link Core Feature Box */}
+          <Card elevated className="p-5 border-[#39D9FF]/40 bg-[#171B21] space-y-3.5 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#242932] pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#39D9FF]" />
+                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+                  Public Application Link
+                </h3>
+              </div>
+              <Badge variant="ai" className="text-[10px]">
+                Candidate Portal
+              </Badge>
+            </div>
+
+            <p className="text-xs text-[#A7AFBC] leading-relaxed">
+              Share this public link with candidates to allow them to submit CV applications, complete the timed MCQ assessment, and take the AI interview.
+            </p>
+
+            <div className="p-2.5 rounded-lg bg-[#0D0F12] border border-[#242932] flex items-center justify-between text-xs font-mono text-[#39D9FF] truncate">
+              <span className="truncate">/apply/{job.id}</span>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                variant="ai"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/apply/${job.id}`);
+                  alert("Public application link copied to clipboard!");
+                }}
+              >
+                Copy Public Link
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => router.push(`/apply/${job.id}`)}
+              >
+                Open Application
+              </Button>
+            </div>
+          </Card>
+
           <Card className="p-5 border-[#242932] bg-[#12151A] space-y-4">
             <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display border-b border-[#242932] pb-3">
               Position Metadata
@@ -390,18 +437,6 @@ export default function JobDetailPage() {
                 </div>
               )}
             </div>
-          </Card>
-
-          <Card elevated className="p-5 border-[#39D9FF]/30 bg-[#171B21] space-y-3">
-            <div className="flex items-center gap-2 border-b border-[#242932] pb-3">
-              <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-              <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                Pipeline Readiness
-              </h3>
-            </div>
-            <p className="text-[11px] text-[#A7AFBC] leading-relaxed">
-              This job position is active in {organization?.name || "your organization"}. Candidates submitted to this role will automatically align with these requirements in upcoming AI pipeline steps.
-            </p>
           </Card>
         </div>
       </div>

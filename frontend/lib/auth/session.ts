@@ -99,10 +99,33 @@ export async function getOrganizationContext(
       }
     }
 
-    const { data: memberships } = await supabase
+    let { data: memberships } = await supabase
       .from("organization_members")
       .select("*")
       .eq("user_id", user.id);
+
+    if (!memberships || memberships.length === 0) {
+      // Self-healing fallback: Check if user owns an existing organization
+      const { data: ownedOrg } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (ownedOrg) {
+        const { data: newMember } = await supabase
+          .from("organization_members")
+          .insert({ organization_id: ownedOrg.id, user_id: user.id, role: "owner" })
+          .select()
+          .single();
+
+        if (newMember) {
+          memberships = [newMember];
+        }
+      }
+    }
 
     if (!memberships || memberships.length === 0) {
       return null;

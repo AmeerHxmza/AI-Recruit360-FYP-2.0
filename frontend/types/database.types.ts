@@ -10,15 +10,49 @@ export type OrganizationRole = "owner" | "admin" | "recruiter" | "interviewer" |
 export type JobStatus = "draft" | "active" | "paused" | "closed";
 export type EmploymentType = "full_time" | "part_time" | "contract" | "internship";
 export type WorkplaceType = "on_site" | "hybrid" | "remote";
-export type ApplicationStatus = "applied" | "screening" | "interview" | "evaluation" | "shortlisted" | "rejected" | "hired";
+
+export type ApplicationStatus =
+  | "applied"
+  | "screening"
+  | "knocked_out"
+  | "assessment"
+  | "assessment_failed"
+  | "interview"
+  | "evaluation"
+  | "shortlisted"
+  | "rejected"
+  | "hired";
+
 export type DocumentType = "resume" | "cover_letter" | "portfolio" | "assessment" | "other";
-export type ProcessingStatus = "uploaded" | "processing" | "processed" | "failed";
-export type Recommendation = "strong_match" | "potential_match" | "low_alignment" | "needs_review";
-export type InterviewStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
+export type ExtractionStatus = "pending" | "processing" | "completed" | "failed";
+
+export type CvRecommendation = "strong_match" | "match" | "borderline" | "no_match";
+export type AssessmentStatus = "pending" | "in_progress" | "completed" | "failed" | "abandoned";
+
+export type InterviewStatus = "pending" | "in_progress" | "completed" | "abandoned" | "scheduled" | "cancelled";
 export type InterviewType = "ai_adaptive" | "technical" | "behavioral" | "screening";
+export type QuestionSource = "job" | "cv" | "previous_answer" | "adaptive";
+
+export type FinalRecommendation = "strong_hire" | "hire" | "review" | "no_hire" | "strong_no_hire";
 export type EvaluationStatus = "pending" | "in_review" | "completed";
-export type EvaluationRecommendation = "strong_hire" | "hire" | "no_hire" | "strong_no_hire";
+
+export type AiEventType =
+  | "job_analyzed"
+  | "job_analysis"
+  | "cv_extracted"
+  | "cv_screened"
+  | "candidate_knocked_out"
+  | "assessment_generated"
+  | "assessment_completed"
+  | "interview_started"
+  | "interview_question_generated"
+  | "interview_evaluated"
+  | "candidate_evaluated"
+  | "document_ingest_completed"
+  | "document_ingest_failed";
+
 export type AiActivityStatus = "success" | "warning" | "error" | "in_progress";
+export type AiEventStatus = AiActivityStatus;
 
 export type Database = {
   public: {
@@ -105,50 +139,62 @@ export type Database = {
         Row: {
           id: string;
           organization_id: string;
-          title: string;
-          department: string;
-          location: string;
-          employment_type: EmploymentType;
-          workplace_type: WorkplaceType;
-          description: string | null;
-          requirements: string | null;
-          status: JobStatus;
           created_by: string | null;
+          title: string;
+          slug: string;
+          department: string | null;
+          location: string | null;
+          employment_type: EmploymentType | null;
+          workplace_type: WorkplaceType | null;
+          description: string;
+          requirements: string | null;
+          responsibilities: string | null;
+          qualifications: string | null;
+          status: JobStatus;
+          published_at: string | null;
+          closed_at: string | null;
           created_at: string;
           updated_at: string;
-          closed_at: string | null;
         };
         Insert: {
           id?: string;
           organization_id: string;
-          title: string;
-          department: string;
-          location: string;
-          employment_type: EmploymentType;
-          workplace_type?: WorkplaceType;
-          description?: string | null;
-          requirements?: string | null;
-          status?: JobStatus;
           created_by?: string | null;
+          title: string;
+          slug: string;
+          department?: string | null;
+          location?: string | null;
+          employment_type?: EmploymentType | null;
+          workplace_type?: WorkplaceType | null;
+          description: string;
+          requirements?: string | null;
+          responsibilities?: string | null;
+          qualifications?: string | null;
+          status?: JobStatus;
+          published_at?: string | null;
+          closed_at?: string | null;
           created_at?: string;
           updated_at?: string;
-          closed_at?: string | null;
         };
         Update: {
           id?: string;
           organization_id?: string;
-          title?: string;
-          department?: string;
-          location?: string;
-          employment_type?: EmploymentType;
-          workplace_type?: WorkplaceType;
-          description?: string | null;
-          requirements?: string | null;
-          status?: JobStatus;
           created_by?: string | null;
+          title?: string;
+          slug?: string;
+          department?: string | null;
+          location?: string | null;
+          employment_type?: EmploymentType | null;
+          workplace_type?: WorkplaceType | null;
+          description?: string;
+          requirements?: string | null;
+          responsibilities?: string | null;
+          qualifications?: string | null;
+          status?: JobStatus;
+          published_at?: string | null;
+          closed_at?: string | null;
           created_at?: string;
           updated_at?: string;
-          closed_at?: string | null;
         };
         Relationships: [];
       };
@@ -204,8 +250,15 @@ export type Database = {
           job_id: string;
           candidate_id: string;
           status: ApplicationStatus;
-          source: string;
           applied_at: string;
+          screening_started_at: string | null;
+          screening_completed_at: string | null;
+          assessment_started_at: string | null;
+          assessment_completed_at: string | null;
+          interview_started_at: string | null;
+          interview_completed_at: string | null;
+          finalized_at: string | null;
+          created_at: string;
           updated_at: string;
         };
         Insert: {
@@ -214,8 +267,15 @@ export type Database = {
           job_id: string;
           candidate_id: string;
           status?: ApplicationStatus;
-          source?: string;
           applied_at?: string;
+          screening_started_at?: string | null;
+          screening_completed_at?: string | null;
+          assessment_started_at?: string | null;
+          assessment_completed_at?: string | null;
+          interview_started_at?: string | null;
+          interview_completed_at?: string | null;
+          finalized_at?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
         Update: {
@@ -224,8 +284,15 @@ export type Database = {
           job_id?: string;
           candidate_id?: string;
           status?: ApplicationStatus;
-          source?: string;
           applied_at?: string;
+          screening_started_at?: string | null;
+          screening_completed_at?: string | null;
+          assessment_started_at?: string | null;
+          assessment_completed_at?: string | null;
+          interview_started_at?: string | null;
+          interview_completed_at?: string | null;
+          finalized_at?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
@@ -235,64 +302,136 @@ export type Database = {
           id: string;
           organization_id: string;
           candidate_id: string;
-          application_id: string | null;
-          file_name: string;
-          file_type: string;
-          storage_path: string;
-          file_size: number;
+          application_id: string;
           document_type: DocumentType;
-          processing_status: ProcessingStatus;
+          storage_path: string;
+          original_filename: string;
+          file_name?: string;
+          mime_type: string;
+          file_size: number;
           extracted_text: string | null;
-          parser_version: string | null;
-          uploaded_at: string;
-          processed_at: string | null;
+          extraction_status: ExtractionStatus;
+          processing_status?: ExtractionStatus;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
           organization_id: string;
           candidate_id: string;
-          application_id?: string | null;
-          file_name: string;
-          file_type: string;
-          storage_path: string;
-          file_size: number;
+          application_id: string;
           document_type?: DocumentType;
-          processing_status?: ProcessingStatus;
+          storage_path: string;
+          original_filename: string;
+          file_name?: string;
+          mime_type: string;
+          file_size: number;
           extracted_text?: string | null;
-          parser_version?: string | null;
-          uploaded_at?: string;
-          processed_at?: string | null;
+          extraction_status?: ExtractionStatus;
+          processing_status?: ExtractionStatus;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
           organization_id?: string;
           candidate_id?: string;
-          application_id?: string | null;
-          file_name?: string;
-          file_type?: string;
-          storage_path?: string;
-          file_size?: number;
+          application_id?: string;
           document_type?: DocumentType;
-          processing_status?: ProcessingStatus;
+          storage_path?: string;
+          original_filename?: string;
+          file_name?: string;
+          mime_type?: string;
+          file_size?: number;
           extracted_text?: string | null;
-          parser_version?: string | null;
-          uploaded_at?: string;
-          processed_at?: string | null;
+          extraction_status?: ExtractionStatus;
+          processing_status?: ExtractionStatus;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
-      ai_candidate_analyses: {
+      cv_screenings: {
         Row: {
           id: string;
           organization_id: string;
           application_id: string;
           match_score: number | null;
-          skills_alignment: Json;
-          experience_alignment: Json;
-          education_alignment: Json;
-          reasoning: string | null;
-          recommendation: Recommendation | null;
-          model_info: Json;
+          recommendation: CvRecommendation | null;
+          skills_score: number | null;
+          experience_score: number | null;
+          education_score: number | null;
+          keyword_score: number | null;
+          matched_skills: Json;
+          missing_skills: Json;
+          matched_experience: Json;
+          missing_requirements: Json;
+          evidence: Json;
+          reasoning_summary: string | null;
+          model: string | null;
+          processing_status: ExtractionStatus;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          application_id: string;
+          match_score?: number | null;
+          recommendation?: CvRecommendation | null;
+          skills_score?: number | null;
+          experience_score?: number | null;
+          education_score?: number | null;
+          keyword_score?: number | null;
+          matched_skills?: Json;
+          missing_skills?: Json;
+          matched_experience?: Json;
+          missing_requirements?: Json;
+          evidence?: Json;
+          reasoning_summary?: string | null;
+          model?: string | null;
+          processing_status?: ExtractionStatus;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          application_id?: string;
+          match_score?: number | null;
+          recommendation?: CvRecommendation | null;
+          skills_score?: number | null;
+          experience_score?: number | null;
+          education_score?: number | null;
+          keyword_score?: number | null;
+          matched_skills?: Json;
+          missing_skills?: Json;
+          matched_experience?: Json;
+          missing_requirements?: Json;
+          evidence?: Json;
+          reasoning_summary?: string | null;
+          model?: string | null;
+          processing_status?: ExtractionStatus;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      assessments: {
+        Row: {
+          id: string;
+          organization_id: string;
+          application_id: string;
+          total_questions: number;
+          correct_answers: number;
+          score: number;
+          percentage: number | null;
+          status: AssessmentStatus;
+          started_at: string | null;
+          completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -300,13 +439,13 @@ export type Database = {
           id?: string;
           organization_id: string;
           application_id: string;
-          match_score?: number | null;
-          skills_alignment?: Json;
-          experience_alignment?: Json;
-          education_alignment?: Json;
-          reasoning?: string | null;
-          recommendation?: Recommendation | null;
-          model_info?: Json;
+          total_questions?: number;
+          correct_answers?: number;
+          score?: number;
+          percentage?: number | null;
+          status?: AssessmentStatus;
+          started_at?: string | null;
+          completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -314,51 +453,93 @@ export type Database = {
           id?: string;
           organization_id?: string;
           application_id?: string;
-          match_score?: number | null;
-          skills_alignment?: Json;
-          experience_alignment?: Json;
-          education_alignment?: Json;
-          reasoning?: string | null;
-          recommendation?: Recommendation | null;
-          model_info?: Json;
+          total_questions?: number;
+          correct_answers?: number;
+          score?: number;
+          percentage?: number | null;
+          status?: AssessmentStatus;
+          started_at?: string | null;
+          completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
       };
-      ai_analysis_evidences: {
+      assessment_questions: {
         Row: {
           id: string;
-          organization_id: string;
-          analysis_id: string;
-          source_document_id: string | null;
-          evidence_type: string;
-          source_reference: string | null;
-          content: string;
-          relevance_score: number | null;
+          assessment_id: string;
+          question_number: number;
+          question: string;
+          option_a: string;
+          option_b: string;
+          option_c: string;
+          option_d: string;
+          correct_option: string;
+          explanation: string | null;
+          skill_category: string | null;
+          difficulty: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
-          organization_id: string;
-          analysis_id: string;
-          source_document_id?: string | null;
-          evidence_type: string;
-          source_reference?: string | null;
-          content: string;
-          relevance_score?: number | null;
+          assessment_id: string;
+          question_number: number;
+          question: string;
+          option_a: string;
+          option_b: string;
+          option_c: string;
+          option_d: string;
+          correct_option: string;
+          explanation?: string | null;
+          skill_category?: string | null;
+          difficulty?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
-          organization_id?: string;
-          analysis_id?: string;
-          source_document_id?: string | null;
-          evidence_type?: string;
-          source_reference?: string | null;
-          content?: string;
-          relevance_score?: number | null;
+          assessment_id?: string;
+          question_number?: number;
+          question?: string;
+          option_a?: string;
+          option_b?: string;
+          option_c?: string;
+          option_d?: string;
+          correct_option?: string;
+          explanation?: string | null;
+          skill_category?: string | null;
+          difficulty?: string | null;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      assessment_answers: {
+        Row: {
+          id: string;
+          assessment_id: string;
+          question_id: string;
+          selected_option: string;
+          is_correct: boolean;
+          time_taken_seconds: number | null;
+          answered_at: string;
+        };
+        Insert: {
+          id?: string;
+          assessment_id: string;
+          question_id: string;
+          selected_option: string;
+          is_correct: boolean;
+          time_taken_seconds?: number | null;
+          answered_at?: string;
+        };
+        Update: {
+          id?: string;
+          assessment_id?: string;
+          question_id?: string;
+          selected_option?: string;
+          is_correct?: boolean;
+          time_taken_seconds?: number | null;
+          answered_at?: string;
         };
         Relationships: [];
       };
@@ -367,11 +548,15 @@ export type Database = {
           id: string;
           organization_id: string;
           application_id: string;
-          scheduled_at: string;
-          duration_minutes: number;
           status: InterviewStatus;
           interview_type: InterviewType;
-          created_by: string | null;
+          total_questions: number;
+          questions_answered: number;
+          scheduled_at?: string | null;
+          duration_minutes?: number | null;
+          overall_score: number | null;
+          started_at: string | null;
+          completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -379,11 +564,15 @@ export type Database = {
           id?: string;
           organization_id: string;
           application_id: string;
-          scheduled_at: string;
-          duration_minutes?: number;
           status?: InterviewStatus;
           interview_type?: InterviewType;
-          created_by?: string | null;
+          total_questions?: number;
+          questions_answered?: number;
+          scheduled_at?: string | null;
+          duration_minutes?: number | null;
+          overall_score?: number | null;
+          started_at?: string | null;
+          completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -391,11 +580,15 @@ export type Database = {
           id?: string;
           organization_id?: string;
           application_id?: string;
-          scheduled_at?: string;
-          duration_minutes?: number;
           status?: InterviewStatus;
           interview_type?: InterviewType;
-          created_by?: string | null;
+          total_questions?: number;
+          questions_answered?: number;
+          scheduled_at?: string | null;
+          duration_minutes?: number | null;
+          overall_score?: number | null;
+          started_at?: string | null;
+          completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -405,25 +598,37 @@ export type Database = {
         Row: {
           id: string;
           interview_id: string;
+          question_number: number;
           question_text: string;
-          category: string;
-          question_order: number;
+          question_type: string;
+          source: QuestionSource;
+          skill_category: string | null;
+          category?: string | null;
+          is_follow_up: boolean | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           interview_id: string;
+          question_number: number;
           question_text: string;
-          category: string;
-          question_order: number;
+          question_type?: string;
+          source?: QuestionSource;
+          skill_category?: string | null;
+          category?: string | null;
+          is_follow_up?: boolean | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           interview_id?: string;
+          question_number?: number;
           question_text?: string;
-          category?: string;
-          question_order?: number;
+          question_type?: string;
+          source?: QuestionSource;
+          skill_category?: string | null;
+          category?: string | null;
+          is_follow_up?: boolean | null;
           created_at?: string;
         };
         Relationships: [];
@@ -431,41 +636,61 @@ export type Database = {
       interview_responses: {
         Row: {
           id: string;
+          interview_id: string;
           question_id: string;
           response_text: string | null;
           audio_storage_path: string | null;
-          duration_seconds: number | null;
+          transcript: string | null;
+          technical_score: number | null;
+          communication_score: number | null;
+          relevance_score: number | null;
+          ai_feedback: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
+          interview_id: string;
           question_id: string;
           response_text?: string | null;
           audio_storage_path?: string | null;
-          duration_seconds?: number | null;
+          transcript?: string | null;
+          technical_score?: number | null;
+          communication_score?: number | null;
+          relevance_score?: number | null;
+          ai_feedback?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
+          interview_id?: string;
           question_id?: string;
           response_text?: string | null;
           audio_storage_path?: string | null;
-          duration_seconds?: number | null;
+          transcript?: string | null;
+          technical_score?: number | null;
+          communication_score?: number | null;
+          relevance_score?: number | null;
+          ai_feedback?: string | null;
           created_at?: string;
         };
         Relationships: [];
       };
-      evaluations: {
+      final_evaluations: {
         Row: {
           id: string;
           organization_id: string;
           application_id: string;
-          interview_id: string | null;
-          evaluator_id: string | null;
-          status: EvaluationStatus;
+          cv_score: number | null;
+          assessment_score: number | null;
+          interview_score: number | null;
           overall_score: number | null;
-          recommendation: EvaluationRecommendation | null;
-          notes: string | null;
+          recommendation: FinalRecommendation | null;
+          strengths: Json;
+          weaknesses: Json;
+          evidence: Json;
+          ai_summary: string | null;
+          model: string | null;
+          status?: EvaluationStatus;
           created_at: string;
           updated_at: string;
         };
@@ -473,12 +698,17 @@ export type Database = {
           id?: string;
           organization_id: string;
           application_id: string;
-          interview_id?: string | null;
-          evaluator_id?: string | null;
-          status?: EvaluationStatus;
+          cv_score?: number | null;
+          assessment_score?: number | null;
+          interview_score?: number | null;
           overall_score?: number | null;
-          recommendation?: EvaluationRecommendation | null;
-          notes?: string | null;
+          recommendation?: FinalRecommendation | null;
+          strengths?: Json;
+          weaknesses?: Json;
+          evidence?: Json;
+          ai_summary?: string | null;
+          model?: string | null;
+          status?: EvaluationStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -486,38 +716,19 @@ export type Database = {
           id?: string;
           organization_id?: string;
           application_id?: string;
-          interview_id?: string | null;
-          evaluator_id?: string | null;
-          status?: EvaluationStatus;
+          cv_score?: number | null;
+          assessment_score?: number | null;
+          interview_score?: number | null;
           overall_score?: number | null;
-          recommendation?: EvaluationRecommendation | null;
-          notes?: string | null;
+          recommendation?: FinalRecommendation | null;
+          strengths?: Json;
+          weaknesses?: Json;
+          evidence?: Json;
+          ai_summary?: string | null;
+          model?: string | null;
+          status?: EvaluationStatus;
           created_at?: string;
           updated_at?: string;
-        };
-        Relationships: [];
-      };
-      evaluation_criteria_scores: {
-        Row: {
-          id: string;
-          evaluation_id: string;
-          criteria_name: string;
-          score: number;
-          notes: string | null;
-        };
-        Insert: {
-          id?: string;
-          evaluation_id: string;
-          criteria_name: string;
-          score: number;
-          notes?: string | null;
-        };
-        Update: {
-          id?: string;
-          evaluation_id?: string;
-          criteria_name?: string;
-          score?: number;
-          notes?: string | null;
         };
         Relationships: [];
       };
@@ -526,10 +737,10 @@ export type Database = {
           id: string;
           organization_id: string;
           user_id: string | null;
-          event_type: string;
-          entity_type: string | null;
-          entity_id: string | null;
-          status: AiActivityStatus;
+          application_id: string | null;
+          job_id: string | null;
+          event_type: AiEventType;
+          status: AiEventStatus;
           metadata: Json;
           created_at: string;
         };
@@ -537,10 +748,10 @@ export type Database = {
           id?: string;
           organization_id: string;
           user_id?: string | null;
-          event_type: string;
-          entity_type?: string | null;
-          entity_id?: string | null;
-          status?: AiActivityStatus;
+          application_id?: string | null;
+          job_id?: string | null;
+          event_type: AiEventType;
+          status?: AiEventStatus;
           metadata?: Json;
           created_at?: string;
         };
@@ -548,10 +759,10 @@ export type Database = {
           id?: string;
           organization_id?: string;
           user_id?: string | null;
-          event_type?: string;
-          entity_type?: string | null;
-          entity_id?: string | null;
-          status?: AiActivityStatus;
+          application_id?: string | null;
+          job_id?: string | null;
+          event_type?: AiEventType;
+          status?: AiEventStatus;
           metadata?: Json;
           created_at?: string;
         };
@@ -576,7 +787,7 @@ export type Database = {
           ip_address?: string | null;
           user_agent?: string | null;
           details?: Json;
-          created_at?: string;
+          created_at: string;
         };
         Update: {
           id?: string;
@@ -591,29 +802,28 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      [_ in never]: never;
+    };
     Functions: {
-      create_organization: {
-        Args: {
-          _name: string;
-          _slug: string;
-        };
-        Returns: Database["public"]["Tables"]["organizations"]["Row"];
-      };
       is_org_member: {
-        Args: {
-          _org_id: string;
-        };
+        Args: { _org_id: string };
         Returns: boolean;
       };
       get_user_org_role: {
-        Args: {
-          _org_id: string;
-        };
-        Returns: OrganizationRole | null;
+        Args: { _org_id: string };
+        Returns: string;
+      };
+      create_organization: {
+        Args: { _name: string; _slug: string };
+        Returns: Database["public"]["Tables"]["organizations"]["Row"];
       };
     };
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 };

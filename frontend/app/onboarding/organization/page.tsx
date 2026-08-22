@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { createOrganizationAction } from "@/app/actions/organization";
 import { useAuth } from "@/providers/auth-provider";
-import { Sparkles, ArrowRight, AlertCircle, Loader2, Building2, Globe, CheckCircle2 } from "lucide-react";
+import { ArrowRight, AlertCircle, Loader2, Building2, Globe, CheckCircle2 } from "lucide-react";
 
 function slugify(text: string): string {
   return text
@@ -87,14 +87,17 @@ export default function OrganizationOnboardingPage() {
       }
 
       // Refresh auth context session so organization membership state updates immediately
-      await refreshSession();
+      try {
+        await refreshSession();
+      } catch {
+        // ignore
+      }
 
-      // Navigate to dashboard
       router.push("/dashboard");
       router.refresh();
     } catch (err: unknown) {
       console.error("Organization creation error:", err);
-      setErrorMsg("An unexpected error occurred. Please try again.");
+      setErrorMsg("An unexpected error occurred while setting up your workspace.");
       setIsSubmitting(false);
     }
   };
@@ -103,14 +106,7 @@ export default function OrganizationOnboardingPage() {
     <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex flex-col justify-between p-4 sm:p-6 selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]">
       {/* Brand Header */}
       <header className="max-w-7xl mx-auto w-full flex items-center justify-between py-4">
-        <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="h-8 w-8 rounded-lg bg-[#12151A] border border-[#242932] group-hover:border-[#39D9FF]/50 flex items-center justify-center transition-colors shadow-[0_0_12px_rgba(57,217,255,0.15)]">
-            <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-          </div>
-          <span className="font-bold text-base tracking-tight text-[#F5F7FA] font-display">
-            AI-Recruit<span className="text-[#39D9FF]">360</span>
-          </span>
-        </Link>
+        <BrandLogo variant="full" size="md" href="/dashboard" />
 
         {user && (
           <div className="text-xs text-[#A7AFBC] font-mono flex items-center gap-2">
@@ -198,9 +194,9 @@ export default function OrganizationOnboardingPage() {
 
               {/* URL Preview */}
               <div className="flex items-center gap-1.5 text-[11px] text-[#A7AFBC] bg-[#12151A]/50 px-3 py-1.5 rounded-lg border border-[#242932]/60 font-mono">
-                <span className="text-[#68717E]">Workspace Identifier:</span>
+                <span className="text-[#68717E]">Workspace Preview:</span>
                 <span className="text-[#39D9FF] truncate font-semibold">
-                  app.ai-recruit360.com/{slug || "your-org"}
+                  ai-recruit360.com/workspace/{slug || "acme"}
                 </span>
               </div>
             </div>

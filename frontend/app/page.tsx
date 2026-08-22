@@ -15,13 +15,13 @@ import { FinalCTASection } from "@/components/landing/final-cta";
 import { PublicFooter } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
-  title: "AI-Recruit360 — Recruitment Intelligence, Reengineered",
+  title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
   description:
-    "AI-powered recruitment intelligence for candidate screening, evaluation, interviews, and smarter hiring decisions.",
+    "Screen candidates, assess skills, conduct AI interviews, and turn applications into actionable hiring intelligence.",
   openGraph: {
-    title: "AI-Recruit360 — Recruitment Intelligence, Reengineered",
+    title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
     description:
-      "AI-powered recruitment intelligence for candidate screening, evaluation, interviews, and smarter hiring decisions.",
+      "Screen candidates, assess skills, conduct AI interviews, and turn applications into actionable hiring intelligence.",
     type: "website",
     siteName: "AI-Recruit360",
   },
@@ -33,16 +33,16 @@ export default function PublicLandingPage() {
       <PublicNavbar />
       <main className="flex-1">
         <HeroSection />
+        <PlatformOverview />
         <ProductWorkflow />
-        <CandidateIntelligenceSection />
         <ScreeningSection />
         <EvidenceSection />
         <InterviewSection />
+        <CandidateIntelligenceSection />
         <AnalyticsSection />
-        <PlatformOverview />
         <AIActivitySection />
-        <TechnologySection />
         <TrustSection />
+        <TechnologySection />
         <FinalCTASection />
       </main>
       <PublicFooter />

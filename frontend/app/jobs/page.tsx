@@ -34,14 +34,17 @@ import {
   Clock,
   FilterX,
 } from "lucide-react";
+import { useWorkspaceCache } from "@/providers/data-cache-provider";
 
 export default function JobsPage() {
   const router = useRouter();
   const { role, organization } = useAuth();
+  const { cache } = useWorkspaceCache();
   const isAuthorizedToManage = canManageJobs(role);
 
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(true);
+  const initialCachedJobs = Array.isArray(cache?.jobs) ? (cache.jobs as Job[]) : [];
+  const [jobs, setJobs] = React.useState<Job[]>(initialCachedJobs);
+  const [loading, setLoading] = React.useState<boolean>(initialCachedJobs.length === 0);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   // Filters
@@ -70,6 +73,10 @@ export default function JobsPage() {
   }, [statusFilter, employmentFilter, workplaceFilter, searchQuery]);
 
   React.useEffect(() => {
+    if (cache?.jobs && cache.jobs.length > 0 && statusFilter === "all" && employmentFilter === "all" && workplaceFilter === "all" && !searchQuery) {
+      return;
+    }
+
     let isMounted = true;
     getJobsAction({
       status: statusFilter,
@@ -89,7 +96,7 @@ export default function JobsPage() {
     return () => {
       isMounted = false;
     };
-  }, [statusFilter, employmentFilter, workplaceFilter, searchQuery]);
+  }, [cache?.jobs, statusFilter, employmentFilter, workplaceFilter, searchQuery]);
 
   const getStatusBadge = (status: JobStatus) => {
     switch (status) {
@@ -106,7 +113,8 @@ export default function JobsPage() {
     }
   };
 
-  const formatEmploymentType = (type: EmploymentType) => {
+  const formatEmploymentType = (type: EmploymentType | null) => {
+    if (!type) return "Full-Time";
     switch (type) {
       case "full_time":
         return "Full-Time";
@@ -121,7 +129,8 @@ export default function JobsPage() {
     }
   };
 
-  const formatWorkplaceType = (type: WorkplaceType) => {
+  const formatWorkplaceType = (type: WorkplaceType | null) => {
+    if (!type) return "Hybrid";
     switch (type) {
       case "on_site":
         return "On-Site";
@@ -245,7 +254,7 @@ export default function JobsPage() {
           /* Loading State Skeleton */
           <div className="p-12 text-center rounded-xl border border-[#242932] bg-[#12151A] space-y-4">
             <Loader2 className="h-8 w-8 text-[#39D9FF] animate-spin mx-auto" />
-            <p className="text-xs text-[#A7AFBC] font-mono">Loading organization jobs from database...</p>
+            <p className="text-xs text-[#A7AFBC] font-mono">Loading...</p>
           </div>
         ) : jobs.length === 0 ? (
           /* Empty State */

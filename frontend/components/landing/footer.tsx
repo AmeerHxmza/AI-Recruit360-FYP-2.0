@@ -2,89 +2,101 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { BrandLogo } from "@/components/brand/brand-logo";
 
 export function PublicFooter() {
   return (
-    <footer className="bg-[#08090B] border-t border-[#242932] pt-16 pb-12 text-left">
+    <footer className="bg-[#08090B] border-t border-[#242932] pt-16 pb-12 text-left selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-12 border-b border-[#242932]/60">
-          {/* Brand Column (5 cols) */}
-          <div className="md:col-span-5 space-y-4">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="h-8 w-8 rounded-lg bg-[#12151A] border border-[#242932] flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-              </div>
-              <span className="font-bold text-lg tracking-tight text-[#F5F7FA] font-display">
-                AI-Recruit<span className="text-[#39D9FF]">360</span>
-              </span>
-            </Link>
+          {/* Brand Column */}
+          <div className="md:col-span-4 space-y-4">
+            <BrandLogo variant="full" size="md" href="/" />
             <p className="text-xs text-[#A7AFBC] max-w-sm leading-relaxed">
-              Intelligence for modern hiring. AI-powered candidate screening, evaluation, and decision support platform.
+              AI-powered recruitment intelligence platform. Automated CV screening, timed skill assessments, AI interviews, and evidence-based candidate scorecards.
             </p>
           </div>
 
-          {/* Navigation Links (7 cols) */}
-          <div className="md:col-span-7 grid grid-cols-3 gap-6">
-            {/* Column 1: Platform */}
+          {/* Navigation Columns (8 cols) */}
+          <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {/* Column 1: Product */}
             <div className="space-y-3">
               <h4 className="text-xs font-mono font-bold text-[#F5F7FA] uppercase tracking-wider">
-                Platform
+                Product
               </h4>
               <ul className="space-y-2 text-xs font-medium">
                 <li>
                   <a href="#platform" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    Overview
+                    AI Screening
                   </a>
                 </li>
                 <li>
                   <a href="#how-it-works" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    How It Works
+                    Timed MCQs
                   </a>
                 </li>
                 <li>
                   <a href="#intelligence" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    Candidate AI
+                    AI Interviews
                   </a>
                 </li>
                 <li>
                   <a href="#technology" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    Technology
+                    Intelligence
                   </a>
                 </li>
               </ul>
             </div>
 
-            {/* Column 2: Application */}
+            {/* Column 2: Company */}
             <div className="space-y-3">
               <h4 className="text-xs font-mono font-bold text-[#F5F7FA] uppercase tracking-wider">
-                Application
+                Company
               </h4>
               <ul className="space-y-2 text-xs font-medium">
                 <li>
-                  <Link href="/dashboard" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    Dashboard
+                  <Link href="/" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
+                    About Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="/jobs" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    Jobs
+                  <Link href="/" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
+                    Enterprise
                   </Link>
                 </li>
                 <li>
-                  <Link href="/candidates" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    Candidates
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/interviews" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
-                    Interviews
+                  <Link href="/" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
+                    Contact
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Column 3: Access */}
+            {/* Column 3: Resources */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-mono font-bold text-[#F5F7FA] uppercase tracking-wider">
+                Resources
+              </h4>
+              <ul className="space-y-2 text-xs font-medium">
+                <li>
+                  <Link href="/dashboard" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
+                    Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/dashboard" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
+                    Security &amp; RLS
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/dashboard" className="text-[#A7AFBC] hover:text-[#39D9FF] transition-colors">
+                    API Reference
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Access */}
             <div className="space-y-3">
               <h4 className="text-xs font-mono font-bold text-[#F5F7FA] uppercase tracking-wider">
                 Workspace
@@ -97,7 +109,7 @@ export function PublicFooter() {
                 </li>
                 <li>
                   <Link href="/signup" className="text-[#39D9FF] hover:underline font-semibold">
-                    Get Started →
+                    Create Workspace →
                   </Link>
                 </li>
               </ul>
@@ -109,7 +121,7 @@ export function PublicFooter() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#68717E]">
           <div>© 2026 AI-Recruit360. All rights reserved.</div>
           <div className="flex items-center gap-4">
-            <span>Precision Technology</span>
+            <span>Precision Intelligence</span>
             <span>•</span>
             <span>Enterprise Hiring</span>
           </div>
@@ -118,3 +130,4 @@ export function PublicFooter() {
     </footer>
   );
 }
+

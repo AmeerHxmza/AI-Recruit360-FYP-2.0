@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { CheckCircle2, ShieldCheck, HelpCircle } from "lucide-react";
 
 export function EvidenceSection() {
@@ -8,8 +9,8 @@ export function EvidenceSection() {
     <section className="py-20 md:py-32 bg-[#08090B] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-mono text-[#39D9FF] uppercase tracking-widest bg-[#39D9FF]/10 px-3 py-1 rounded-full border border-[#39D9FF]/20 mb-4 inline-block">
-            Evidence-Based AI
+          <span className="text-xs font-mono text-[#39D9FF] uppercase tracking-widest bg-[#39D9FF]/10 px-3.5 py-1 rounded-full border border-[#39D9FF]/20 mb-4 inline-block">
+            02 — TIMED TECHNICAL ASSESSMENT
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#F5F7FA] font-display uppercase mt-2 mb-4">
             Don&apos;t Just Score Candidates. <br />
@@ -74,6 +75,17 @@ export function EvidenceSection() {
                 Match Confidence: 97%
               </div>
             </div>
+          </div>
+
+          {/* Assessment Feature Asset Showcase */}
+          <div className="mt-10 relative w-full aspect-[21/9] rounded-2xl overflow-hidden bg-[#08090B]">
+            <Image
+              src="/images/feature-assessment.png"
+              alt="AI-Recruit360 Timed Technical Assessment Feature Visual"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1200px) 100vw, 1000px"
+            />
           </div>
 
           <div className="mt-8 pt-6 border-t border-[#242932] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A7AFBC]">

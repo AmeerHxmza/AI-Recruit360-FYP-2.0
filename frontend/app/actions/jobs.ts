@@ -5,6 +5,7 @@ import { getCurrentOrganization } from "@/lib/auth/session";
 import {
   createJob,
   getJobById,
+  getPublicJobBySlug,
   getJobsForOrg,
   updateJob,
   updateJobStatus,
@@ -46,6 +47,21 @@ export async function getJobByIdAction(jobId: string): Promise<ActionResult<Job>
       return { success: false, error: err.message };
     }
     return { success: false, error: "Job position not found." };
+  }
+}
+
+export async function getPublicJobBySlugAction(slug: string): Promise<ActionResult<Job>> {
+  try {
+    const job = await getPublicJobBySlug(slug);
+    if (!job) {
+      return { success: false, error: "Job position not found or no longer active." };
+    }
+    return { success: true, data: job };
+  } catch (err: unknown) {
+    if (err instanceof AppError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Failed to load job details." };
   }
 }
 

@@ -2,17 +2,23 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrganization, getCurrentRole } from "@/lib/auth/session";
 import { canManageEvaluations } from "@/lib/auth/permissions";
 import { ForbiddenError, NotFoundError, DatabaseError } from "@/lib/utils/errors";
-import { Database, EvaluationRecommendation, EvaluationStatus } from "@/types/database.types";
+import { Database, FinalRecommendation } from "@/types/database.types";
 
-export type Evaluation = Database["public"]["Tables"]["evaluations"]["Row"];
-export type EvaluationCriteriaScore = Database["public"]["Tables"]["evaluation_criteria_scores"]["Row"];
+export type FinalEvaluation = Database["public"]["Tables"]["final_evaluations"]["Row"];
 
-export async function getEvaluationsForOrg(orgId: string, applicationId?: string): Promise<Evaluation[]> {
+export interface FinalEvaluationItemWithDetails extends FinalEvaluation {
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+  jobDepartment: string;
+}
+
+export async function getEvaluationsForOrg(orgId: string, applicationId?: string): Promise<FinalEvaluation[]> {
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
 
   let query = supabase
-    .from("evaluations")
+    .from("final_evaluations")
     .select("*")
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false });
@@ -30,12 +36,100 @@ export async function getEvaluationsForOrg(orgId: string, applicationId?: string
   return data || [];
 }
 
-export async function getEvaluationById(orgId: string, evaluationId: string): Promise<Evaluation> {
+export async function getEvaluationsForOrgWithDetails(
+  orgId: string,
+  applicationId?: string
+): Promise<FinalEvaluationItemWithDetails[]> {
+  await getCurrentOrganization(orgId);
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("final_evaluations")
+    .select(`
+      *,
+      applications (
+        candidates (
+          full_name,
+          email
+        ),
+        jobs (
+          title,
+          department
+        )
+      )
+    `)
+    .eq("organization_id", orgId)
+    .order("created_at", { ascending: false });
+
+  if (applicationId) {
+    query = query.eq("application_id", applicationId);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    return [];
+  }
+
+  interface EvaluationJoinQueryResult {
+    id: string;
+    organization_id: string;
+    application_id: string;
+    cv_score: number | null;
+    assessment_score: number | null;
+    interview_score: number | null;
+    overall_score: number | null;
+    recommendation: FinalRecommendation | null;
+    strengths: unknown;
+    weaknesses: unknown;
+    evidence: unknown;
+    ai_summary: string | null;
+    model: string | null;
+    created_at: string;
+    updated_at: string;
+    applications: {
+      candidates: {
+        full_name: string;
+        email: string;
+      } | null;
+      jobs: {
+        title: string;
+        department: string | null;
+      } | null;
+    } | null;
+  }
+
+  const typedData = data as unknown as EvaluationJoinQueryResult[];
+
+  return typedData.map((item) => ({
+    id: item.id,
+    organization_id: item.organization_id,
+    application_id: item.application_id,
+    cv_score: item.cv_score,
+    assessment_score: item.assessment_score,
+    interview_score: item.interview_score,
+    overall_score: item.overall_score,
+    recommendation: item.recommendation,
+    strengths: item.strengths as FinalEvaluation["strengths"],
+    weaknesses: item.weaknesses as FinalEvaluation["weaknesses"],
+    evidence: item.evidence as FinalEvaluation["evidence"],
+    ai_summary: item.ai_summary,
+    model: item.model,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    candidateName: item.applications?.candidates?.full_name || "Candidate",
+    candidateEmail: item.applications?.candidates?.email || "candidate@example.com",
+    jobTitle: item.applications?.jobs?.title || "Job Position",
+    jobDepartment: item.applications?.jobs?.department || "General",
+  }));
+}
+
+export async function getEvaluationById(orgId: string, evaluationId: string): Promise<FinalEvaluation> {
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("evaluations")
+    .from("final_evaluations")
     .select("*")
     .eq("organization_id", orgId)
     .eq("id", evaluationId)
@@ -52,13 +146,14 @@ export async function createEvaluation(
   orgId: string,
   input: {
     application_id: string;
-    interview_id?: string;
+    cv_score?: number;
+    assessment_score?: number;
+    interview_score?: number;
     overall_score?: number;
-    recommendation?: EvaluationRecommendation;
-    notes?: string;
-    status?: EvaluationStatus;
+    recommendation?: FinalRecommendation;
+    ai_summary?: string;
   }
-): Promise<Evaluation> {
+): Promise<FinalEvaluation> {
   await getCurrentOrganization(orgId);
   const role = await getCurrentRole(orgId);
 
@@ -68,21 +163,22 @@ export async function createEvaluation(
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("evaluations")
+    .from("final_evaluations")
     .insert({
       organization_id: orgId,
       application_id: input.application_id,
-      interview_id: input.interview_id || null,
+      cv_score: input.cv_score || null,
+      assessment_score: input.assessment_score || null,
+      interview_score: input.interview_score || null,
       overall_score: input.overall_score || null,
       recommendation: input.recommendation || null,
-      notes: input.notes || null,
-      status: input.status || "completed",
+      ai_summary: input.ai_summary || null,
     })
     .select("*")
     .single();
 
   if (error || !data) {
-    throw new DatabaseError("Failed to record evaluation submit.");
+    throw new DatabaseError(error?.message || "Failed to record evaluation submit.");
   }
 
   return data;
