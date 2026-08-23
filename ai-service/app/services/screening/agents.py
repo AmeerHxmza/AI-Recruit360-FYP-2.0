@@ -15,7 +15,8 @@ def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, An
     cv_full_text = " ".join([
         cv.summary or "",
         " ".join(cv.skills),
-        " ".join([f"{exp.title} {exp.company} {' '.join(exp.highlights)}" for exp in cv.experience])
+        " ".join([f"{exp.title} {exp.company} {' '.join(exp.highlights)}" for exp in cv.experience]),
+        " ".join(cv.projects) if cv.projects else ""
     ]).lower()
     
     crit_reqs = [s.name for s in job.critical_skills]
@@ -44,7 +45,7 @@ def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, An
                 is_matched = True
                 break
 
-        # 2. Fallback: Search in full CV text blob
+        # 2. Fallback: Search in full CV text blob (including projects & summary)
         if not is_matched and len(req_lower) >= 2:
             if re.search(rf'\b{re.escape(req_lower)}\b', cv_full_text):
                 is_matched = True
@@ -67,23 +68,38 @@ def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, An
         "matched_critical_count": len(matched_critical),
     }
 
-# Agent 2: Experience Evaluation Agent
+# Agent 2: Experience & Project Evaluation Agent (Intern & Project Aware)
 def evaluate_experience(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, Any]:
     total_exp_years = sum(exp.duration_years for exp in cv.experience) if cv.experience else 0.0
-    min_years = job.minimum_experience_years
+    project_count = len(cv.projects) if cv.projects else 0
 
-    if min_years <= 0:
-        exp_score = 80.0 if cv.experience else 40.0
-    else:
-        if total_exp_years <= 0:
-            exp_score = 20.0
+    min_years = job.minimum_experience_years
+    job_title_lower = (job.normalized_title or "").lower()
+    is_entry_or_intern = min_years <= 0 or any(kw in job_title_lower for kw in ["intern", "junior", "trainee", "associate", "entry"])
+
+    if is_entry_or_intern:
+        # For intern/entry roles, projects and practical work count as full experience score
+        if cv.experience or project_count > 0:
+            exp_score = 100.0
         else:
-            ratio = total_exp_years / min_years
-            exp_score = min(100.0, ratio * 80.0)
+            exp_score = 75.0
+    else:
+        if min_years <= 0:
+            exp_score = 100.0 if (cv.experience or project_count > 0) else 60.0
+        else:
+            effective_years = total_exp_years + (project_count * 0.5)
+            if effective_years <= 0:
+                exp_score = 30.0
+            else:
+                ratio = effective_years / min_years
+                exp_score = min(100.0, max(50.0, ratio * 100.0))
 
     matched_roles = [f"{exp.title} ({exp.duration_years} yrs)" for exp in cv.experience]
+    if cv.projects:
+        matched_roles.extend([f"Project: {p}" for p in cv.projects[:3]])
+
     missing_reqs = []
-    if total_exp_years < min_years:
+    if not is_entry_or_intern and total_exp_years < min_years:
         missing_reqs.append(f"Requires {min_years} yrs, candidate has {total_exp_years} yrs.")
 
     return {
@@ -96,12 +112,12 @@ def evaluate_experience(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str
 # Agent 3: Education Evaluation Agent
 def evaluate_education(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, Any]:
     if not cv.education:
-        return {"score": 40.0}
+        return {"score": 50.0}
 
     cv_edu_text = " ".join(cv.education).lower()
-    has_degree = any(term in cv_edu_text for term in ["bs", "bachelor", "master", "ms", "phd", "degree", "computer", "engineering", "cs"])
+    has_degree = any(term in cv_edu_text for term in ["bs", "bachelor", "master", "ms", "phd", "degree", "computer", "engineering", "cs", "software", "university"])
 
-    score = 100.0 if has_degree else 60.0
+    score = 100.0 if has_degree else 70.0
     return {"score": score}
 
 # Agent 4: Evidence Extraction Agent
@@ -109,7 +125,7 @@ def extract_evidence(job: JobAnalysisResult, cv: CVExtractedData, matched_skills
     evidence_list: List[EvidenceMatch] = []
     
     for skill in matched_skills[:5]:
-        found_quote = f"Candidate lists {skill} proficiency."
+        found_quote = f"Candidate demonstrates proficiency in {skill}."
         if cv.experience:
             for exp in cv.experience:
                 if any(skill.lower() in h.lower() for h in exp.highlights):
@@ -133,44 +149,52 @@ def synthesize_screening_decision(
     edu_eval: Dict[str, Any],
     evidence: List[EvidenceMatch]
 ) -> ScreeningDecisionResult:
-    # Transparent weighted scoring formula:
-    # Skills = 40%, Experience = 30%, Education = 15%, Relevance = 15%
+    job_title_lower = (job.normalized_title or "").lower()
+    min_years = job.minimum_experience_years
+    is_entry_or_intern = min_years <= 0 or any(kw in job_title_lower for kw in ["intern", "junior", "trainee", "associate", "entry"])
+
     skills_score = skills_eval["score"]
     exp_score = exp_eval["score"]
     edu_score = edu_eval["score"]
     rel_score = (skills_score + exp_score) / 2.0
 
-    overall_match_score = round(
-        skills_score * 0.40 +
-        exp_score * 0.30 +
-        edu_score * 0.15 +
-        rel_score * 0.15,
-        1
-    )
+    if is_entry_or_intern:
+        # Weight Skills (50%), Projects/Exp (25%), Education (25%) for Intern/Entry positions
+        overall_match_score = round(
+            skills_score * 0.50 +
+            exp_score * 0.25 +
+            edu_score * 0.25,
+            1
+        )
+    else:
+        overall_match_score = round(
+            skills_score * 0.40 +
+            exp_score * 0.30 +
+            edu_score * 0.15 +
+            rel_score * 0.15,
+            1
+        )
 
-    threshold = settings.CV_PASS_THRESHOLD
+    threshold = 40.0 if is_entry_or_intern else settings.CV_PASS_THRESHOLD
     has_critical_reqs = skills_eval.get("total_critical", 0) > 0
     matched_crit_cnt = skills_eval.get("matched_critical_count", 0)
 
-    min_exp_years = job.minimum_experience_years
     cand_exp_years = exp_eval.get("total_years", 0.0)
-
-    # Experience Deficit: If job requires min_exp_years (e.g. 3 yrs) and candidate has less than 75% of required years (e.g. 1 yr or fresh grad), knockout!
-    has_exp_deficit = (min_exp_years > 0) and (cand_exp_years < (min_exp_years * 0.75))
+    has_exp_deficit = (not is_entry_or_intern) and (min_years > 0) and (cand_exp_years < (min_years * 0.75))
 
     knockout_reasons: List[str] = []
 
     if has_exp_deficit:
         knockout_reasons.append(
-            f"Experience Deficit: Position requires minimum {min_exp_years} yrs experience, but candidate has only {cand_exp_years} yrs."
+            f"Experience Deficit: Position requires minimum {min_years} yrs experience, but candidate has only {cand_exp_years} yrs."
         )
 
-    if skills_score < 50.0:
+    if skills_score < 30.0:
         knockout_reasons.append(
-            f"Skill Overlap Deficit: Candidate matched only {len(skills_eval['matched'])} skills ({skills_score}%), falling below 50% skill requirement threshold."
+            f"Skill Overlap Deficit: Candidate matched only {len(skills_eval['matched'])} skills ({skills_score}%), falling below skill requirement threshold."
         )
 
-    if has_critical_reqs and matched_crit_cnt == 0:
+    if has_critical_reqs and matched_crit_cnt == 0 and not is_entry_or_intern:
         knockout_reasons.append(
             f"Critical Skill Deficit: Candidate matched 0 critical skills required for {job.normalized_title}."
         )
@@ -182,11 +206,11 @@ def synthesize_screening_decision(
 
     qualified = len(knockout_reasons) == 0
 
-    if qualified and overall_match_score >= 85.0:
+    if qualified and overall_match_score >= 80.0:
         recommendation = "strong_match"
-    elif qualified and overall_match_score >= 70.0:
+    elif qualified and overall_match_score >= 60.0:
         recommendation = "match"
-    elif qualified and overall_match_score >= 50.0:
+    elif qualified and overall_match_score >= 40.0:
         recommendation = "borderline"
     else:
         recommendation = "no_match"
@@ -195,7 +219,7 @@ def synthesize_screening_decision(
         summary = (
             f"Candidate {cv.candidate_name} qualified for assessment for {job.normalized_title}. "
             f"Overall Match: {overall_match_score}% (Threshold: {threshold}%). "
-            f"Matched {len(skills_eval['matched'])} required skills and {cand_exp_years} yrs experience."
+            f"Matched {len(skills_eval['matched'])} required skills."
         )
     else:
         summary = (
