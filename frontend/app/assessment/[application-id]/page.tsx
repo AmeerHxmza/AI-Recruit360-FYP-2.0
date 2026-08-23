@@ -7,16 +7,15 @@ import {
   submitAssessmentAnswerAction, 
   finalizeAssessmentAction 
 } from "@/app/actions/assessment";
-import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { Loader2, Clock, CheckCircle2, XCircle } from "lucide-react";
-import { CandidatePublicMCQItem } from "@/lib/api/ai-service-client";
+import { PythonMCQItem, PythonAssessmentFinalResult } from "@/lib/api/ai-service-client";
 
 export default function CandidateAssessmentPage() {
   const params = useParams();
   const applicationId = (params?.["application-id"] as string) || "";
 
-  const [questions, setQuestions] = React.useState<CandidatePublicMCQItem[]>([]);
+  const [questions, setQuestions] = React.useState<PythonMCQItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -25,7 +24,7 @@ export default function CandidateAssessmentPage() {
   const [timeLeft, setTimeLeft] = React.useState(30);
   const [submitting, setSubmitting] = React.useState(false);
   const [assessmentComplete, setAssessmentComplete] = React.useState(false);
-  const [finalResult, setFinalResult] = React.useState<any>(null);
+  const [finalResult, setFinalResult] = React.useState<PythonAssessmentFinalResult | null>(null);
 
   // Fetch Assessment on Mount
   React.useEffect(() => {
@@ -75,7 +74,7 @@ export default function CandidateAssessmentPage() {
       // Finalize Assessment
       try {
         const finalizeRes = await finalizeAssessmentAction(question.assessment_id!);
-        if (finalizeRes.success) {
+        if (finalizeRes.success && finalizeRes.data) {
           setFinalResult(finalizeRes.data);
         }
       } catch (err) {
@@ -91,6 +90,7 @@ export default function CandidateAssessmentPage() {
     if (loading || assessmentComplete || questions.length === 0 || submitting) return;
 
     if (timeLeft === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       handleAnswerSubmit("TIMEOUT");
       return;
     }
@@ -102,44 +102,7 @@ export default function CandidateAssessmentPage() {
     return () => clearInterval(timer);
   }, [timeLeft, loading, assessmentComplete, questions, submitting, handleAnswerSubmit]);
 
-  const handleAnswerSubmit = async (selectedOption: string) => {
-    if (submitting || !questions[currentIdx]) return;
-    setSubmitting(true);
 
-    const question = questions[currentIdx];
-    const timeTaken = 30 - timeLeft;
-
-    try {
-      await submitAssessmentAnswerAction(
-        question.assessment_id!,
-        question.id,
-        question.question_number,
-        selectedOption,
-        timeTaken
-      );
-    } catch (err) {
-      console.error("Failed to submit answer", err);
-    }
-
-    // Move to next question or finalize
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx((prev) => prev + 1);
-      setTimeLeft(30);
-      setSubmitting(false);
-    } else {
-      // Finalize Assessment
-      try {
-        const finalizeRes = await finalizeAssessmentAction(question.assessment_id!);
-        if (finalizeRes.success) {
-          setFinalResult(finalizeRes.data);
-        }
-      } catch (err) {
-        console.error("Failed to finalize", err);
-      }
-      setAssessmentComplete(true);
-      setSubmitting(false);
-    }
-  };
 
   if (loading) {
     return (

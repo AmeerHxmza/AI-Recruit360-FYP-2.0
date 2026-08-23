@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getCurrentOrganization, getCurrentRole } from "@/lib/auth/session";
 import { canManageCandidates } from "@/lib/auth/permissions";
 import { ForbiddenError, NotFoundError, DatabaseError } from "@/lib/utils/errors";
@@ -305,11 +305,13 @@ export async function getCandidateDocuments(
 
   const result: CandidateDocumentWithUrl[] = [];
 
+  const adminClient = await createAdminClient();
+
   for (const doc of docs) {
     let signedUrl: string | null = null;
     try {
-      const { data: signedData } = await supabase.storage
-        .from("candidate-documents")
+      const { data: signedData } = await adminClient.storage
+        .from("candidate_documents")
         .createSignedUrl(doc.storage_path, 3600);
       signedUrl = signedData?.signedUrl || null;
     } catch {

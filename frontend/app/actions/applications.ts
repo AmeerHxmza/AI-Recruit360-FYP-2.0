@@ -7,6 +7,7 @@ import {
   createApplication,
   submitPublicCandidateApplication,
   updateApplicationStatus,
+  getPublicApplicationStatus,
   ApplicationItemWithDetails,
   Application,
 } from "@/lib/services/application-service";
@@ -120,5 +121,17 @@ export async function updateApplicationStatusAction(
       return { success: false, error: err.message };
     }
     return { success: false, error: "Failed to update application status." };
+  }
+}
+
+export async function getPublicApplicationStatusAction(applicationId: string): Promise<ActionResult<ApplicationStatus>> {
+  try {
+    const status = await getPublicApplicationStatus(applicationId);
+    return { success: true, data: status };
+  } catch (err: unknown) {
+    if (err instanceof AppError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Failed to retrieve application status." };
   }
 }

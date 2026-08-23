@@ -155,8 +155,8 @@ export function JobsClientView({ initialJobs, role, orgName }: JobsClientViewPro
   return (
     <ApplicationShell pageBreadcrumb={[orgName || "AI-Recruit360", "Jobs"]}>
       <PageHeader
-        title="Jobs Directory"
-        description="Manage active recruitment roles, configurations, and job post specifications across your workspace."
+        title="Jobs"
+        description="Create positions, publish application links, and monitor candidate activity."
         actions={
           isAuthorizedToManage ? (
             <Button
@@ -294,13 +294,15 @@ export function JobsClientView({ initialJobs, role, orgName }: JobsClientViewPro
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-[#242932] bg-[#0D0F12]">
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Job Position</TableHead>
+                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Job</TableHead>
                     <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Department</TableHead>
                     <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Location</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Workplace</TableHead>
+                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Type</TableHead>
+                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider text-center">Applicants</TableHead>
+                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider text-center">Qualified</TableHead>
                     <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Status</TableHead>
                     <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Created</TableHead>
-                    <TableHead className="text-right text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Action</TableHead>
+                    <TableHead className="text-right text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -329,14 +331,24 @@ export function JobsClientView({ initialJobs, role, orgName }: JobsClientViewPro
                       <TableCell className="text-xs text-[#A7AFBC]">{job.location}</TableCell>
                       <TableCell className="text-xs text-[#A7AFBC]">
                         <span className="rounded bg-[#0D0F12] px-2 py-0.5 border border-[#242932] text-[11px] font-mono">
-                          {formatWorkplaceType(job.workplace_type)}
+                          {formatEmploymentType(job.employment_type)}
                         </span>
+                      </TableCell>
+                      <TableCell className="text-xs text-[#F5F7FA] font-bold text-center">
+                        {job.applicantsCount ?? 0}
+                      </TableCell>
+                      <TableCell className="text-xs text-[#35D07F] font-bold text-center">
+                        {job.qualifiedCount ?? 0}
                       </TableCell>
                       <TableCell>{getStatusBadge(job.status)}</TableCell>
                       <TableCell className="text-xs text-[#68717E] font-mono">{formatDate(job.created_at)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-[#A7AFBC] hover:text-[#39D9FF]">
-                          <ExternalLink className="h-3.5 w-3.5" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 text-xs text-[#39D9FF] hover:text-[#63E3FF] hover:bg-[#39D9FF]/10"
+                        >
+                          Manage
                         </Button>
                       </TableCell>
                     </TableRow>

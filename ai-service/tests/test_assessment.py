@@ -53,34 +53,23 @@ async def test_generate_mcqs_idempotency(mock_run_sync):
 @patch("app.services.assessment.scorer.get_supabase_client")
 async def test_server_side_timer_validation(mock_get_supabase):
     """Test that answers submitted after the 30s limit (with 5s network grace) are marked as incorrect."""
-    
     mock_supabase = MagicMock()
     mock_get_supabase.return_value = mock_supabase
     
-    # Mock question lookup (correct answer is A)
     mock_q_res = MagicMock()
     mock_q_res.data = [{"id": "q_123", "correct_option": "A"}]
-    
-    mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_q_res
-    
-    # Mock upsert lookup (doesn't exist)
     mock_existing_ans = MagicMock()
     mock_existing_ans.data = []
     
-    # Override select behavior based on chain calls isn't perfect with simple MagicMocks
-    # But we can just test the logic inside record_candidate_answer using side_effects if needed.
-    # To keep it simple, we'll patch the table behavior.
-    def mock_table(table_name):
-        t = MagicMock()
-        if table_name == "assessment_questions":
-            t.select.return_value.eq.return_value.execute.return_value = mock_q_res
-        elif table_name == "assessment_answers":
-            t.select.return_value.eq.return_value.execute.return_value = mock_existing_ans
-        return t
-        
-    mock_supabase.table.side_effect = mock_table
+    table_mocks = {
+        "assessment_questions": MagicMock(),
+        "assessment_answers": MagicMock()
+    }
+    table_mocks["assessment_questions"].select.return_value.eq.return_value.execute.return_value = mock_q_res
+    table_mocks["assessment_answers"].select.return_value.eq.return_value.execute.return_value = mock_existing_ans
     
-    # Submit correct answer, but time taken is 36 seconds (> 35s limit)
+    mock_supabase.table.side_effect = lambda t: table_mocks[t]
+    
     sub = MCQAnswerSubmission(
         assessment_id="ass_123",
         question_id="q_123",
@@ -94,8 +83,7 @@ async def test_server_side_timer_validation(mock_get_supabase):
     assert res["status"] == "recorded"
     assert res["timed_out"] is True
     
-    # The insert should have been called with is_correct = False
-    insert_call = mock_supabase.table("assessment_answers").insert.call_args[0][0]
+    insert_call = table_mocks["assessment_answers"].insert.call_args[0][0]
     assert insert_call["is_correct"] is False
     assert insert_call["time_taken_seconds"] == 36
 
@@ -103,26 +91,24 @@ async def test_server_side_timer_validation(mock_get_supabase):
 @patch("app.services.assessment.scorer.get_supabase_client")
 async def test_finalize_assessment_scoring(mock_get_supabase):
     """Test final scoring calculation and application status update."""
-    
     mock_supabase = MagicMock()
     mock_get_supabase.return_value = mock_supabase
     
-    def mock_table(table_name):
-        t = MagicMock()
-        if table_name == "assessments":
-            # Return assessment
-            res = MagicMock()
-            res.data = [{"id": "ass_123", "application_id": "app_123", "total_questions": 10}]
-            t.select.return_value.eq.return_value.execute.return_value = res
-        elif table_name == "assessment_answers":
-            # Return 8 correct out of 10
-            res = MagicMock()
-            res.data = [{"is_correct": True} for _ in range(8)] + [{"is_correct": False} for _ in range(2)]
-            t.select.return_value.eq.return_value.execute.return_value = res
-        return t
-        
-    mock_supabase.table.side_effect = mock_table
+    table_mocks = {
+        "assessments": MagicMock(),
+        "assessment_answers": MagicMock(),
+        "applications": MagicMock()
+    }
     
+    ass_res = MagicMock()
+    ass_res.data = [{"id": "ass_123", "application_id": "app_123", "total_questions": 10}]
+    table_mocks["assessments"].select.return_value.eq.return_value.execute.return_value = ass_res
+    
+    ans_res = MagicMock()
+    ans_res.data = [{"is_correct": True} for _ in range(8)] + [{"is_correct": False} for _ in range(2)]
+    table_mocks["assessment_answers"].select.return_value.eq.return_value.execute.return_value = ans_res
+    
+    mock_supabase.table.side_effect = lambda t: table_mocks[t]
     settings.ASSESSMENT_PASS_THRESHOLD = 70.0
     
     res = await finalize_assessment_session("ass_123")
@@ -130,6 +116,5 @@ async def test_finalize_assessment_scoring(mock_get_supabase):
     assert res.score == 80.0
     assert res.passed is True
     
-    # Check if update was called to set application status to interview
-    update_app_call = mock_supabase.table("applications").update.call_args[0][0]
+    update_app_call = table_mocks["applications"].update.call_args[0][0]
     assert update_app_call["status"] == "interview"

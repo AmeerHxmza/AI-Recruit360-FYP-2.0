@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ApplicationShell } from "@/components/layout/application-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { MetricCard } from "@/components/dashboard/metric-card";
-import { HiringPipeline } from "@/components/dashboard/hiring-pipeline";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +25,8 @@ import {
   Sparkles,
   UserCheck,
   ChevronRight,
-  FileText,
   Plus,
+  FileText,
 } from "lucide-react";
 
 interface DashboardClientViewProps {
@@ -40,22 +39,6 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
   const router = useRouter();
   const [activeNav, setActiveNav] = React.useState("dashboard");
   const [data] = React.useState<DashboardData>(initialData);
-
-  // Format Funnel Stages
-  const funnelStages = React.useMemo(() => {
-    if (!data) return [];
-    const total = data.funnel.total || 1;
-    const calcPct = (cnt: number) => (data.funnel.total > 0 ? Math.round((cnt / total) * 100) : 0);
-
-    return [
-      { stage: "Applied", count: data.funnel.applied, percentage: calcPct(data.funnel.applied), color: "#39D9FF" },
-      { stage: "Screening", count: data.funnel.screening, percentage: calcPct(data.funnel.screening), color: "#63E3FF" },
-      { stage: "Assessment", count: data.funnel.assessment, percentage: calcPct(data.funnel.assessment), color: "#F5B942" },
-      { stage: "Interview", count: data.funnel.interview, percentage: calcPct(data.funnel.interview), color: "#35D07F" },
-      { stage: "Evaluation", count: data.funnel.evaluation, percentage: calcPct(data.funnel.evaluation), color: "#A7AFBC" },
-      { stage: "Shortlisted", count: data.funnel.shortlisted, percentage: calcPct(data.funnel.shortlisted), color: "#00E5A3" },
-    ];
-  }, [data]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -121,63 +104,69 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: AI Intelligence & Recent Applications */}
         <div className="lg:col-span-8 space-y-6">
-          {/* AI Intelligence Panel */}
-          <Card elevated className="p-6 border-[#39D9FF]/30 bg-[#171B21] space-y-4">
+          {/* Candidate Screening Funnel */}
+          <Card elevated className="p-6 border-[#242932] bg-[#12151A] space-y-6">
             <div className="flex items-center justify-between border-b border-[#242932] pb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#39D9FF]" />
+                <Users className="h-4 w-4 text-[#39D9FF]" />
                 <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                  AI Screening Intelligence
+                  Candidate Screening
                 </h3>
               </div>
-              <Badge variant="ai" className="text-[10px]">
-                {data.aiSummary.totalScreened ? `${data.aiSummary.totalScreened} Processed` : "Active"}
-              </Badge>
             </div>
 
-            {data.aiSummary && data.aiSummary.totalScreened > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
-                  <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
+            {data.metrics.totalApplications > 0 ? (
+              <div className="relative">
+                {/* Connecting Line */}
+                <div className="absolute top-1/2 left-0 w-full h-px bg-[#242932] -translate-y-1/2 z-0 hidden sm:block" />
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
+                  <div className="bg-[#0D0F12] border border-[#242932] p-4 rounded-xl text-center shadow-md">
                     <span className="text-2xl font-bold text-[#F5F7FA] font-display block">
+                      {data.metrics.totalApplications}
+                    </span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Applications</span>
+                  </div>
+                  <div className="bg-[#0D0F12] border border-[#242932] p-4 rounded-xl text-center shadow-md">
+                    <span className="text-2xl font-bold text-[#39D9FF] font-display block">
                       {data.aiSummary.totalScreened}
                     </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Candidates Screened</span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">CV Screened</span>
                   </div>
-                  <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
-                    <span className="text-2xl font-bold text-[#39D9FF] font-display block">
-                      {data.aiSummary.averageMatchScore}%
-                    </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Avg Match Score</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
-                    <span className="text-2xl font-bold text-[#35D07F] font-display block">
+                  <div className="bg-[#0D0F12] border border-[#35D07F]/30 p-4 rounded-xl text-center shadow-md relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[#35D07F]/5 pointer-events-none" />
+                    <span className="text-2xl font-bold text-[#35D07F] font-display block relative z-10">
                       {data.aiSummary.qualifiedCount}
                     </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Qualified</span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold relative z-10">Qualified</span>
                   </div>
-                  <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
-                    <span className="text-2xl font-bold text-[#FF5A5A] font-display block">
+                  <div className="bg-[#0D0F12] border border-[#FF5A5A]/30 p-4 rounded-xl text-center shadow-md relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[#FF5A5A]/5 pointer-events-none" />
+                    <span className="text-2xl font-bold text-[#FF5A5A] font-display block relative z-10">
                       {data.aiSummary.knockedOutCount}
                     </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Knocked Out</span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold relative z-10">Knocked Out</span>
                   </div>
                 </div>
               </div>
             ) : (
               /* Empty State for AI Screening */
-              <div className="p-6 text-center space-y-3 bg-[#0D0F12]/60 rounded-xl border border-[#242932]/60">
+              <div className="p-6 text-center space-y-3 bg-[#0D0F12] rounded-xl border border-[#242932]">
                 <p className="text-xs text-[#A7AFBC] leading-relaxed">
-                  AI candidate screening metrics will appear here once candidate resumes are processed and evaluated.
+                  No candidate applications yet.
                 </p>
-                <Button
-                  variant="ai"
-                  size="sm"
-                  onClick={() => router.push("/jobs/new")}
-                  className="mx-auto"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Create Job &amp; Begin Pipeline
-                </Button>
+                <p className="text-[11px] text-[#68717E]">
+                  Create a job and share its application link to start receiving candidates.
+                </p>
+                <div className="pt-2">
+                  <Button
+                    variant="ai"
+                    size="sm"
+                    onClick={() => router.push("/jobs/new")}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Create Job
+                  </Button>
+                </div>
               </div>
             )}
           </Card>
@@ -188,7 +177,7 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-[#39D9FF]" />
                 <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                  Recent Workspace Submissions
+                  Recent Candidates
                 </h3>
               </div>
               <Button
@@ -253,10 +242,9 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
           </div>
         </div>
 
-        {/* Right Column: Hiring Pipeline & AI Insights */}
+        {/* Right Column: AI Insights & Activity */}
         <div className="lg:col-span-4 space-y-6">
-          <HiringPipeline stages={funnelStages} />
-          <InsightsPanel />
+          <InsightsPanel recentApplications={data.recentApplications} />
         </div>
       </div>
     </ApplicationShell>

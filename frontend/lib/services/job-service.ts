@@ -6,7 +6,11 @@ import { validateJobInput } from "@/lib/utils/validation";
 import { Database, EmploymentType, JobStatus, WorkplaceType } from "@/types/database.types";
 import { measurePerformance } from "@/lib/performance/logger";
 
-export type Job = Database["public"]["Tables"]["jobs"]["Row"];
+// Extend Job to include our calculated properties without modifying the original Database type
+export type Job = Database["public"]["Tables"]["jobs"]["Row"] & {
+  applicantsCount?: number;
+  qualifiedCount?: number;
+};
 
 export interface JobFilters {
   status?: JobStatus | "all";
@@ -65,13 +69,36 @@ export async function getJobsForOrg(orgId: string, filters?: JobFilters): Promis
       query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
     }
 
-    const { data, error } = await query;
+    const { data: jobs, error } = await query;
 
-    if (error) {
+    if (error || !jobs) {
       throw new DatabaseError("Failed to retrieve jobs for organization.");
     }
+    
+    if (jobs.length === 0) return [];
 
-    return (data || []) as Job[];
+    // Fetch applications for these jobs to calculate counts
+    const { data: apps } = await supabase
+      .from("applications")
+      .select("job_id, status")
+      .eq("organization_id", orgId)
+      .in("job_id", jobs.map(j => j.id));
+
+    const qualifiedStatuses = ["assessment", "interview", "evaluation", "shortlisted"];
+    
+    const enrichedJobs = jobs.map((job) => {
+      const jobApps = (apps || []).filter(a => a.job_id === job.id);
+      const applicantsCount = jobApps.length;
+      const qualifiedCount = jobApps.filter(a => qualifiedStatuses.includes(a.status)).length;
+      
+      return {
+        ...job,
+        applicantsCount,
+        qualifiedCount
+      } as Job;
+    });
+
+    return enrichedJobs;
   });
 
   return result;

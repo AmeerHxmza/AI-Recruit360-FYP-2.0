@@ -22,7 +22,6 @@ import {
 } from "@/app/actions/candidates";
 import { Candidate, CandidateApplicationItem, CandidateDocumentWithUrl } from "@/lib/services/candidate-service";
 import { CandidateIntelligence } from "@/lib/services/candidate-intelligence-service";
-import { CandidateDocumentUploader } from "@/components/candidates/candidate-document-uploader";
 import { CandidateIntelligencePanel } from "@/components/candidates/candidate-intelligence-panel";
 import {
   ArrowLeft,
@@ -361,13 +360,6 @@ export default function CandidateDetailPage() {
               )}
             </div>
           </Card>
-
-          {/* Secure Candidate Document Ingestion Pipeline */}
-          <CandidateDocumentUploader
-            organizationId={organization?.id || "00000000-0000-0000-0000-000000000001"}
-            candidateId={candidate.id}
-            onSuccess={refreshData}
-          />
 
           {/* Candidate Applications Section (Real Database Joins) */}
           <Card className="p-6 border-[#242932] bg-[#12151A] space-y-4">

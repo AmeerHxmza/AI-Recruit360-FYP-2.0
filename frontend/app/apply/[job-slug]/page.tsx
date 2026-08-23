@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { getPublicJobBySlugAction } from "@/app/actions/jobs";
-import { submitPublicApplicationAction } from "@/app/actions/applications";
+import { submitPublicApplicationAction, getPublicApplicationStatusAction } from "@/app/actions/applications";
 import { runCvScreeningAction } from "@/app/actions/ai-screening";
 import { Job } from "@/lib/services/job-service";
+import { ApplicationStatus } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import {
@@ -18,10 +19,12 @@ import {
   MapPin,
   Briefcase,
   XCircle,
+  FileText,
 } from "lucide-react";
 
 export default function PublicCandidateApplyPage() {
   const params = useParams();
+  const router = useRouter();
   const jobSlugOrId = (params?.["job-slug"] as string) || "";
 
   // Core Job Data State
@@ -29,8 +32,10 @@ export default function PublicCandidateApplyPage() {
   const [loading, setLoading] = React.useState(true);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
 
-  // Application Flow Step: 1 = Form, 2 = Success Timeline
-  const [flowStep, setFlowStep] = React.useState<1 | 2>(1);
+  // Application Flow Step: 1 = Form, 2 = Polling, 3 = Knockout, 4 = Assessment Ready
+  const [flowStep, setFlowStep] = React.useState<1 | 2 | 3 | 4>(1);
+  const [applicationId, setApplicationId] = React.useState<string | null>(null);
+  const [appStatus, setAppStatus] = React.useState<ApplicationStatus | null>(null);
 
   // Candidate Form Inputs
   const [fullName, setFullName] = React.useState("");
@@ -62,6 +67,26 @@ export default function PublicCandidateApplyPage() {
       isMounted = false;
     };
   }, [jobSlugOrId]);
+
+  // Polling for Status
+  React.useEffect(() => {
+    if (flowStep !== 2 || !applicationId) return;
+    
+    const interval = setInterval(async () => {
+      const res = await getPublicApplicationStatusAction(applicationId);
+      if (res.success && res.data) {
+        setAppStatus(res.data);
+        
+        if (res.data === "knocked_out") {
+          setFlowStep(3);
+        } else if (res.data === "assessment") {
+          setFlowStep(4);
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [flowStep, applicationId]);
 
   // Submit Application Form Step 1
   const handleApplicationSubmit = async (e: React.FormEvent) => {
@@ -111,6 +136,8 @@ export default function PublicCandidateApplyPage() {
 
       if (res.success && res.data) {
         const appId = res.data.application_id;
+        setApplicationId(appId);
+        setAppStatus("applied");
 
         // Trigger AI Screening async (do not wait for it to finish for the UI)
         runCvScreeningAction(appId).catch((err) => {
@@ -133,7 +160,7 @@ export default function PublicCandidateApplyPage() {
       <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex items-center justify-center p-6 font-sans">
         <div className="text-center space-y-3">
           <Loader2 className="h-8 w-8 text-[#39D9FF] animate-spin mx-auto" />
-          <p className="text-xs text-[#A7AFBC] font-mono">Loading application workspace...</p>
+          <p className="text-xs text-[#A7AFBC] font-mono">Loading job application...</p>
         </div>
       </div>
     );
@@ -149,7 +176,7 @@ export default function PublicCandidateApplyPage() {
             {fetchError || "This job link is invalid or expired."}
           </p>
           <Link href="/" className="inline-block px-4 py-2 rounded-lg bg-[#171B21] border border-[#242932] text-xs text-[#39D9FF]">
-            Return to AI-Recruit360 Homepage
+            Return to Homepage
           </Link>
         </div>
       </div>
@@ -164,14 +191,14 @@ export default function PublicCandidateApplyPage() {
           <BrandLogo variant="full" size="md" href="/" />
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-[#A7AFBC] hidden sm:inline">Candidate Portal</span>
-            <span className="h-2 w-2 rounded-full bg-[#35D07F]" />
+            <span className="text-[10px] font-mono text-[#A7AFBC] hidden sm:inline uppercase tracking-wider">Candidate Application</span>
           </div>
         </div>
       </header>
 
       {/* Main Candidate Experience Container */}
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-8">
+        
         {/* Step 1: Candidate Application Form */}
         {flowStep === 1 && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -201,7 +228,7 @@ export default function PublicCandidateApplyPage() {
 
                 <div className="space-y-2 pt-2 border-t border-[#242932]">
                   <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                    Position Overview
+                    Description
                   </h3>
                   <p className="text-xs text-[#A7AFBC] leading-relaxed whitespace-pre-line">
                     {job.description || "No overview provided."}
@@ -210,7 +237,7 @@ export default function PublicCandidateApplyPage() {
 
                 <div className="space-y-2 pt-2 border-t border-[#242932]">
                   <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                    Key Requirements
+                    Requirements
                   </h3>
                   <div className="text-xs text-[#A7AFBC] leading-relaxed whitespace-pre-line bg-[#0D0F12] p-3 rounded-lg border border-[#242932]">
                     {job.requirements || "Standard job qualifications apply."}
@@ -224,7 +251,7 @@ export default function PublicCandidateApplyPage() {
               <div className="rounded-2xl border border-[#242932] bg-[#12151A] p-6 sm:p-8 space-y-6 shadow-2xl">
                 <div className="border-b border-[#242932] pb-4 space-y-1">
                   <h2 className="text-xl font-bold font-display text-[#F5F7FA]">Submit Application</h2>
-                  <p className="text-xs text-[#A7AFBC]">Complete your profile to apply for this position.</p>
+                  <p className="text-xs text-[#A7AFBC]">Please provide your details below.</p>
                 </div>
 
                 {formError && (
@@ -262,7 +289,7 @@ export default function PublicCandidateApplyPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-[#A7AFBC]">
-                        Phone Number <span className="text-[#FF5C67]">*</span>
+                        Phone Number *
                       </label>
                       <input
                         type="tel"
@@ -288,7 +315,7 @@ export default function PublicCandidateApplyPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-[#A7AFBC]">LinkedIn Profile URL</label>
+                      <label className="text-xs font-semibold text-[#A7AFBC]">LinkedIn URL</label>
                       <input
                         type="url"
                         placeholder="https://linkedin.com/in/username"
@@ -300,7 +327,7 @@ export default function PublicCandidateApplyPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-[#A7AFBC]">Portfolio / GitHub URL</label>
+                    <label className="text-xs font-semibold text-[#A7AFBC]">Portfolio URL</label>
                     <input
                       type="url"
                       placeholder="https://github.com/username"
@@ -312,7 +339,7 @@ export default function PublicCandidateApplyPage() {
 
                   {/* Resume PDF / DOCX File Drag & Drop Dropzone */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-[#A7AFBC]">Upload Resume (PDF or DOCX) *</label>
+                    <label className="text-xs font-semibold text-[#A7AFBC]">Upload CV (PDF or DOCX) *</label>
                     <div className="border-2 border-dashed border-[#242932] hover:border-[#39D9FF]/50 bg-[#0D0F12] rounded-xl p-4 text-center transition-all cursor-pointer relative group">
                       <input
                         type="file"
@@ -328,13 +355,10 @@ export default function PublicCandidateApplyPage() {
                       />
                       <div className="flex flex-col items-center gap-1.5 pointer-events-none">
                         <div className="p-2 rounded-lg bg-[#171B21] border border-[#242932] text-[#39D9FF] group-hover:scale-105 transition-transform">
-                          <Briefcase className="h-5 w-5" />
+                          <FileText className="h-5 w-5" />
                         </div>
                         <span className="text-xs font-semibold text-[#F5F7FA]">
-                          Drop your PDF or DOCX resume here, or <span className="text-[#39D9FF]">browse</span>
-                        </span>
-                        <span className="text-[10px] text-[#68717E] font-mono">
-                          Supports PDF, DOC, DOCX (Max 10MB)
+                          Drop your CV here, or <span className="text-[#39D9FF]">browse</span>
                         </span>
                         {cvFile && (
                           <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#35D07F]/10 border border-[#35D07F]/20 text-[#35D07F] text-xs">
@@ -351,7 +375,7 @@ export default function PublicCandidateApplyPage() {
                     variant="ai"
                     size="md"
                     disabled={formSubmitting}
-                    className="w-full text-xs font-semibold py-3 mt-4"
+                    className="w-full text-sm py-4 mt-4 bg-[#39D9FF] text-[#08090B] hover:bg-[#63E3FF] border-none shadow-none"
                   >
                     {formSubmitting ? (
                       <>
@@ -361,7 +385,6 @@ export default function PublicCandidateApplyPage() {
                     ) : (
                       <>
                         Submit Application
-                        <ArrowRight className="h-4 w-4 ml-1.5" />
                       </>
                     )}
                   </Button>
@@ -371,55 +394,47 @@ export default function PublicCandidateApplyPage() {
           </div>
         )}
 
-        {/* Step 2: Submission Success & Timeline */}
+        {/* Step 2: Screening / Polling Timeline */}
         {flowStep === 2 && (
           <div className="max-w-2xl mx-auto text-center space-y-6 py-10">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#35D07F]/10 border border-[#35D07F]/30 flex items-center justify-center text-[#35D07F]">
-              <CheckCircle2 className="h-8 w-8" />
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#39D9FF]/10 border border-[#39D9FF]/30 flex items-center justify-center text-[#39D9FF]">
+              <Loader2 className="h-8 w-8 animate-spin" />
             </div>
 
             <div className="space-y-2">
               <h1 className="text-3xl font-bold font-display text-[#F5F7FA]">
-                Application Successfully Submitted
+                Reviewing your application
               </h1>
               <p className="text-xs text-[#A7AFBC] leading-relaxed max-w-md mx-auto">
-                Thank you for applying to <strong className="text-[#F5F7FA]">{job.title}</strong>. Your profile has been received and is entering the review process.
+                Please wait while we process your CV and verify the requirements for this role.
               </p>
             </div>
 
             {/* Pipeline Timeline Status */}
             <div className="p-6 rounded-2xl bg-[#12151A] border border-[#242932] text-left mt-8">
-              <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display border-b border-[#242932] pb-3 mb-4">
-                Application Status Timeline
-              </h3>
-              
-              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-[#35D07F] before:via-[#242932] before:to-[#242932]">
+              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-[#242932]">
                 
                 {/* Step 1: Received */}
-                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                   <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 bg-[#12151A] border-[#35D07F] text-[#35D07F] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow shadow-[#35D07F]/20">
                     <CheckCircle2 className="w-3 h-3" />
                   </div>
                   <div className="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-[#35D07F]/30 bg-[#35D07F]/5 shadow-sm">
                     <div className="flex items-center justify-between space-x-2 mb-1">
                       <div className="font-bold text-[#F5F7FA] text-sm">Application Received</div>
-                      <div className="font-mono text-[10px] text-[#35D07F]">Complete</div>
                     </div>
-                    <div className="text-[#A7AFBC] text-xs">Your CV and profile were successfully uploaded.</div>
                   </div>
                 </div>
                 
                 {/* Step 2: Screening */}
-                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 bg-[#12151A] border-[#39D9FF] text-[#39D9FF] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow shadow-[#39D9FF]/20">
-                    <div className="w-2 h-2 rounded-full bg-[#39D9FF] animate-pulse"></div>
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                  <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 bg-[#12151A] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ${appStatus === 'screening' || appStatus === 'applied' ? 'border-[#39D9FF] text-[#39D9FF] shadow shadow-[#39D9FF]/20' : 'border-[#242932] text-[#68717E]'}`}>
+                    <div className={`w-2 h-2 rounded-full ${appStatus === 'screening' || appStatus === 'applied' ? 'bg-[#39D9FF] animate-pulse' : 'bg-[#68717E]'}`}></div>
                   </div>
-                  <div className="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-[#39D9FF]/30 bg-[#39D9FF]/5 shadow-sm">
+                  <div className={`w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border ${appStatus === 'screening' || appStatus === 'applied' ? 'border-[#39D9FF]/30 bg-[#39D9FF]/5' : 'border-[#242932] bg-[#0D0F12]/50'} shadow-sm`}>
                     <div className="flex items-center justify-between space-x-2 mb-1">
-                      <div className="font-bold text-[#F5F7FA] text-sm">CV Screening</div>
-                      <div className="font-mono text-[10px] text-[#39D9FF] animate-pulse">In Progress</div>
+                      <div className="font-bold text-[#F5F7FA] text-sm">CV Analysis</div>
                     </div>
-                    <div className="text-[#A7AFBC] text-xs">Our AI is analyzing your skills and experience. You will be notified via email of the outcome.</div>
                   </div>
                 </div>
 
@@ -430,10 +445,8 @@ export default function PublicCandidateApplyPage() {
                   </div>
                   <div className="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-[#242932] bg-[#0D0F12]/50 shadow-sm opacity-60">
                     <div className="flex items-center justify-between space-x-2 mb-1">
-                      <div className="font-bold text-[#F5F7FA] text-sm">Technical Assessment</div>
-                      <div className="font-mono text-[10px] text-[#68717E]">Pending</div>
+                      <div className="font-bold text-[#F5F7FA] text-sm">Assessment</div>
                     </div>
-                    <div className="text-[#A7AFBC] text-xs">If matched, you will receive an invitation to complete a 10-question MCQ.</div>
                   </div>
                 </div>
 
@@ -444,10 +457,8 @@ export default function PublicCandidateApplyPage() {
                   </div>
                   <div className="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-[#242932] bg-[#0D0F12]/50 shadow-sm opacity-60">
                     <div className="flex items-center justify-between space-x-2 mb-1">
-                      <div className="font-bold text-[#F5F7FA] text-sm">AI Voice Interview</div>
-                      <div className="font-mono text-[10px] text-[#68717E]">Pending</div>
+                      <div className="font-bold text-[#F5F7FA] text-sm">AI Interview</div>
                     </div>
-                    <div className="text-[#A7AFBC] text-xs">A simulated voice conversation assessing your problem-solving process.</div>
                   </div>
                 </div>
 
@@ -458,31 +469,86 @@ export default function PublicCandidateApplyPage() {
                   </div>
                   <div className="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-[#242932] bg-[#0D0F12]/50 shadow-sm opacity-60">
                     <div className="flex items-center justify-between space-x-2 mb-1">
-                      <div className="font-bold text-[#F5F7FA] text-sm">Recruiter Evaluation</div>
-                      <div className="font-mono text-[10px] text-[#68717E]">Pending</div>
+                      <div className="font-bold text-[#F5F7FA] text-sm">Evaluation</div>
                     </div>
-                    <div className="text-[#A7AFBC] text-xs">Final human review of your complete profile and scores.</div>
                   </div>
                 </div>
-
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="pt-4">
+        {/* Step 3: Knockout */}
+        {flowStep === 3 && (
+          <div className="max-w-xl mx-auto text-center space-y-6 py-16">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#242932] flex items-center justify-center text-[#A7AFBC]">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold font-display text-[#F5F7FA]">
+                Application Review Complete
+              </h1>
+              <p className="text-sm text-[#A7AFBC] leading-relaxed">
+                Thank you for your interest in this position. Based on the requirements for this role, your application will not proceed to the next stage at this time.
+              </p>
+              <p className="text-sm text-[#A7AFBC] leading-relaxed">
+                We appreciate you taking the time to apply and wish you the best in your job search.
+              </p>
+            </div>
+
+            <div className="pt-8">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#242932] text-[#F5F7FA] text-xs font-semibold hover:bg-[#323842] transition-all"
+                className="inline-block px-6 py-3 rounded-lg bg-[#12151A] border border-[#242932] text-sm text-[#F5F7FA] hover:bg-[#171B21] transition-all"
               >
-                Return to AI-Recruit360 Homepage
-                <ArrowRight className="h-4 w-4" />
+                Return to Homepage
               </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Assessment Pass */}
+        {flowStep === 4 && (
+          <div className="max-w-xl mx-auto text-center space-y-6 py-16">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#35D07F]/10 border border-[#35D07F]/30 flex items-center justify-center text-[#35D07F] shadow-[0_0_24px_rgba(53,208,127,0.2)]">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold font-display text-[#F5F7FA]">
+                You&apos;re moving to the next stage.
+              </h1>
+              <p className="text-sm text-[#A7AFBC] leading-relaxed">
+                Your application meets the initial requirements. Please continue to the technical assessment.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-[#12151A] border border-[#242932] text-left mt-8 space-y-4">
+              <h3 className="text-sm font-bold text-[#F5F7FA] uppercase tracking-wider font-display border-b border-[#242932] pb-3">
+                Technical Assessment
+              </h3>
+              <ul className="text-sm text-[#A7AFBC] space-y-2 list-disc list-inside">
+                <li>10 Multiple Choice Questions</li>
+                <li>30 seconds per question</li>
+                <li>Focuses on key skills for the role</li>
+              </ul>
+              
+              <Button
+                variant="ai"
+                onClick={() => router.push(`/assessment/${applicationId}`)}
+                className="w-full text-sm py-4 mt-2 bg-[#35D07F] hover:bg-[#35D07F]/90 text-[#08090B] border-none shadow-[0_0_20px_rgba(53,208,127,0.3)]"
+              >
+                Start Assessment
+                <ArrowRight className="h-4 w-4 ml-1.5" />
+              </Button>
             </div>
           </div>
         )}
       </main>
 
-      <footer className="border-t border-[#242932] py-4 text-center text-xs font-mono text-[#68717E]">
-        © 2026 AI-Recruit360 Candidate Intelligence Portal
+      <footer className="border-t border-[#242932] py-6 text-center text-xs font-mono text-[#68717E]">
+        © 2026 AI-Recruit360
       </footer>
     </div>
   );

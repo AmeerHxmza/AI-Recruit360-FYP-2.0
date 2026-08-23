@@ -25,12 +25,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div className="space-y-1">
         <div className="flex items-center gap-3">
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#F5F7FA] font-display">
-            Recruiter Dashboard
+            Good morning, {userName}
           </h1>
 
         </div>
         <p className="text-xs md:text-sm text-[#A7AFBC]">
-          Monitor your recruitment pipeline and candidate evaluations.
+          Monitor your candidate screening pipeline and AI evaluations.
         </p>
       </div>
 

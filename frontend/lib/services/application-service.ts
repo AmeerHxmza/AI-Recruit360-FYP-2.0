@@ -353,3 +353,18 @@ export async function updateApplicationStatus(
 
   return data;
 }
+
+export async function getPublicApplicationStatus(applicationId: string): Promise<ApplicationStatus> {
+  const supabase = await createAdminClient();
+  const { data, error } = await supabase
+    .from("applications")
+    .select("status")
+    .eq("id", applicationId)
+    .single();
+
+  if (error || !data) {
+    throw new NotFoundError("Application not found.");
+  }
+
+  return data.status as ApplicationStatus;
+}

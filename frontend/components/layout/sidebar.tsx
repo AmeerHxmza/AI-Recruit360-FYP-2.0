@@ -41,11 +41,12 @@ export interface SidebarProps {
 }
 
 export const recruitmentNavItems: NavItem[] = [
-  { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4.5 w-4.5" /> },
+  { id: "dashboard", label: "Overview", href: "/dashboard", icon: <LayoutDashboard className="h-4.5 w-4.5" /> },
   { id: "jobs", label: "Jobs", href: "/jobs", icon: <Briefcase className="h-4.5 w-4.5" /> },
   { id: "candidates", label: "Candidates", href: "/candidates", icon: <Users className="h-4.5 w-4.5" /> },
   { id: "applications", label: "Applications", href: "/applications", icon: <FileText className="h-4.5 w-4.5" /> },
   { id: "interviews", label: "Interviews", href: "/interviews", icon: <Video className="h-4.5 w-4.5" /> },
+  { id: "evaluations", label: "Evaluations", href: "/evaluations", icon: <FileText className="h-4.5 w-4.5" /> },
 ];
 
 export const insightsNavItems: NavItem[] = [
