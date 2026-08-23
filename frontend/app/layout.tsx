@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/providers/auth-provider";
 import { DataCacheProvider } from "@/providers/data-cache-provider";
+import { QueryProvider } from "@/providers/query-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -69,10 +70,13 @@ export default function RootLayout({
         className="min-h-full bg-[#08090B] text-[#F5F7FA] font-sans flex flex-col selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]"
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <DataCacheProvider>{children}</DataCacheProvider>
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <DataCacheProvider>{children}</DataCacheProvider>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );
 }
+

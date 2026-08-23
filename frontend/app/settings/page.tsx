@@ -89,10 +89,9 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#39D9FF]" />
                   <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                    AI Screening &amp; RAG Parameters
+                    AI Screening Parameters
                   </h3>
                 </div>
-                <Badge variant="ai">Agentic Core</Badge>
               </div>
 
               {/* Threshold Slider */}
@@ -123,15 +122,15 @@ export default function SettingsPage() {
 
                 <label className="flex items-center justify-between p-3 rounded-lg bg-[#12151A] border border-[#242932] cursor-pointer">
                   <div>
-                    <span className="text-xs font-semibold text-[#F5F7FA] block">RAG Evidence Retrieval</span>
-                    <span className="text-[11px] text-[#A7AFBC]">Query vector database for resume chunk verification</span>
+                    <span className="text-xs font-semibold text-[#F5F7FA] block">Candidate analysis</span>
+                    <span className="text-[11px] text-[#A7AFBC]">Analyze resumes and extract insights</span>
                   </div>
                   <input type="checkbox" defaultChecked className="accent-[#39D9FF] h-4 w-4" />
                 </label>
 
                 <label className="flex items-center justify-between p-3 rounded-lg bg-[#12151A] border border-[#242932] cursor-pointer">
                   <div>
-                    <span className="text-xs font-semibold text-[#F5F7FA] block">AI Adaptive Interview Engine</span>
+                    <span className="text-xs font-semibold text-[#F5F7FA] block">AI Interview</span>
                     <span className="text-[11px] text-[#A7AFBC]">Generate real-time follow-up technical questions during interviews</span>
                   </div>
                   <input type="checkbox" defaultChecked className="accent-[#39D9FF] h-4 w-4" />

@@ -39,21 +39,10 @@ export function InterviewsClientView({
   orgName,
 }: InterviewsClientViewProps) {
   const router = useRouter();
-  const isAuthorizedToManage = canManageInterviews(role);
 
   const [interviews, setInterviews] = React.useState<InterviewItemWithDetails[]>(initialInterviews);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
-
-  // Schedule Modal State
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = React.useState(false);
-  const [applications, setApplications] = React.useState<ApplicationItemWithDetails[]>([]);
-  const [selectedAppId, setSelectedAppId] = React.useState("");
-  const [scheduledAt, setScheduledAt] = React.useState("");
-  const [durationMinutes, setDurationMinutes] = React.useState(45);
-  const [interviewType, setInterviewType] = React.useState<InterviewType>("ai_adaptive");
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [modalErrorMsg, setModalErrorMsg] = React.useState<string | null>(null);
 
   const loadInterviews = React.useCallback(async () => {
     setLoading(true);
@@ -67,44 +56,6 @@ export function InterviewsClientView({
     }
     setLoading(false);
   }, []);
-
-  const openScheduleModal = async () => {
-    setModalErrorMsg(null);
-    setIsScheduleModalOpen(true);
-
-    const res = await getApplicationsAction();
-    if (res.success && res.data) {
-      setApplications(res.data);
-      if (res.data.length > 0) setSelectedAppId(res.data[0].id);
-    }
-  };
-
-  const handleScheduleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setModalErrorMsg(null);
-
-    if (!selectedAppId || !scheduledAt) {
-      setModalErrorMsg("Please select an application and scheduled date/time.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const res = await createInterviewAction({
-      application_id: selectedAppId,
-      scheduled_at: scheduledAt || new Date().toISOString(),
-      duration_minutes: durationMinutes,
-      interview_type: interviewType,
-    });
-
-    if (res.success && res.data) {
-      setIsScheduleModalOpen(false);
-      loadInterviews();
-    } else {
-      setModalErrorMsg(res.error || "Failed to schedule interview session.");
-    }
-    setIsSubmitting(false);
-  };
 
   const getStatusBadge = (status: InterviewStatus) => {
     switch (status) {
@@ -163,13 +114,7 @@ export function InterviewsClientView({
             <Sparkles className="h-3 w-3 mr-1" /> Live Adaptive Voice AI
           </Badge>
         }
-        actions={
-          isAuthorizedToManage ? (
-            <Button variant="ai" size="md" onClick={openScheduleModal}>
-              <Plus className="h-4 w-4 mr-1.5" /> Schedule AI Interview
-            </Button>
-          ) : undefined
-        }
+        actions={undefined}
       />
 
       {/* Metric Cards Row */}
@@ -227,16 +172,11 @@ export function InterviewsClientView({
               <Video className="h-7 w-7" />
             </div>
             <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-lg font-bold font-display text-[#F5F7FA]">No interview sessions scheduled</h3>
+              <h3 className="text-lg font-bold font-display text-[#F5F7FA]">No interview sessions available</h3>
               <p className="text-xs text-[#A7AFBC] leading-relaxed">
-                Schedule your first candidate AI voice interview session to begin conducting automated adaptive technical screenings.
+                Candidates who pass the technical assessment will automatically be invited to an AI interview.
               </p>
             </div>
-            {isAuthorizedToManage && (
-              <Button variant="ai" size="md" onClick={openScheduleModal} className="mt-2">
-                <Plus className="h-4 w-4 mr-1.5" /> Schedule First Interview
-              </Button>
-            )}
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-[#242932] bg-[#12151A]">
@@ -295,117 +235,6 @@ export function InterviewsClientView({
           </div>
         )}
       </Section>
-
-      {/* Schedule Interview Modal Dialog */}
-      {isScheduleModalOpen && (
-        <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-[#08090B]/80 backdrop-blur-xs transition-opacity"
-            onClick={() => setIsScheduleModalOpen(false)}
-          />
-          <div className="relative z-[1700] w-full max-w-lg rounded-2xl border border-[#39D9FF]/30 bg-[#12151A] p-6 shadow-2xl space-y-5 text-[#F5F7FA]">
-            <div className="flex items-center justify-between border-b border-[#242932] pb-4">
-              <div className="flex items-center gap-2">
-                <Video className="h-5 w-5 text-[#39D9FF]" />
-                <h3 className="text-lg font-bold font-display text-[#F5F7FA]">Schedule AI Interview</h3>
-              </div>
-              <button
-                onClick={() => setIsScheduleModalOpen(false)}
-                className="p-1 text-[#A7AFBC] hover:text-[#F5F7FA]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {modalErrorMsg && (
-              <div className="p-3 rounded-lg bg-[#FF5C67]/10 border border-[#FF5C67]/30 text-xs text-[#FF5C67] flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{modalErrorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleScheduleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#A7AFBC]">Target Candidate Application *</label>
-                {applications.length === 0 ? (
-                  <p className="text-xs text-[#FF5C67]">
-                    No application records found. Create an application first.
-                  </p>
-                ) : (
-                  <Select
-                    value={selectedAppId}
-                    onChange={(e) => setSelectedAppId(e.target.value)}
-                    options={applications.map((a) => ({
-                      value: a.id,
-                      label: `${a.candidateName} — ${a.jobTitle}`,
-                    }))}
-                  />
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Scheduled Date &amp; Time *</label>
-                  <Input
-                    type="datetime-local"
-                    value={scheduledAt}
-                    onChange={(e) => setScheduledAt(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Duration (Minutes)</label>
-                  <Input
-                    type="number"
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                    min={15}
-                    max={120}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#A7AFBC]">Interview Engine Format</label>
-                <Select
-                  value={interviewType}
-                  onChange={(e) => setInterviewType(e.target.value as InterviewType)}
-                  options={[
-                    { value: "ai_adaptive", label: "AI Adaptive Voice Interview" },
-                    { value: "technical", label: "Structured Technical Screening" },
-                    { value: "behavioral", label: "Behavioral & Competency Evaluation" },
-                  ]}
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#242932]">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsScheduleModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="ai"
-                  size="sm"
-                  disabled={isSubmitting || applications.length === 0}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-1.5" />
-                  )}
-                  Schedule Interview
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </ApplicationShell>
   );
 }

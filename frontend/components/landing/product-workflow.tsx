@@ -20,7 +20,7 @@ export function ProductWorkflow() {
           { label: "Department", value: "AI & Engineering" },
           { label: "Employment Type", value: "Full-Time" },
           { label: "Workplace", value: "Remote" },
-          { label: "Requirements", value: "Python, FastAPI, RAG, Next.js, Postgres" },
+          { label: "Requirements", value: "Python, FastAPI, Next.js, Postgres" },
         ],
         status: "Draft Saved",
       },

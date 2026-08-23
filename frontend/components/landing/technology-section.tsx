@@ -11,7 +11,7 @@ export function TechnologySection() {
       icon: Cpu,
     },
     {
-      title: "RETRIEVAL-AUGMENTED GENERATION (RAG)",
+      title: "EVIDENCE RETRIEVAL",
       desc: "Evidence extraction grounded directly in resume artifacts.",
       icon: Database,
     },
@@ -21,13 +21,13 @@ export function TechnologySection() {
       icon: Search,
     },
     {
-      title: "VECTOR RETRIEVAL",
-      desc: "High-dimensional embedding indexing for skill lookup.",
+      title: "SKILL MATCHING",
+      desc: "Advanced matching algorithms for candidate skill lookup.",
       icon: Layers,
     },
     {
-      title: "MULTI-AGENT WORKFLOWS",
-      desc: "LangGraph-powered screening and evaluation graphs.",
+      title: "AI WORKFLOWS",
+      desc: "Automated screening and candidate evaluation processes.",
       icon: GitBranch,
     },
     {

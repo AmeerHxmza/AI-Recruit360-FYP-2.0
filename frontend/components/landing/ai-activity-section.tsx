@@ -53,7 +53,7 @@ export function AIActivitySection() {
             See The Intelligence At Work.
           </h2>
           <p className="text-[#A7AFBC] text-base sm:text-lg leading-relaxed">
-            Real-time observational audit log of AI background screening, vector matching, and decision engine events.
+            Real-time observational audit log of AI background screening and decision engine events.
           </p>
         </div>
 

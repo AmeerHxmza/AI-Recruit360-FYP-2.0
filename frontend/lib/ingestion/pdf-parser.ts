@@ -2,6 +2,21 @@ import { DocumentParser } from "./document-parser";
 import { ParsedDocumentResult } from "./types";
 import { DocumentExtractionError } from "./errors";
 
+// Polyfills for pdf-parse (pdf.js) to avoid ReferenceErrors in Next.js Server environment
+if (typeof globalThis !== "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const globalAny = globalThis as any;
+  if (typeof globalAny.DOMMatrix === "undefined") {
+    globalAny.DOMMatrix = class DOMMatrix {};
+  }
+  if (typeof globalAny.Path2D === "undefined") {
+    globalAny.Path2D = class Path2D {};
+  }
+  if (typeof globalAny.ImageData === "undefined") {
+    globalAny.ImageData = class ImageData {};
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse");
 

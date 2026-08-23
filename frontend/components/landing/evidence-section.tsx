@@ -31,7 +31,7 @@ export function EvidenceSection() {
                   01. Role Requirement
                 </span>
                 <h4 className="text-sm font-semibold text-[#F5F7FA] mb-1">
-                  &quot;Production RAG experience&quot;
+                  &quot;Production AI experience&quot;
                 </h4>
                 <p className="text-xs text-[#A7AFBC]">
                   Senior AI Engineer position specification requirement.
@@ -49,7 +49,7 @@ export function EvidenceSection() {
                   <CheckCircle2 className="h-3 w-3" /> 02. Extracted Evidence
                 </span>
                 <p className="text-xs font-mono text-[#F5F7FA] italic bg-[#171B21] p-3 rounded border border-[#242932] leading-relaxed">
-                  &quot;Designed and deployed retrieval pipelines using vector search and semantic retrieval serving 1M requests.&quot;
+                  &quot;Designed and deployed automated pipelines using AI and semantics serving 1M requests.&quot;
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-[#242932] text-[11px] font-mono text-[#35D07F]">
@@ -68,7 +68,7 @@ export function EvidenceSection() {
                   Strong Alignment
                 </div>
                 <p className="text-xs text-[#A7AFBC] leading-relaxed">
-                  Verified 3+ years of production RAG architecture with vector database indexing.
+                  Verified 3+ years of production AI architecture with database indexing.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-[#242932] text-[11px] font-mono text-[#39D9FF]">

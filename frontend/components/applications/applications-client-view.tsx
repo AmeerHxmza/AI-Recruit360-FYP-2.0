@@ -198,8 +198,6 @@ export function ApplicationsClientView({
         return <Badge variant="ai" className="text-[11px] font-medium uppercase">Evaluation</Badge>;
       case "rejected":
         return <Badge variant="danger" className="text-[11px] font-medium uppercase">Rejected</Badge>;
-      case "hired":
-        return <Badge variant="success" className="text-[11px] font-medium uppercase">Hired</Badge>;
       default:
         return <Badge variant="outline" className="text-[11px] uppercase">{status}</Badge>;
     }
@@ -293,7 +291,6 @@ export function ApplicationsClientView({
                   { value: "Evaluation", label: "Evaluation" },
                   { value: "Shortlisted", label: "Shortlisted" },
                   { value: "Rejected", label: "Rejected" },
-                  { value: "Hired", label: "Hired" },
                 ]}
               />
             </div>
@@ -399,7 +396,6 @@ export function ApplicationsClientView({
                                 { value: "evaluation", label: "Evaluation" },
                                 { value: "shortlisted", label: "Shortlisted" },
                                 { value: "rejected", label: "Rejected" },
-                                { value: "hired", label: "Hired" },
                               ]}
                             />
                           </div>

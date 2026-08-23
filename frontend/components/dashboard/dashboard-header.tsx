@@ -25,14 +25,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div className="space-y-1">
         <div className="flex items-center gap-3">
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#F5F7FA] font-display">
-            Good morning, {userName}
+            Recruiter Dashboard
           </h1>
-          <Badge variant="ai" className="hidden sm:inline-flex px-2.5 py-0.5 text-xs">
-            <Sparkles className="h-3 w-3 mr-1" /> Agentic Engine Active
-          </Badge>
+
         </div>
         <p className="text-xs md:text-sm text-[#A7AFBC]">
-          Recruitment intelligence overview &amp; candidate screening portal.
+          Monitor your recruitment pipeline and candidate evaluations.
         </p>
       </div>
 

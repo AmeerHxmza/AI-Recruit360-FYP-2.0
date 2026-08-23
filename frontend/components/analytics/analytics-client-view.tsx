@@ -22,10 +22,10 @@ export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientVie
     return [
       { stage: "Applied", count: data.funnel.applied, color: "#39D9FF" },
       { stage: "Screening", count: data.funnel.screening, color: "#63E3FF" },
-      { stage: "Interview", count: data.funnel.interview, color: "#F5B942" },
+      { stage: "Assessment", count: data.funnel.assessment, color: "#F5B942" },
+      { stage: "Interview", count: data.funnel.interview, color: "#35D07F" },
       { stage: "Evaluation", count: data.funnel.evaluation, color: "#A7AFBC" },
-      { stage: "Shortlisted", count: data.funnel.shortlisted, color: "#35D07F" },
-      { stage: "Hired", count: data.funnel.hired, color: "#00E5A3" },
+      { stage: "Shortlisted", count: data.funnel.shortlisted, color: "#00E5A3" },
     ];
   }, [data, totalApplications]);
 
@@ -52,14 +52,14 @@ export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientVie
         />
         <MetricCard
           label="AI Screenings"
-          value={data.metrics.aiAnalysesCount ?? 0}
+          value={data.aiSummary.totalScreened ?? 0}
           description="Processed evaluation reports"
           icon={<Sparkles className="h-4 w-4" />}
           highlight={true}
         />
         <MetricCard
           label="Avg Match Score"
-          value={data.aiSummary.averageScore ? `${data.aiSummary.averageScore}%` : "0%"}
+          value={data.aiSummary.averageMatchScore ? `${data.aiSummary.averageMatchScore}%` : "0%"}
           description="Candidate alignment score"
           icon={<Target className="h-4 w-4" />}
         />
@@ -132,25 +132,25 @@ export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientVie
             <div className="space-y-5 text-xs text-[#A7AFBC]">
               <div className="p-4 rounded-xl bg-[#0D0F12] border border-[#242932] space-y-2">
                 <div className="flex justify-between items-center text-[#F5F7FA]">
-                  <span className="font-semibold">Match Quality Distribution</span>
+                  <span className="font-semibold">Qualified Candidates</span>
                   <span className="font-mono text-[#39D9FF]">
-                    {data.aiSummary.strongMatches} Strong Matches
+                    {data.aiSummary.qualifiedCount} Passed
                   </span>
                 </div>
                 <p className="text-[11px] text-[#A7AFBC] leading-relaxed">
-                  {data.aiSummary.strongMatches} candidates achieved a score over 80% and were automatically prioritized.
+                  {data.aiSummary.qualifiedCount} candidates met the required threshold and proceeded in the pipeline.
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#0D0F12] border border-[#242932] space-y-2">
                 <div className="flex justify-between items-center text-[#F5F7FA]">
-                  <span className="font-semibold">Requires Review</span>
-                  <span className="font-mono text-[#F5B942]">
-                    {data.aiSummary.needsReview} Flagged
+                  <span className="font-semibold">Knocked Out</span>
+                  <span className="font-mono text-[#FF5C67]">
+                    {data.aiSummary.knockedOutCount} Rejected
                   </span>
                 </div>
                 <p className="text-[11px] text-[#A7AFBC] leading-relaxed">
-                  Candidates requiring human recruiter review or additional assessment evaluation.
+                  Candidates rejected automatically due to low screening match scores.
                 </p>
               </div>
             </div>

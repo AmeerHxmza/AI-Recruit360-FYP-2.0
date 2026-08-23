@@ -121,13 +121,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Right Controls & User Profile */}
         <div className="flex items-center gap-2 md:gap-3">
-          {/* AI Activity Indicator */}
-          <Link href="/ai-activity">
-            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-[#39D9FF]/30 bg-[#39D9FF]/10 px-2.5 py-1 text-[11px] font-semibold text-[#39D9FF] hover:bg-[#39D9FF]/20 transition-micro">
-              <Sparkles className="h-3 w-3 text-[#39D9FF] animate-pulse" />
-              <span>AI Engine Active</span>
-            </div>
-          </Link>
+
 
           {/* Notifications Button */}
           <Button

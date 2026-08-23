@@ -80,6 +80,10 @@ export interface PythonScreeningResult {
   reasoning_summary: string;
 }
 
+export interface GenerateAssessmentPayload {
+  application_id: string;
+}
+
 export interface PythonMCQItem {
   id: string;
   assessment_id?: string;
@@ -108,16 +112,8 @@ export const aiServiceClient = {
    */
   screenApplication: async (payload: {
     application_id: string;
-    job_title: string;
-    job_description: string;
-    job_requirements?: string | null;
-    cv_text: string;
-    candidate_name?: string;
-    organization_id?: string;
-    candidate_id?: string;
-    job_id?: string;
-  }): Promise<PythonScreeningResult> => {
-    return aiServiceFetch<PythonScreeningResult>("/screening/screen-application", {
+  }): Promise<{ status: string; message: string; application_id: string }> => {
+    return aiServiceFetch<{ status: string; message: string; application_id: string }>("/screening/screen-application", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -128,10 +124,6 @@ export const aiServiceClient = {
    */
   generateAssessment: async (payload: {
     application_id: string;
-    job_title: string;
-    job_description: string;
-    matched_skills?: string[];
-    cv_summary?: string | null;
   }): Promise<PythonMCQItem[]> => {
     return aiServiceFetch<PythonMCQItem[]>("/assessments/generate", {
       method: "POST",

@@ -19,6 +19,7 @@ import {
   CreateCandidateInput,
   UpdateCandidateInput,
 } from "@/lib/services/candidate-service";
+import { getCandidateIntelligence, CandidateIntelligence } from "@/lib/services/candidate-intelligence-service";
 import { AppError } from "@/lib/utils/errors";
 
 export interface ActionResult<T> {
@@ -157,5 +158,19 @@ export async function getCandidateCountsAction(): Promise<
       success: false,
       data: { total: 0, withLocation: 0, withLinkedin: 0, recentCount: 0 },
     };
+  }
+}
+
+export async function getCandidateIntelligenceAction(
+  candidateId: string
+): Promise<ActionResult<CandidateIntelligence>> {
+  try {
+    const data = await getCandidateIntelligence(candidateId);
+    return { success: true, data };
+  } catch (err: unknown) {
+    if (err instanceof AppError) {
+      return { success: false, error: err.message };
+    }
+    return { success: false, error: "Failed to fetch candidate intelligence." };
   }
 }

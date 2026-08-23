@@ -6,20 +6,19 @@ import { measurePerformance } from "@/lib/performance/logger";
 export interface DashboardData {
   metrics: {
     activeJobs: number;
-    totalCandidates: number;
     totalApplications: number;
-    totalInterviews: number;
-    shortlistedCount: number;
-    aiAnalysesCount: number;
+    qualifiedCandidates: number;
+    aiInterviews: number;
   };
   funnel: {
     applied: number;
     screening: number;
+    assessment: number;
     interview: number;
     evaluation: number;
     shortlisted: number;
     rejected: number;
-    hired: number;
+    knocked_out: number;
     total: number;
   };
   recentApplications: {
@@ -28,14 +27,16 @@ export interface DashboardData {
     candidateEmail: string;
     jobTitle: string;
     status: string;
+    cvMatch: number | null;
+    assessmentScore: number | null;
+    interviewScore: number | null;
     createdAt: string;
   }[];
   aiSummary: {
-    averageScore: number;
-    strongMatches: number;
-    potentialMatches: number;
-    needsReview: number;
-    totalAnalyses: number;
+    totalScreened: number;
+    averageMatchScore: number;
+    qualifiedCount: number;
+    knockedOutCount: number;
   };
 }
 
@@ -47,59 +48,54 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
   const supabase = await createClient();
 
   try {
-    const { result, durationMs: dbDuration } = await measurePerformance("DB Query (Dashboard Summary RPC)", async () => {
-      // 1. Try atomic PostgreSQL RPC for maximum speed (< 50ms)
-      const { data: rpcData, error: rpcError } = await supabase.rpc("get_dashboard_summary", {
-        _org_id: orgId,
-      });
-
-      if (!rpcError && rpcData) {
-        return (rpcData as unknown) as DashboardData;
-      }
-
-      // 2. Fallback to optimized parallel queries if RPC not deployed yet
+    const { result, durationMs: dbDuration } = await measurePerformance("DB Query (Dashboard Summary)", async () => {
+      // Fetching all necessary components via Supabase optimized parallel queries
       const [
         activeJobsRes,
-        candidatesRes,
         applicationsRes,
+        qualifiedAppsRes,
         interviewsRes,
-        shortlistedRes,
-        aiAnalysesRes,
         funnelRes,
         recentAppsRes,
-        aiMetricsRes,
+        cvScreeningsRes,
       ] = await Promise.all([
         supabase.from("jobs").select("id", { count: "exact", head: true }).eq("organization_id", orgId).eq("status", "active"),
-        supabase.from("candidates").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
         supabase.from("applications").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("interviews").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("applications").select("id", { count: "exact", head: true }).eq("organization_id", orgId).eq("status", "shortlisted"),
-        supabase.from("cv_screenings").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+        supabase.from("applications").select("id", { count: "exact", head: true }).eq("organization_id", orgId).in("status", ["assessment", "interview", "evaluation", "shortlisted"]),
+        supabase.from("interviews").select("id", { count: "exact", head: true }).eq("organization_id", orgId).neq("status", "abandoned").neq("status", "cancelled"),
         supabase.from("applications").select("status").eq("organization_id", orgId),
         supabase
           .from("applications")
-          .select("id, status, applied_at, candidates(full_name, email), jobs(title)")
+          .select(`
+            id, 
+            status, 
+            applied_at, 
+            candidates(full_name, email), 
+            jobs(title),
+            cv_screenings(match_score),
+            assessments(score),
+            interviews(overall_score)
+          `)
           .eq("organization_id", orgId)
           .order("applied_at", { ascending: false })
-          .limit(5),
-        supabase.from("cv_screenings").select("match_score, recommendation").eq("organization_id", orgId),
+          .limit(8),
+        supabase.from("cv_screenings").select("match_score").eq("organization_id", orgId),
       ]);
 
       const activeJobs = activeJobsRes.count || 0;
-      const totalCandidates = candidatesRes.count || 0;
       const totalApplications = applicationsRes.count || 0;
-      const totalInterviews = interviewsRes.count || 0;
-      const shortlistedCount = shortlistedRes.count || 0;
-      const aiAnalysesCount = aiAnalysesRes.count || 0;
+      const qualifiedCandidates = qualifiedAppsRes.count || 0;
+      const aiInterviews = interviewsRes.count || 0;
 
       const funnel = {
         applied: 0,
         screening: 0,
+        assessment: 0,
         interview: 0,
         evaluation: 0,
         shortlisted: 0,
         rejected: 0,
-        hired: 0,
+        knocked_out: 0,
         total: 0,
       };
 
@@ -113,53 +109,58 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
         });
       }
 
-      const recentApplications = (recentAppsRes.data || []).map((app) => {
-        const cand = app.candidates as { full_name?: string; email?: string } | null;
-        const job = app.jobs as { title?: string } | null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const recentApplications = (recentAppsRes.data || []).map((app: any) => {
+        const cand = app.candidates;
+        const job = app.jobs;
+        
+        // Extract array values from joined tables, safely fall back to null
+        const cvs = Array.isArray(app.cv_screenings) ? app.cv_screenings[0] : app.cv_screenings;
+        const asst = Array.isArray(app.assessments) ? app.assessments[0] : app.assessments;
+        const intv = Array.isArray(app.interviews) ? app.interviews[0] : app.interviews;
+
         return {
           id: app.id,
           candidateName: cand?.full_name || "Applicant",
           candidateEmail: cand?.email || "N/A",
           jobTitle: job?.title || "Job Position",
           status: app.status,
+          cvMatch: cvs?.match_score ?? null,
+          assessmentScore: asst?.score ?? null,
+          interviewScore: intv?.overall_score ?? null,
           createdAt: app.applied_at,
         };
       });
 
-      let averageScore = 0;
-      let strongMatches = 0;
-      let potentialMatches = 0;
-      let needsReview = 0;
+      const totalScreened = cvScreeningsRes.data?.length || 0;
+      let averageMatchScore = 0;
+      let qualifiedCount = 0;
+      const knockedOutCount = funnel.knocked_out;
 
-      if (aiMetricsRes.data && aiMetricsRes.data.length > 0) {
+      if (totalScreened > 0) {
         let totalScoreSum = 0;
-        aiMetricsRes.data.forEach((row) => {
+        cvScreeningsRes.data!.forEach((row) => {
           const score = row.match_score || 0;
           totalScoreSum += score;
-          if (score >= 85) strongMatches++;
-          else if (score >= 70) potentialMatches++;
-          else needsReview++;
+          if (score >= 70) qualifiedCount++;
         });
-        averageScore = Math.round(totalScoreSum / aiMetricsRes.data.length);
+        averageMatchScore = Math.round(totalScoreSum / totalScreened);
       }
 
       return {
         metrics: {
           activeJobs,
-          totalCandidates,
           totalApplications,
-          totalInterviews,
-          shortlistedCount,
-          aiAnalysesCount,
+          qualifiedCandidates,
+          aiInterviews,
         },
         funnel,
         recentApplications,
         aiSummary: {
-          averageScore,
-          strongMatches,
-          potentialMatches,
-          needsReview,
-          totalAnalyses: aiAnalysesCount,
+          totalScreened,
+          averageMatchScore,
+          qualifiedCount,
+          knockedOutCount,
         },
       };
     });

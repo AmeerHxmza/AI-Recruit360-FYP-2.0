@@ -32,7 +32,7 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
           </div>
           <div>
             <h2 className="text-sm font-bold text-[#F5F7FA] uppercase tracking-wider font-display flex items-center gap-2">
-              AI Intelligence Engine
+              Candidate Analysis
             </h2>
             <p className="text-xs text-[#A7AFBC] mt-0.5">
               Automated candidate screening &amp; evidence-matching intelligence
@@ -46,7 +46,7 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#39D9FF] opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[#39D9FF]" />
           </span>
-          Engine Active
+          Analysis Active
         </Badge>
       </div>
 
@@ -83,7 +83,7 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
       {/* Analysis Pipeline Capacity Sub-section */}
       <div className="mt-5 space-y-3">
         <div className="flex items-center justify-between text-xs font-semibold text-[#A7AFBC] uppercase tracking-wider">
-          <span>Analysis Pipeline Capacity</span>
+          <span>Analysis Progress</span>
           <span className="text-[#39D9FF] font-mono">91% Complete</span>
         </div>
 

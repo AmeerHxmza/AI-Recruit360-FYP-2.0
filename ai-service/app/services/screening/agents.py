@@ -156,22 +156,32 @@ def synthesize_screening_decision(
     skills_score = skills_eval["score"]
     exp_score = exp_eval["score"]
     edu_score = edu_eval["score"]
-    rel_score = (skills_score + exp_score) / 2.0
+    
+    # Calculate evidence score based on the quality of evidence extracted
+    # If the quote starts with "Candidate demonstrates proficiency in", it's a default/weak evidence.
+    # If it starts with "Demonstrated", it's strong evidence from experience highlights.
+    if not evidence:
+        evidence_score = 0.0
+    else:
+        strong_evidence = sum(1 for e in evidence if e.evidence_quote.startswith("Demonstrated"))
+        evidence_score = (strong_evidence / len(evidence)) * 50.0 + 50.0 # Base 50% for having matched skills, +50% for strong evidence
 
     if is_entry_or_intern:
-        # Weight Skills (50%), Projects/Exp (25%), Education (25%) for Intern/Entry positions
-        overall_match_score = round(
-            skills_score * 0.50 +
-            exp_score * 0.25 +
-            edu_score * 0.25,
-            1
-        )
-    else:
+        # For Intern/Entry positions, experience/evidence might be lower, adjust weights slightly
         overall_match_score = round(
             skills_score * 0.40 +
             exp_score * 0.30 +
             edu_score * 0.15 +
-            rel_score * 0.15,
+            evidence_score * 0.15,
+            1
+        )
+    else:
+        # Standard agreed scoring model
+        overall_match_score = round(
+            skills_score * 0.40 +
+            exp_score * 0.30 +
+            edu_score * 0.15 +
+            evidence_score * 0.15,
             1
         )
 
@@ -234,7 +244,7 @@ def synthesize_screening_decision(
         skills_score=skills_score,
         experience_score=exp_score,
         education_score=edu_score,
-        relevance_score=round(rel_score, 1),
+        relevance_score=round(evidence_score, 1),
         matched_skills=skills_eval["matched"],
         missing_skills=skills_eval["missing"],
         matched_experience=exp_eval["matched_experience"],

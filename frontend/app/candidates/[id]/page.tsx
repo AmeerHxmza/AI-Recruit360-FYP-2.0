@@ -18,9 +18,12 @@ import {
   deleteCandidateAction,
   getCandidateApplicationsAction,
   getCandidateDocumentsAction,
+  getCandidateIntelligenceAction,
 } from "@/app/actions/candidates";
 import { Candidate, CandidateApplicationItem, CandidateDocumentWithUrl } from "@/lib/services/candidate-service";
+import { CandidateIntelligence } from "@/lib/services/candidate-intelligence-service";
 import { CandidateDocumentUploader } from "@/components/candidates/candidate-document-uploader";
+import { CandidateIntelligencePanel } from "@/components/candidates/candidate-intelligence-panel";
 import {
   ArrowLeft,
   Edit3,
@@ -52,6 +55,7 @@ export default function CandidateDetailPage() {
   const [candidate, setCandidate] = React.useState<Candidate | null>(null);
   const [applications, setApplications] = React.useState<CandidateApplicationItem[]>([]);
   const [documents, setDocuments] = React.useState<CandidateDocumentWithUrl[]>([]);
+  const [intelligence, setIntelligence] = React.useState<CandidateIntelligence | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
@@ -74,15 +78,17 @@ export default function CandidateDetailPage() {
 
   const refreshData = React.useCallback(async () => {
     if (!candId) return;
-    const [candRes, appsRes, docsRes] = await Promise.all([
+    const [candRes, appsRes, docsRes, intRes] = await Promise.all([
       getCandidateByIdAction(candId),
       getCandidateApplicationsAction(candId),
       getCandidateDocumentsAction(candId),
+      getCandidateIntelligenceAction(candId),
     ]);
 
     if (candRes.success && candRes.data) setCandidate(candRes.data);
     if (appsRes.success && appsRes.data) setApplications(appsRes.data);
     if (docsRes.success && docsRes.data) setDocuments(docsRes.data);
+    if (intRes.success && intRes.data) setIntelligence(intRes.data);
   }, [candId]);
 
   React.useEffect(() => {
@@ -93,7 +99,8 @@ export default function CandidateDetailPage() {
       getCandidateByIdAction(candId),
       getCandidateApplicationsAction(candId),
       getCandidateDocumentsAction(candId),
-    ]).then(([candRes, appsRes, docsRes]) => {
+      getCandidateIntelligenceAction(candId),
+    ]).then(([candRes, appsRes, docsRes, intRes]) => {
       if (!isMounted) return;
       if (candRes.success && candRes.data) {
         setCandidate(candRes.data);
@@ -105,6 +112,9 @@ export default function CandidateDetailPage() {
       }
       if (docsRes.success && docsRes.data) {
         setDocuments(docsRes.data);
+      }
+      if (intRes.success && intRes.data) {
+        setIntelligence(intRes.data);
       }
       setLoading(false);
     });
@@ -241,6 +251,26 @@ export default function CandidateDetailPage() {
         actions={
           isAuthorizedToManage ? (
             <div className="flex items-center gap-2">
+              {intelligence?.application?.status === "evaluation" && (
+                <>
+                  <Button variant="primary" size="sm" onClick={() => {}}>
+                    Shortlist
+                  </Button>
+                  <Button variant="outline" size="sm" className="border-[#FF5C67]/40 text-[#FF5C67]" onClick={() => {}}>
+                    Reject
+                  </Button>
+                </>
+              )}
+              {(intelligence?.application?.status === "applied" || intelligence?.application?.status === "screening" || intelligence?.application?.status === "assessment" || intelligence?.application?.status === "interview") && (
+                <Button variant="ai" size="sm" onClick={() => {}}>
+                  View Progress
+                </Button>
+              )}
+              {intelligence?.application?.status === "knocked_out" && (
+                <Button variant="secondary" size="sm" onClick={() => {}}>
+                  View Screening
+                </Button>
+              )}
               <Button variant="secondary" size="sm" onClick={openEditModal}>
                 <Edit3 className="h-3.5 w-3.5 mr-1.5" /> Edit Profile
               </Button>
@@ -433,18 +463,8 @@ export default function CandidateDetailPage() {
             )}
           </Card>
 
-          {/* AI Analysis Neutral Banner */}
-          <Card className="p-6 border-[#242932] bg-[#12151A] space-y-3">
-            <div className="flex items-center gap-2 border-b border-[#242932] pb-3">
-              <Sparkles className="h-4 w-4 text-[#A7AFBC]" />
-              <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                AI Evaluation Intelligence
-              </h3>
-            </div>
-            <p className="text-xs text-[#A7AFBC] leading-relaxed">
-              AI analysis not available yet. Automated vector embedding scoring and evidence extraction will occur in future AI pipeline execution steps.
-            </p>
-          </Card>
+          {/* AI Analysis Integration */}
+          <CandidateIntelligencePanel intelligence={intelligence} />
         </div>
 
         {/* Right Column: Metadata Panel */}

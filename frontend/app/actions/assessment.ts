@@ -5,33 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function getOrGenerateAssessmentAction(applicationId: string) {
   try {
-    const supabase = await createClient();
-
-    const { data: app, error } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("id", applicationId)
-      .single();
-
-    if (error || !app) {
-      return { success: false, error: "Application not found." };
-    }
-
-    const { data: job } = await supabase.from("jobs").select("*").eq("id", app.job_id).single();
-    const { data: screenings } = await supabase.from("cv_screenings").select("*").eq("application_id", applicationId);
-
-    const screening = screenings && screenings.length > 0 ? screenings[0] : null;
-    const matchedSkills = (screening?.matched_skills as string[] | undefined) || ["Software Engineering"];
-
-    // Delegate 10 MCQ generation to Python FastAPI AI Engine
     const questions = await aiServiceClient.generateAssessment({
       application_id: applicationId,
-      job_title: job?.title || "Technical Position",
-      job_description: job?.description || "",
-      matched_skills: matchedSkills,
-      cv_summary: screening?.reasoning_summary || null,
     });
-
     return { success: true, data: questions };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to load personalized assessment.";

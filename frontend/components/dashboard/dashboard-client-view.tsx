@@ -50,10 +50,10 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
     return [
       { stage: "Applied", count: data.funnel.applied, percentage: calcPct(data.funnel.applied), color: "#39D9FF" },
       { stage: "Screening", count: data.funnel.screening, percentage: calcPct(data.funnel.screening), color: "#63E3FF" },
-      { stage: "Interview", count: data.funnel.interview, percentage: calcPct(data.funnel.interview), color: "#F5B942" },
+      { stage: "Assessment", count: data.funnel.assessment, percentage: calcPct(data.funnel.assessment), color: "#F5B942" },
+      { stage: "Interview", count: data.funnel.interview, percentage: calcPct(data.funnel.interview), color: "#35D07F" },
       { stage: "Evaluation", count: data.funnel.evaluation, percentage: calcPct(data.funnel.evaluation), color: "#A7AFBC" },
-      { stage: "Shortlisted", count: data.funnel.shortlisted, percentage: calcPct(data.funnel.shortlisted), color: "#35D07F" },
-      { stage: "Hired", count: data.funnel.hired, percentage: calcPct(data.funnel.hired), color: "#00E5A3" },
+      { stage: "Shortlisted", count: data.funnel.shortlisted, percentage: calcPct(data.funnel.shortlisted), color: "#00E5A3" },
     ];
   }, [data]);
 
@@ -70,16 +70,7 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return dateStr;
-    }
-  };
+  // Removed formatDate
 
   return (
     <ApplicationShell
@@ -100,29 +91,29 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
       {/* Primary Metrics Editorial Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <MetricCard
-          label="Active Positions"
+          label="Active Jobs"
           value={data.metrics.activeJobs}
-          description="Open recruiting roles"
+          description="Open positions"
           icon={<Briefcase className="h-4 w-4" />}
-        />
-        <MetricCard
-          label="Total Candidates"
-          value={data.metrics.totalCandidates}
-          description="Registered applicant records"
-          icon={<Users className="h-4 w-4" />}
         />
         <MetricCard
           label="Applications"
           value={data.metrics.totalApplications}
-          description="Pipeline submissions"
+          description="Total submissions"
+          icon={<Users className="h-4 w-4" />}
+        />
+        <MetricCard
+          label="Qualified"
+          value={data.metrics.qualifiedCandidates}
+          description="Passed CV screening"
           icon={<UserCheck className="h-4 w-4" />}
         />
         <MetricCard
-          label="AI Analyses"
-          value={data.metrics.aiAnalysesCount}
-          description="Processed evaluation reports"
+          label="AI Interviews"
+          value={data.metrics.aiInterviews}
+          description="Completed / active"
           icon={<Sparkles className="h-4 w-4" />}
-          highlight={true}
+          highlight={false}
         />
       </div>
 
@@ -140,36 +131,36 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
                 </h3>
               </div>
               <Badge variant="ai" className="text-[10px]">
-                {data.aiSummary.totalAnalyses ? `${data.aiSummary.totalAnalyses} Processed` : "Active"}
+                {data.aiSummary.totalScreened ? `${data.aiSummary.totalScreened} Processed` : "Active"}
               </Badge>
             </div>
 
-            {data.aiSummary && data.aiSummary.totalAnalyses > 0 ? (
+            {data.aiSummary && data.aiSummary.totalScreened > 0 ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
                   <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
-                    <span className="text-2xl font-bold text-[#39D9FF] font-display block">
-                      {data.aiSummary.averageScore}%
+                    <span className="text-2xl font-bold text-[#F5F7FA] font-display block">
+                      {data.aiSummary.totalScreened}
                     </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Avg Match</span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Candidates Screened</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
+                    <span className="text-2xl font-bold text-[#39D9FF] font-display block">
+                      {data.aiSummary.averageMatchScore}%
+                    </span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Avg Match Score</span>
                   </div>
                   <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
                     <span className="text-2xl font-bold text-[#35D07F] font-display block">
-                      {data.aiSummary.strongMatches}
+                      {data.aiSummary.qualifiedCount}
                     </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Strong Matches</span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Qualified</span>
                   </div>
                   <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
-                    <span className="text-2xl font-bold text-[#F5B942] font-display block">
-                      {data.aiSummary.potentialMatches}
+                    <span className="text-2xl font-bold text-[#FF5A5A] font-display block">
+                      {data.aiSummary.knockedOutCount}
                     </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Potential</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
-                    <span className="text-2xl font-bold text-[#A7AFBC] font-display block">
-                      {data.aiSummary.needsReview}
-                    </span>
-                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Under Review</span>
+                    <span className="text-[10px] text-[#A7AFBC] uppercase font-semibold">Knocked Out</span>
                   </div>
                 </div>
               </div>
@@ -216,9 +207,11 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
                   <TableHeader>
                     <TableRow className="border-b border-[#242932] bg-[#0D0F12]">
                       <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Candidate</TableHead>
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Target Position</TableHead>
+                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Job</TableHead>
+                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">CV Match</TableHead>
+                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Assessment</TableHead>
+                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Interview</TableHead>
                       <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Status</TableHead>
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Submitted Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -238,8 +231,10 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
                           </div>
                         </TableCell>
                         <TableCell className="text-xs text-[#F5F7FA] font-medium">{app.jobTitle}</TableCell>
+                        <TableCell className="text-xs text-[#F5F7FA] font-medium">{app.cvMatch !== null ? `${app.cvMatch}%` : '—'}</TableCell>
+                        <TableCell className="text-xs text-[#F5F7FA] font-medium">{app.assessmentScore !== null ? `${app.assessmentScore}/10` : '—'}</TableCell>
+                        <TableCell className="text-xs text-[#F5F7FA] font-medium">{app.interviewScore !== null ? `${app.interviewScore}%` : '—'}</TableCell>
                         <TableCell>{getStatusBadge(app.status)}</TableCell>
-                        <TableCell className="text-xs text-[#68717E] font-mono">{formatDate(app.createdAt)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

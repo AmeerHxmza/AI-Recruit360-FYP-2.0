@@ -62,7 +62,7 @@ export function CandidateIntelligenceSection() {
               <div className="p-3.5 rounded-xl bg-[#0D0F12] border border-[#242932] text-xs text-[#A7AFBC] space-y-1">
                 <span className="text-[10px] font-mono text-[#39D9FF] uppercase font-bold block">AI Evidence Summary</span>
                 <p className="leading-relaxed">
-                  Demonstrated 6 years of production RAG &amp; LangGraph experience. Passed 10-question timed technical assessment with 90% score and completed 8-question adaptive interview.
+                  Demonstrated 6 years of production AI experience. Passed 10-question timed technical assessment with 90% score and completed 8-question adaptive interview.
                 </p>
               </div>
             </div>

@@ -95,8 +95,8 @@ export function AiActivityClientView({ initialLogs, orgName }: AiActivityClientV
   return (
     <ApplicationShell pageBreadcrumb={[orgName || "AI-Recruit360", "AI Activity"]}>
       <PageHeader
-        title="AI Engine Event Stream"
-        description="Real-time audit log of Gemini LLM agent operations, vector embeddings, and candidate scoring executions."
+        title="AI Processing Activity"
+        description="Recent AI processing events across candidate screening, assessment, interviews, and evaluation."
         badge={
           <Badge variant="ai">
             <Sparkles className="h-3 w-3 mr-1" /> Live Event Stream

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getCurrentOrganization, getCurrentRole } from "@/lib/auth/session";
 import { canManageApplications } from "@/lib/auth/permissions";
 import { ForbiddenError, NotFoundError, DatabaseError, ValidationError } from "@/lib/utils/errors";
@@ -172,14 +172,15 @@ export async function submitPublicCandidateApplication(input: {
   location?: string;
   linkedin_url?: string;
   portfolio_url?: string;
-  cv_text?: string;
+  cv_file?: File;
 }): Promise<{ candidate_id: string; application_id: string }> {
   // 1. Mandatory Phone Validation
   if (!input.phone || input.phone.trim().length === 0) {
     throw new ValidationError("Mobile phone number is required to submit your application.");
   }
 
-  const supabase = await createClient();
+  // Use Admin Client (service_role) to bypass RLS for public applications
+  const supabase = await createAdminClient();
   const emailLower = input.email.trim().toLowerCase();
   const phoneTrimmed = input.phone.trim();
 
@@ -249,20 +250,39 @@ export async function submitPublicCandidateApplication(input: {
 
     const applicationId = appData.id;
 
-    // 4. Save candidate document if text provided
-    if (input.cv_text && input.cv_text.trim().length > 0) {
-      const storagePath = `${input.organization_id}/${applicationId}/${candidateId}/resume.txt`;
+    // 4. Save candidate document if file provided
+    if (input.cv_file) {
+      // Create candidate_documents bucket if it doesn't exist (fails silently if it does)
+      await supabase.storage.createBucket("candidate_documents", {
+        public: false,
+        allowedMimeTypes: ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"],
+        fileSizeLimit: 10485760 // 10MB
+      });
+
+      const fileName = `${Date.now()}_${input.cv_file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+      const storagePath = `${input.organization_id}/${applicationId}/${candidateId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("candidate_documents")
+        .upload(storagePath, input.cv_file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new DatabaseError("Failed to upload CV to secure storage.");
+      }
+
       await supabase.from("candidate_documents").insert({
         organization_id: input.organization_id,
         candidate_id: candidateId,
         application_id: applicationId,
         document_type: "resume",
         storage_path: storagePath,
-        original_filename: "resume.txt",
-        mime_type: "text/plain",
-        file_size: Buffer.byteLength(input.cv_text, "utf-8"),
-        extracted_text: input.cv_text.trim(),
-        extraction_status: "completed",
+        original_filename: input.cv_file.name,
+        mime_type: input.cv_file.type || "application/octet-stream",
+        file_size: input.cv_file.size,
+        extraction_status: "pending",
       });
     }
 

@@ -1,29 +1,57 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from typing import Optional, List
+
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     AI_SERVICE_PORT: int = 8000
-    
+    WORKER_COUNT: int = 4  # Gunicorn worker processes (2 * CPU cores + 1 recommended)
+
+    # ── Supabase ────────────────────────────────────────────────────────────────
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
-    
+
+    # ── AI Providers ────────────────────────────────────────────────────────────
     AI_PROVIDER: str = "gemini"
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-1.5-flash"
-    
+
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4o-mini"
-    
+
+    # ── Security ─────────────────────────────────────────────────────────────────
     AI_SERVICE_SHARED_SECRET: str = "recruit360_shared_backend_secret_2026"
-    
+    # Comma-separated list loaded from env; wildcard "*" is FORBIDDEN in production
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
+    # ── Redis (Distributed Cache + ARQ Job Queue) ───────────────────────────────
+    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_CACHE_TTL_SECONDS: int = 3600        # 1 hour default cache TTL
+    REDIS_JOB_TTL_SECONDS: int = 86400         # 24-hour job result retention
+
+    # ── AI Scoring Thresholds ───────────────────────────────────────────────────
     CV_PASS_THRESHOLD: float = 70.0
     ASSESSMENT_PASS_THRESHOLD: float = 60.0
+
+    # ── Rate Limiting ───────────────────────────────────────────────────────────
+    RATE_LIMIT_SCREEN: str = "20/minute"       # CV screening per IP
+    RATE_LIMIT_ASSESSMENT: str = "30/minute"   # Assessment ops per IP
+    RATE_LIMIT_INTERVIEW: str = "60/minute"    # Interview ops per IP
+    RATE_LIMIT_EVALUATION: str = "10/minute"   # Final evaluation per IP
+
+    # ── OpenTelemetry Observability ──────────────────────────────────────────────
+    OTLP_ENDPOINT: Optional[str] = None        # e.g. https://api.honeycomb.io/v1/traces
+    OTLP_HEADERS: Optional[str] = None         # e.g. x-honeycomb-team=YOUR_KEY
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
+
 settings = Settings()
+

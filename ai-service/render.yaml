@@ -1,22 +1,45 @@
 services:
+  # ── Web Service: FastAPI + Gunicorn ───────────────────────────────────────
   - type: web
     name: ai-recruit360-backend
     env: python
     region: oregon
-    plan: free
+    plan: starter          # ← Minimum for production (Free plan sleeps!)
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Gunicorn multi-worker (replaces single-process uvicorn)
+    startCommand: >-
+      gunicorn app.main:app
+      --workers 2
+      --worker-class uvicorn.workers.UvicornWorker
+      --bind 0.0.0.0:$PORT
+      --timeout 120
+      --graceful-timeout 30
+      --max-requests 1000
+      --max-requests-jitter 100
+    healthCheckPath: /api/v1/health/live
     envVars:
       - key: ENVIRONMENT
         value: production
       - key: AI_PROVIDER
-        value: openai
-      - key: OPENAI_MODEL
-        value: gpt-4o-mini
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
       - key: CV_PASS_THRESHOLD
         value: "70.0"
       - key: ASSESSMENT_PASS_THRESHOLD
         value: "60.0"
+      # Rate limiting config
+      - key: RATE_LIMIT_SCREEN
+        value: "20/minute"
+      - key: RATE_LIMIT_ASSESSMENT
+        value: "30/minute"
+      - key: RATE_LIMIT_INTERVIEW
+        value: "60/minute"
+      - key: RATE_LIMIT_EVALUATION
+        value: "10/minute"
+      # Secrets — set in Render Dashboard → Environment
+      - key: GEMINI_API_KEY
+        sync: false
       - key: OPENAI_API_KEY
         sync: false
       - key: SUPABASE_URL
@@ -25,3 +48,40 @@ services:
         sync: false
       - key: AI_SERVICE_SHARED_SECRET
         sync: false
+      - key: REDIS_URL
+        sync: false          # Set to your Upstash Redis URL
+      - key: ALLOWED_ORIGINS
+        sync: false          # Set to ["https://your-domain.com"]
+
+  # ── Background Worker: ARQ + Redis Queue ─────────────────────────────────
+  # Processes heavy AI jobs (screening, MCQ generation, evaluations) async.
+  # Scale workers independently from the web service.
+  - type: worker
+    name: ai-recruit360-worker
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.workers.worker
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: CV_PASS_THRESHOLD
+        value: "70.0"
+      - key: ASSESSMENT_PASS_THRESHOLD
+        value: "60.0"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+

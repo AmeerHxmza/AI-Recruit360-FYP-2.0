@@ -12,7 +12,6 @@ import {
   Users,
   FileText,
   Video,
-  BarChart3,
   TrendingUp,
   Cpu,
   Settings,
@@ -41,18 +40,20 @@ export interface SidebarProps {
   className?: string;
 }
 
-export const mainNavItems: NavItem[] = [
+export const recruitmentNavItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4.5 w-4.5" /> },
   { id: "jobs", label: "Jobs", href: "/jobs", icon: <Briefcase className="h-4.5 w-4.5" /> },
   { id: "candidates", label: "Candidates", href: "/candidates", icon: <Users className="h-4.5 w-4.5" /> },
   { id: "applications", label: "Applications", href: "/applications", icon: <FileText className="h-4.5 w-4.5" /> },
   { id: "interviews", label: "Interviews", href: "/interviews", icon: <Video className="h-4.5 w-4.5" /> },
-  { id: "evaluations", label: "Evaluations", href: "/evaluations", icon: <BarChart3 className="h-4.5 w-4.5" /> },
+];
+
+export const insightsNavItems: NavItem[] = [
   { id: "analytics", label: "Analytics", href: "/analytics", icon: <TrendingUp className="h-4.5 w-4.5" /> },
 ];
 
-export const secondaryNavItems: NavItem[] = [
-  { id: "ai-activity", label: "AI Activity", href: "/ai-activity", icon: <Cpu className="h-4.5 w-4.5" />, badge: "Active" },
+export const systemNavItems: NavItem[] = [
+  { id: "ai-activity", label: "AI Activity", href: "/ai-activity", icon: <Cpu className="h-4.5 w-4.5" /> },
   { id: "settings", label: "Settings", href: "/settings", icon: <Settings className="h-4.5 w-4.5" /> },
 ];
 
@@ -108,9 +109,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Workspace Switcher */}
         <OrganizationSwitcher isCollapsed={isCollapsed} />
 
-        {/* Main Nav Items */}
-        <div className="space-y-1">
-          {mainNavItems.map((item) => {
+        {/* Recruitment Nav Items */}
+        <div className="space-y-1 pb-2">
+          {!isCollapsed && <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#68717E]">Recruitment</div>}
+          {recruitmentNavItems.map((item) => {
             const isActive = isItemActive(item.href);
             return (
               <Link
@@ -140,12 +142,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
 
-        {/* Separator */}
-        <div className="my-3 h-px bg-[#242932]" />
-
-        {/* Secondary Nav Items */}
-        <div className="space-y-1">
-          {secondaryNavItems.map((item) => {
+        {/* Insights Nav Items */}
+        <div className="space-y-1 pb-2 border-t border-[#242932] pt-2">
+          {!isCollapsed && <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#68717E]">Insights</div>}
+          {insightsNavItems.map((item) => {
             const isActive = isItemActive(item.href);
             return (
               <Link
@@ -170,12 +170,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
 
                 {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
 
-                {!isCollapsed && item.badge && (
-                  <span className="rounded-full bg-[#39D9FF]/10 px-2 py-0.5 text-[10px] font-semibold text-[#39D9FF] border border-[#39D9FF]/30">
-                    {item.badge}
-                  </span>
+        {/* System Nav Items */}
+        <div className="space-y-1 pb-2 border-t border-[#242932] pt-2">
+          {!isCollapsed && <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#68717E]">System</div>}
+          {systemNavItems.map((item) => {
+            const isActive = isItemActive(item.href);
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={onMobileClose}
+                title={isCollapsed ? item.label : undefined}
+                className={cn(
+                  "relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  isActive
+                    ? "bg-[#39D9FF]/10 text-[#39D9FF] font-semibold border-l-2 border-[#39D9FF]"
+                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA]"
                 )}
+              >
+                <span
+                  className={cn(
+                    "shrink-0 transition-micro",
+                    isActive ? "text-[#39D9FF]" : "text-[#68717E] group-hover:text-[#F5F7FA]"
+                  )}
+                >
+                  {item.icon}
+                </span>
+
+                {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
               </Link>
             );
           })}

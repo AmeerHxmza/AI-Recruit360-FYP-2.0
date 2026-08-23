@@ -65,7 +65,7 @@ export function ScreeningSection() {
                     <CheckCircle2 className="h-3 w-3 text-[#35D07F]" /> FastAPI — demonstrated
                   </span>
                   <span className="px-2.5 py-1 rounded bg-[#0D0F12] border border-[#242932] text-[#F5F7FA] text-[11px] font-mono flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3 w-3 text-[#35D07F]" /> RAG — demonstrated
+                    <CheckCircle2 className="h-3 w-3 text-[#35D07F]" /> Required AI experience — demonstrated
                   </span>
                 </div>
               </div>

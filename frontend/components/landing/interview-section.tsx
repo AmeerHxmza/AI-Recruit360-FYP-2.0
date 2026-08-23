@@ -47,7 +47,7 @@ export function InterviewSection() {
                 <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#242932]">
                   <span className="text-[10px] font-mono text-[#A7AFBC] uppercase block mb-1">Candidate Answer</span>
                   <p className="text-[#F5F7FA] font-sans italic">
-                    &quot;We designed a RAG architecture using hybrid vector search for our search engine...&quot;
+                    &quot;We designed an intelligent architecture using semantic search for our engine...&quot;
                   </p>
                 </div>
 

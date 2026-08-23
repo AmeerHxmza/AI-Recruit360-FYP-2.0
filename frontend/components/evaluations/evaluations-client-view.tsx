@@ -22,10 +22,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { canManageEvaluations } from "@/lib/auth/permissions";
-import { getEvaluationsAction, createEvaluationAction } from "@/app/actions/evaluations";
-import { getApplicationsAction } from "@/app/actions/applications";
+import { getEvaluationsAction } from "@/app/actions/evaluations";
 import { FinalEvaluationItemWithDetails } from "@/lib/services/evaluation-service";
-import { ApplicationItemWithDetails } from "@/lib/services/application-service";
 import { FinalRecommendation, OrganizationRole } from "@/types/database.types";
 import { BarChart3, ShieldCheck, CheckCircle2, Clock, ExternalLink, Plus, Loader2, AlertCircle, X, Sparkles } from "lucide-react";
 
@@ -47,15 +45,7 @@ export function EvaluationsClientView({
   const [loading, setLoading] = React.useState<boolean>(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
-  // Submit Evaluation Modal State
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [applications, setApplications] = React.useState<ApplicationItemWithDetails[]>([]);
-  const [selectedAppId, setSelectedAppId] = React.useState("");
-  const [overallScore, setOverallScore] = React.useState(85);
-  const [recommendation, setRecommendation] = React.useState<FinalRecommendation>("hire");
-  const [notes, setNotes] = React.useState("");
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [modalErrorMsg, setModalErrorMsg] = React.useState<string | null>(null);
+
 
   const loadEvaluations = React.useCallback(async () => {
     setLoading(true);
@@ -70,44 +60,7 @@ export function EvaluationsClientView({
     setLoading(false);
   }, []);
 
-  const openModal = async () => {
-    setModalErrorMsg(null);
-    setIsModalOpen(true);
 
-    const res = await getApplicationsAction();
-    if (res.success && res.data) {
-      setApplications(res.data);
-      if (res.data.length > 0) setSelectedAppId(res.data[0].id);
-    }
-  };
-
-  const handleSubmitEvaluation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setModalErrorMsg(null);
-
-    if (!selectedAppId) {
-      setModalErrorMsg("Please select an application record.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const res = await createEvaluationAction({
-      application_id: selectedAppId,
-      overall_score: Number(overallScore) || 85,
-      recommendation,
-      ai_summary: notes.trim() || undefined,
-    });
-
-    if (res.success && res.data) {
-      setIsModalOpen(false);
-      setNotes("");
-      loadEvaluations();
-    } else {
-      setModalErrorMsg(res.error || "Failed to submit candidate evaluation.");
-    }
-    setIsSubmitting(false);
-  };
 
   const getRecommendationBadge = (rec: FinalRecommendation | null) => {
     switch (rec) {
@@ -168,13 +121,7 @@ export function EvaluationsClientView({
             <Sparkles className="h-3 w-3 mr-1" /> Scorecard Matrix
           </Badge>
         }
-        actions={
-          isAuthorizedToManage ? (
-            <Button variant="ai" size="md" onClick={openModal}>
-              <Plus className="h-4 w-4 mr-1.5" /> Submit Evaluation
-            </Button>
-          ) : undefined
-        }
+        actions={undefined}
       />
 
       {/* Summary Metrics Row */}
@@ -237,11 +184,7 @@ export function EvaluationsClientView({
                 Submit your workspace&apos;s first candidate evaluation scorecard to begin recording technical hiring decisions.
               </p>
             </div>
-            {isAuthorizedToManage && (
-              <Button variant="ai" size="md" onClick={openModal} className="mt-2">
-                <Plus className="h-4 w-4 mr-1.5" /> Submit First Evaluation
-              </Button>
-            )}
+
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-[#242932] bg-[#12151A]">
@@ -303,117 +246,7 @@ export function EvaluationsClientView({
         )}
       </Section>
 
-      {/* Submit Evaluation Modal Dialog */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-[#08090B]/80 backdrop-blur-xs transition-opacity"
-            onClick={() => setIsModalOpen(false)}
-          />
-          <div className="relative z-[1700] w-full max-w-lg rounded-2xl border border-[#39D9FF]/30 bg-[#12151A] p-6 shadow-2xl space-y-5 text-[#F5F7FA]">
-            <div className="flex items-center justify-between border-b border-[#242932] pb-4">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-[#39D9FF]" />
-                <h3 className="text-lg font-bold font-display text-[#F5F7FA]">Submit Candidate Evaluation</h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 text-[#A7AFBC] hover:text-[#F5F7FA]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
 
-            {modalErrorMsg && (
-              <div className="p-3 rounded-lg bg-[#FF5C67]/10 border border-[#FF5C67]/30 text-xs text-[#FF5C67] flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{modalErrorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitEvaluation} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#A7AFBC]">Select Application Record *</label>
-                {applications.length === 0 ? (
-                  <p className="text-xs text-[#FF5C67]">
-                    No application records found. Submit an application first.
-                  </p>
-                ) : (
-                  <Select
-                    value={selectedAppId}
-                    onChange={(e) => setSelectedAppId(e.target.value)}
-                    options={applications.map((a) => ({
-                      value: a.id,
-                      label: `${a.candidateName} — ${a.jobTitle}`,
-                    }))}
-                  />
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Overall Score (0 - 100)</label>
-                  <Input
-                    type="number"
-                    value={overallScore}
-                    onChange={(e) => setOverallScore(Number(e.target.value))}
-                    min={0}
-                    max={100}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Recommendation</label>
-                  <Select
-                    value={recommendation}
-                    onChange={(e) => setRecommendation(e.target.value as FinalRecommendation)}
-                    options={[
-                      { value: "strong_hire", label: "Strong Hire" },
-                      { value: "hire", label: "Hire" },
-                      { value: "review", label: "Needs Review" },
-                      { value: "no_hire", label: "No Hire" },
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#A7AFBC]">Evaluation Notes / Feedback</label>
-                <Textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Technical strengths, areas of concern, or interviewer notes..."
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#242932]">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="ai"
-                  size="sm"
-                  disabled={isSubmitting || applications.length === 0}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-1.5" />
-                  )}
-                  Submit Scorecard
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </ApplicationShell>
   );
 }
