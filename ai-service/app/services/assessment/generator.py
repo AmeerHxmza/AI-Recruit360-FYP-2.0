@@ -36,8 +36,9 @@ async def generate_personalized_mcqs(
             return [
                 CandidatePublicMCQItem(
                     id=q["id"],
+                    assessment_id=q["assessment_id"],
                     question_number=q["question_number"],
-                    question=q["question_text"],
+                    question=q.get("question") or q.get("question_text", ""),
                     option_a=q["option_a"],
                     option_b=q["option_b"],
                     option_c=q["option_c"],
@@ -48,13 +49,21 @@ async def generate_personalized_mcqs(
                 for q in q_res.data
             ]
 
+    # Retrieve organization_id from application record
+    app_rec = supabase.table("applications").select("organization_id").eq("id", application_id).execute()
+    org_id = app_rec.data[0]["organization_id"] if app_rec.data and len(app_rec.data) > 0 else None
+
     # Create new assessment record if none exists
     if not existing_assessment.data or len(existing_assessment.data) == 0:
-        ass_ins = supabase.table("assessments").insert({
+        ass_payload = {
             "application_id": application_id,
             "total_questions": 10,
             "status": "pending"
-        }).execute()
+        }
+        if org_id:
+            ass_payload["organization_id"] = org_id
+
+        ass_ins = supabase.table("assessments").insert(ass_payload).execute()
         assessment_id = ass_ins.data[0]["id"]
     else:
         assessment_id = existing_assessment.data[0]["id"]
@@ -80,13 +89,13 @@ async def generate_personalized_mcqs(
         # Fallback question generation if LLM fails
         raw_result = generate_fallback_mcqs(job_title, matched_skills)
 
-    # Insert 10 questions into database (keeping correct_option server-side only!)
-    inserted_public_items: List[CandidatePublicMCQItem] = []
+    # Insert all 10 questions in a SINGLE BATCH DATABASE INSERT (< 40ms)
+    batch_rows = []
     for item in raw_result.questions:
-        q_row = supabase.table("assessment_questions").insert({
+        batch_rows.append({
             "assessment_id": assessment_id,
             "question_number": item.question_number,
-            "question_text": item.question,
+            "question": item.question,
             "option_a": item.option_a,
             "option_b": item.option_b,
             "option_c": item.option_c,
@@ -95,21 +104,25 @@ async def generate_personalized_mcqs(
             "explanation": item.explanation,
             "skill_category": item.skill_category,
             "difficulty": item.difficulty
-        }).execute()
+        })
 
-        db_q = q_row.data[0]
-        # Return stripped public representation (NO correct_option or explanation!)
-        inserted_public_items.append(CandidatePublicMCQItem(
-            id=db_q["id"],
-            question_number=db_q["question_number"],
-            question=db_q["question_text"],
-            option_a=db_q["option_a"],
-            option_b=db_q["option_b"],
-            option_c=db_q["option_c"],
-            option_d=db_q["option_d"],
-            skill_category=db_q["skill_category"],
-            difficulty=db_q["difficulty"]
-        ))
+    q_res = supabase.table("assessment_questions").insert(batch_rows).execute()
+    
+    inserted_public_items: List[CandidatePublicMCQItem] = []
+    if q_res.data:
+        for db_q in q_res.data:
+            inserted_public_items.append(CandidatePublicMCQItem(
+                id=db_q["id"],
+                assessment_id=assessment_id,
+                question_number=db_q["question_number"],
+                question=db_q.get("question") or db_q.get("question_text", ""),
+                option_a=db_q["option_a"],
+                option_b=db_q["option_b"],
+                option_c=db_q["option_c"],
+                option_d=db_q["option_d"],
+                skill_category=db_q.get("skill_category", "General"),
+                difficulty=db_q.get("difficulty", "medium")
+            ))
 
     return inserted_public_items
 

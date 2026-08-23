@@ -14,6 +14,16 @@ export async function initializeInterviewAction(applicationId: string): Promise<
   }
 }
 
+export async function getNextInterviewQuestionAction(interviewId: string): Promise<ActionResult<Record<string, unknown>>> {
+  try {
+    const data = await aiServiceClient.getNextInterviewQuestion(interviewId);
+    return { success: true, data: data as Record<string, unknown> };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to fetch next interview question.";
+    return { success: false, error: errorMsg };
+  }
+}
+
 export async function submitInterviewResponseAction(
   interviewId: string,
   questionId: string,

@@ -15,12 +15,20 @@ async def get_or_create_interview_session(application_id: str) -> dict:
     if res.data and len(res.data) > 0:
         return res.data[0]
 
+    # Retrieve organization_id from application record
+    app_rec = supabase.table("applications").select("organization_id").eq("id", application_id).execute()
+    org_id = app_rec.data[0]["organization_id"] if app_rec.data and len(app_rec.data) > 0 else None
+
     # Create new interview record
-    new_int = supabase.table("interviews").insert({
+    int_payload = {
         "application_id": application_id,
-        "interview_type": "technical_ai",
+        "interview_type": "ai_adaptive",
         "status": "pending"
-    }).execute()
+    }
+    if org_id:
+        int_payload["organization_id"] = org_id
+
+    new_int = supabase.table("interviews").insert(int_payload).execute()
     return new_int.data[0]
 
 async def generate_next_interview_question(interview_id: str) -> NextInterviewQuestionResponse:

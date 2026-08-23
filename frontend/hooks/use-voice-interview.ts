@@ -52,6 +52,14 @@ export function useVoiceInterview() {
 
         recognitionRef.current = recognition;
       }
+
+      // Pre-load Web Speech Synthesis Voices asynchronously
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.getVoices();
+        };
+      }
     }
   }, []);
 
@@ -98,7 +106,8 @@ export function useVoiceInterview() {
           v.name.includes("Zira") ||
           v.name.includes("Female") ||
           v.name.includes("Google US English") ||
-          (v.lang.startsWith("en") && v.name.toLowerCase().includes("female"))
+          (v.lang.startsWith("en") && v.name.toLowerCase().includes("female")) ||
+          v.lang.startsWith("en")
       );
 
       if (femaleVoice) {
@@ -109,6 +118,7 @@ export function useVoiceInterview() {
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
 
+      setIsSpeaking(true);
       window.speechSynthesis.speak(utterance);
     }
   }, []);

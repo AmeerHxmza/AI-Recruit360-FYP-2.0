@@ -1,14 +1,19 @@
 /**
- * Thin API Client for communicating with the Python FastAPI AI Service (http://localhost:8000/api/v1).
- * Contains ZERO AI orchestration, prompts, or model logic.
+ * API Client for communicating with the Python FastAPI AI Service (http://localhost:8000/api/v1).
+ * Features request timeouts, retry policies, and structured error handling.
  */
 
 const AI_SERVICE_BASE_URL = typeof window !== "undefined" 
   ? "/api/py" 
   : (process.env.AI_SERVICE_URL || "http://localhost:8000/api/v1");
 const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "recruit360_shared_backend_secret_2026";
+const DEFAULT_TIMEOUT_MS = 45000; // 45s maximum timeout for AI processing
 
-async function aiServiceFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function aiServiceFetch<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  retries = 2
+): Promise<T> {
   const url = `${AI_SERVICE_BASE_URL}${endpoint}`;
   const headers = {
     "Content-Type": "application/json",
@@ -16,17 +21,47 @@ async function aiServiceFetch<T>(endpoint: string, options: RequestInit = {}): P
     ...options.headers,
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`AI Service request failed [HTTP ${response.status}]: ${errorText}`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        // Do not retry 4xx user errors
+        if (response.status >= 400 && response.status < 500) {
+          throw new Error(`[HTTP ${response.status}] ${errorText}`);
+        }
+        throw new Error(`[HTTP ${response.status}] ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      
+      // If client abort or non-retryable 4xx error, throw immediately
+      if (lastError.name === "AbortError") {
+        throw new Error(`AI Service request timed out after ${DEFAULT_TIMEOUT_MS}ms.`);
+      }
+
+      if (attempt < retries) {
+        // Exponential backoff: 300ms, 600ms
+        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 300));
+      }
+    }
   }
 
-  return response.json();
+  throw lastError || new Error("Failed to communicate with AI Engine after retries.");
 }
 
 export interface PythonScreeningResult {
@@ -47,6 +82,7 @@ export interface PythonScreeningResult {
 
 export interface PythonMCQItem {
   id: string;
+  assessment_id?: string;
   question_number: number;
   question: string;
   option_a: string;
@@ -136,6 +172,29 @@ export const aiServiceClient = {
     return aiServiceFetch<{ interview_id: string; total_questions: number; initial_questions: Array<Record<string, unknown>> }>("/interviews/initialize", {
       method: "POST",
       body: JSON.stringify({ application_id: applicationId }),
+    });
+  },
+
+  /**
+   * Fetches or generates the next adaptive interview question via Python FastAPI engine
+   */
+  getNextInterviewQuestion: async (interviewId: string) => {
+    return aiServiceFetch<{
+      interview_id: string;
+      completed: boolean;
+      current_question?: {
+        question_number: number;
+        question_text: string;
+        question_type: string;
+        skill_category: string;
+        source: string;
+        is_follow_up: boolean;
+      } | null;
+      questions_answered: number;
+      total_questions: number;
+    }>("/interviews/next-question", {
+      method: "POST",
+      body: JSON.stringify({ interview_id: interviewId }),
     });
   },
 

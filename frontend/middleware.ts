@@ -8,6 +8,36 @@ export async function middleware(request: NextRequest) {
     },
   });
 
+  const pathname = request.nextUrl.pathname;
+
+  const protectedRoutes = [
+    "/dashboard",
+    "/jobs",
+    "/candidates",
+    "/applications",
+    "/interviews",
+    "/evaluations",
+    "/analytics",
+    "/ai-activity",
+    "/settings",
+  ];
+
+  const isProtectedRoute = protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  const isAuthRoute =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password";
+
+  const isOnboardingRoute = pathname === "/onboarding/organization" || pathname.startsWith("/onboarding/");
+
+  // OPTIMIZATION: If request is for a public route (e.g., /apply/..., /, static assets, api), skip Supabase Auth network call
+  if (!isProtectedRoute && !isAuthRoute && !isOnboardingRoute) {
+    return response;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -37,31 +67,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
-
-  const protectedRoutes = [
-    "/dashboard",
-    "/jobs",
-    "/candidates",
-    "/applications",
-    "/interviews",
-    "/evaluations",
-    "/analytics",
-    "/ai-activity",
-    "/settings",
-  ];
-
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  const isAuthRoute =
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/forgot-password";
-
-  const isOnboardingRoute = pathname === "/onboarding/organization" || pathname.startsWith("/onboarding/");
 
   // 1. Unauthenticated user trying to access protected route or onboarding route -> Redirect to /login
   if ((isProtectedRoute || isOnboardingRoute) && !user) {

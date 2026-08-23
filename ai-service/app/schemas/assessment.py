@@ -18,6 +18,7 @@ class GeneratedAssessmentPayload(BaseModel):
 
 class CandidatePublicMCQItem(BaseModel):
     id: str
+    assessment_id: str
     question_number: int
     question: str
     option_a: str

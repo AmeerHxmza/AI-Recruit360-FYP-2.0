@@ -50,9 +50,11 @@ async def evaluate_interview_response(
         "interview_id": interview_id,
         "question_id": question_id,
         "response_text": response_text,
-        "audio_url": None,
-        "score": eval_result.overall_score,
-        "feedback": eval_result.feedback
+        "transcript": response_text,
+        "technical_score": eval_result.technical_score,
+        "communication_score": eval_result.communication_score,
+        "relevance_score": eval_result.relevance_score,
+        "ai_feedback": eval_result.feedback
     }).execute()
 
     return eval_result

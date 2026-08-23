@@ -40,7 +40,7 @@ export async function submitPublicApplicationAction(input: {
   organization_id: string;
   full_name: string;
   email: string;
-  phone?: string;
+  phone: string;
   location?: string;
   linkedin_url?: string;
   portfolio_url?: string;

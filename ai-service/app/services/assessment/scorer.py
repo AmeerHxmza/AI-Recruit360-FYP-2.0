@@ -77,9 +77,9 @@ async def finalize_assessment_session(assessment_id: str) -> AssessmentFinalResu
         "completed_at": now_iso
     }).eq("id", assessment_id).execute()
 
-    # Update application stage: interview if passed, else assessment_failed / rejected
-    next_stage = "interview" if passed else "rejected"
-    supabase.table("applications").update({"stage": next_stage}).eq("id", application_id).execute()
+    # Update application status: interview if passed, else assessment_failed
+    next_stage = "interview" if passed else "assessment_failed"
+    supabase.table("applications").update({"status": next_stage}).eq("id", application_id).execute()
 
     return AssessmentFinalResult(
         assessment_id=assessment_id,

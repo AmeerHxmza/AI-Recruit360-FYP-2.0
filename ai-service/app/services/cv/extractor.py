@@ -1,7 +1,5 @@
 import io
 import logging
-from pypdf import PdfReader
-from docx import Document
 from app.core.exceptions import DocumentExtractionError
 
 logger = logging.getLogger("ai_service.services.cv.extractor")
@@ -19,24 +17,43 @@ def extract_text_from_bytes(file_bytes: bytes, file_name: str, mime_type: str | 
         except UnicodeDecodeError:
             return file_bytes.decode("latin-1", errors="ignore")
     else:
-        # Fallback to UTF-8 decoding
         try:
             return file_bytes.decode("utf-8")
         except Exception:
             raise DocumentExtractionError(f"Unsupported document format for '{file_name}'. Standard PDF, DOCX, or TXT required.")
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
+    """High-performance PDF text extraction using PyMuPDF (fitz) with fallback to pypdf."""
+    # 1. Try PyMuPDF (fitz) - 100x faster, layout & multi-column aware
     try:
+        import fitz
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        pages_text = []
+        for page in doc:
+            text = page.get_text("text")
+            if text and text.strip():
+                pages_text.append(text.strip())
+        doc.close()
+        
+        extracted = "\n".join(pages_text).strip()
+        if extracted:
+            return extracted
+    except Exception as fitz_err:
+        logger.warning(f"PyMuPDF extraction failed, trying pypdf fallback: {str(fitz_err)}")
+
+    # 2. Fallback: pypdf
+    try:
+        from pypdf import PdfReader
         reader = PdfReader(io.BytesIO(file_bytes))
         pages_text = []
-        for i, page in enumerate(reader.pages):
+        for page in reader.pages:
             text = page.extract_text()
             if text:
                 pages_text.append(text)
         
         extracted = "\n".join(pages_text).strip()
         if not extracted:
-            raise DocumentExtractionError("PDF file returned empty text. OCR may be required if PDF is image-only.")
+            raise DocumentExtractionError("PDF file returned empty text. Image-only PDFs require OCR.")
         return extracted
     except Exception as e:
         logger.error(f"PDF extraction error: {str(e)}")
@@ -44,6 +61,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 
 def extract_text_from_docx(file_bytes: bytes) -> str:
     try:
+        from docx import Document
         doc = Document(io.BytesIO(file_bytes))
         paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
         extracted = "\n".join(paragraphs).strip()

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrganization } from "@/lib/auth/session";
 import { DatabaseError } from "@/lib/utils/errors";
 import { AiActivityStatus, Database, Json } from "@/types/database.types";
+import { measurePerformance } from "@/lib/performance/logger";
 
 export type AiActivityLog = Database["public"]["Tables"]["ai_activity_logs"]["Row"];
 
@@ -9,18 +10,22 @@ export async function getAiActivityLogsForOrg(orgId: string, limit = 50): Promis
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("ai_activity_logs")
-    .select("*")
-    .eq("organization_id", orgId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const { result } = await measurePerformance("DB Query (getAiActivityLogsForOrg)", async () => {
+    const { data, error } = await supabase
+      .from("ai_activity_logs")
+      .select("id, organization_id, user_id, application_id, job_id, event_type, status, metadata, created_at")
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
-  if (error) {
-    throw new DatabaseError("Failed to retrieve AI activity event stream.");
-  }
+    if (error) {
+      throw new DatabaseError("Failed to retrieve AI activity event stream.");
+    }
 
-  return data || [];
+    return (data || []) as AiActivityLog[];
+  });
+
+  return result;
 }
 
 export async function recordAiActivityLog(

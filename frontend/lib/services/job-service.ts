@@ -4,6 +4,7 @@ import { canManageJobs } from "@/lib/auth/permissions";
 import { ForbiddenError, NotFoundError, DatabaseError } from "@/lib/utils/errors";
 import { validateJobInput } from "@/lib/utils/validation";
 import { Database, EmploymentType, JobStatus, WorkplaceType } from "@/types/database.types";
+import { measurePerformance } from "@/lib/performance/logger";
 
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 
@@ -40,36 +41,40 @@ export async function getJobsForOrg(orgId: string, filters?: JobFilters): Promis
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
 
-  let query = supabase
-    .from("jobs")
-    .select("*")
-    .eq("organization_id", orgId)
-    .order("created_at", { ascending: false });
+  const { result } = await measurePerformance("DB Query (getJobsForOrg)", async () => {
+    let query = supabase
+      .from("jobs")
+      .select("id, organization_id, title, slug, department, location, employment_type, workplace_type, status, published_at, created_at, updated_at")
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: false });
 
-  if (filters?.status && filters.status !== "all") {
-    query = query.eq("status", filters.status);
-  }
+    if (filters?.status && filters.status !== "all") {
+      query = query.eq("status", filters.status);
+    }
 
-  if (filters?.employment_type && filters.employment_type !== "all") {
-    query = query.eq("employment_type", filters.employment_type);
-  }
+    if (filters?.employment_type && filters.employment_type !== "all") {
+      query = query.eq("employment_type", filters.employment_type);
+    }
 
-  if (filters?.workplace_type && filters.workplace_type !== "all") {
-    query = query.eq("workplace_type", filters.workplace_type);
-  }
+    if (filters?.workplace_type && filters.workplace_type !== "all") {
+      query = query.eq("workplace_type", filters.workplace_type);
+    }
 
-  if (filters?.search && filters.search.trim().length > 0) {
-    const term = filters.search.trim();
-    query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
-  }
+    if (filters?.search && filters.search.trim().length > 0) {
+      const term = filters.search.trim();
+      query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
+    }
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  if (error) {
-    throw new DatabaseError("Failed to retrieve jobs for organization.");
-  }
+    if (error) {
+      throw new DatabaseError("Failed to retrieve jobs for organization.");
+    }
 
-  return data || [];
+    return (data || []) as Job[];
+  });
+
+  return result;
 }
 
 export async function getJobById(orgId: string, jobId: string): Promise<Job> {
@@ -78,7 +83,7 @@ export async function getJobById(orgId: string, jobId: string): Promise<Job> {
 
   const { data, error } = await supabase
     .from("jobs")
-    .select("*")
+    .select("id, organization_id, created_by, title, slug, department, location, employment_type, workplace_type, description, requirements, responsibilities, qualifications, status, published_at, closed_at, created_at, updated_at")
     .eq("organization_id", orgId)
     .eq("id", jobId)
     .single();
@@ -87,7 +92,7 @@ export async function getJobById(orgId: string, jobId: string): Promise<Job> {
     throw new NotFoundError("Job position not found.");
   }
 
-  return data;
+  return data as Job;
 }
 
 function generateSlug(title: string): string {
@@ -103,39 +108,45 @@ function generateSlug(title: string): string {
 export async function getPublicJobBySlug(slug: string): Promise<Job | null> {
   const supabase = await createClient();
 
-  // 1. Try matching by slug
-  const { data: bySlug } = await supabase
-    .from("jobs")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (bySlug) {
-    return bySlug;
-  }
-
-  // 2. If slug parameter is a valid UUID string, try matching by id
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
-  if (isUuid) {
-    const { data: byId } = await supabase
+  const { result } = await measurePerformance("DB Query (getPublicJobBySlug)", async () => {
+    // 1. Optimized select for public application route
+    const { data: bySlug } = await supabase
       .from("jobs")
-      .select("*")
-      .eq("id", slug)
+      .select("id, organization_id, title, slug, department, location, employment_type, workplace_type, description, requirements, responsibilities, qualifications, status")
+      .eq("slug", slug)
+      .eq("status", "active")
       .maybeSingle();
 
-    if (byId) {
-      return byId;
+    if (bySlug) {
+      return bySlug as Job;
     }
-  }
 
-  // 3. Fallback: Retrieve latest active job in database for testing/previews
-  const { data: fallbackJobs } = await supabase
-    .from("jobs")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1);
+    // 2. UUID direct lookup
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+    if (isUuid) {
+      const { data: byId } = await supabase
+        .from("jobs")
+        .select("id, organization_id, title, slug, department, location, employment_type, workplace_type, description, requirements, responsibilities, qualifications, status")
+        .eq("id", slug)
+        .maybeSingle();
 
-  return fallbackJobs && fallbackJobs.length > 0 ? fallbackJobs[0] : null;
+      if (byId) {
+        return byId as Job;
+      }
+    }
+
+    // 3. Fallback preview
+    const { data: fallbackJobs } = await supabase
+      .from("jobs")
+      .select("id, organization_id, title, slug, department, location, employment_type, workplace_type, description, requirements, responsibilities, qualifications, status")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    return fallbackJobs && fallbackJobs.length > 0 ? (fallbackJobs[0] as Job) : null;
+  });
+
+  return result;
 }
 
 export async function createJob(
@@ -192,7 +203,6 @@ export async function updateJob(
     throw new ForbiddenError("You do not have permission to edit job positions.");
   }
 
-  // Ensure job exists and belongs to current org
   await getJobById(orgId, jobId);
 
   const updatePayload: Database["public"]["Tables"]["jobs"]["Update"] = {};

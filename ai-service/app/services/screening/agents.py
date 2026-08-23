@@ -7,9 +7,16 @@ from app.core.config import settings
 
 logger = logging.getLogger("ai_service.services.screening.agents")
 
-# Agent 1: Skills Matching Agent (Strict Word Boundary Match)
+# Agent 1: Skills Matching Agent (Word Boundary & Full Text Match)
 def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, Any]:
     cv_skills_lower = [s.lower().strip() for s in cv.skills]
+
+    # Build comprehensive text blob from CV for fallback matching
+    cv_full_text = " ".join([
+        cv.summary or "",
+        " ".join(cv.skills),
+        " ".join([f"{exp.title} {exp.company} {' '.join(exp.highlights)}" for exp in cv.experience])
+    ]).lower()
     
     crit_reqs = [s.name for s in job.critical_skills]
     imp_reqs = [s.name for s in job.important_skills]
@@ -26,16 +33,21 @@ def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, An
         req_lower = req.lower().strip()
         is_matched = False
 
+        # 1. Check extracted skills list
         for cv_s in cv_skills_lower:
             if not cv_s:
                 continue
-            # Exact match or strict word-boundary regex match
             if req_lower == cv_s:
                 is_matched = True
                 break
             elif len(cv_s) >= 3 and (re.search(rf'\b{re.escape(cv_s)}\b', req_lower) or re.search(rf'\b{re.escape(req_lower)}\b', cv_s)):
                 is_matched = True
                 break
+
+        # 2. Fallback: Search in full CV text blob
+        if not is_matched and len(req_lower) >= 2:
+            if re.search(rf'\b{re.escape(req_lower)}\b', cv_full_text):
+                is_matched = True
 
         if is_matched:
             matched.append(req)

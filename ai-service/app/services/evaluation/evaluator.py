@@ -23,11 +23,22 @@ async def generate_final_candidate_evaluation(application_id: str) -> FinalCandi
     int_score = 80.0
     if int_res.data and len(int_res.data) > 0:
         interview_id = int_res.data[0]["id"]
-        resp_res = supabase.table("interview_responses").select("score").eq("interview_id", interview_id).execute()
+        resp_res = supabase.table("interview_responses").select("technical_score, communication_score, relevance_score").eq("interview_id", interview_id).execute()
         if resp_res.data and len(resp_res.data) > 0:
-            scores = [r["score"] for r in resp_res.data if r.get("score") is not None]
+            scores = []
+            for r in resp_res.data:
+                ts = r.get("technical_score")
+                cs = r.get("communication_score")
+                rs = r.get("relevance_score")
+                item_scores = [s for s in (ts, cs, rs) if s is not None]
+                if item_scores:
+                    scores.append(sum(item_scores) / len(item_scores))
             if scores:
                 int_score = sum(scores) / len(scores)
+
+    # Retrieve organization_id from application record
+    app_rec = supabase.table("applications").select("organization_id").eq("id", application_id).execute()
+    org_id = app_rec.data[0]["organization_id"] if app_rec.data and len(app_rec.data) > 0 else None
 
     # Deterministic Weighted Scoring Formula:
     # CV Match = 40%, MCQ Score = 25%, Interview Score = 35%
@@ -91,6 +102,8 @@ async def generate_final_candidate_evaluation(application_id: str) -> FinalCandi
         "evidence": evidence_items,
         "ai_summary": summary
     }
+    if org_id:
+        eval_payload["organization_id"] = org_id
 
     ex = supabase.table("final_evaluations").select("id").eq("application_id", application_id).execute()
     if ex.data and len(ex.data) > 0:
@@ -98,7 +111,7 @@ async def generate_final_candidate_evaluation(application_id: str) -> FinalCandi
     else:
         supabase.table("final_evaluations").insert(eval_payload).execute()
 
-    # Update application stage to evaluated
-    supabase.table("applications").update({"stage": "evaluated"}).eq("id", application_id).execute()
+    # Update application status to evaluation
+    supabase.table("applications").update({"status": "evaluation"}).eq("id", application_id).execute()
 
     return result

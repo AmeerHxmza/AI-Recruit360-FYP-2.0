@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrganization, getCurrentRole } from "@/lib/auth/session";
 import { canManageApplications } from "@/lib/auth/permissions";
-import { ForbiddenError, NotFoundError, DatabaseError } from "@/lib/utils/errors";
+import { ForbiddenError, NotFoundError, DatabaseError, ValidationError } from "@/lib/utils/errors";
 import { ApplicationStatus, Database } from "@/types/database.types";
+import { measurePerformance } from "@/lib/performance/logger";
 
 export type Application = Database["public"]["Tables"]["applications"]["Row"];
 
@@ -45,7 +46,7 @@ export async function getApplicationsForOrg(orgId: string, jobId?: string): Prom
 
   let query = supabase
     .from("applications")
-    .select("*")
+    .select("id, organization_id, job_id, candidate_id, status, applied_at, created_at, updated_at")
     .eq("organization_id", orgId)
     .order("applied_at", { ascending: false });
 
@@ -59,7 +60,7 @@ export async function getApplicationsForOrg(orgId: string, jobId?: string): Prom
     throw new DatabaseError("Failed to retrieve recruitment applications.");
   }
 
-  return data || [];
+  return (data || []) as Application[];
 }
 
 export async function getApplicationsForOrgWithDetails(
@@ -69,68 +70,79 @@ export async function getApplicationsForOrgWithDetails(
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
 
-  let query = supabase
-    .from("applications")
-    .select(`
-      *,
-      candidates (
-        full_name,
-        email
-      ),
-      jobs (
-        title,
-        department
-      )
-    `)
-    .eq("organization_id", orgId)
-    .order("applied_at", { ascending: false });
+  const { result } = await measurePerformance("DB Query (getApplicationsForOrgWithDetails)", async () => {
+    let query = supabase
+      .from("applications")
+      .select(`
+        id,
+        organization_id,
+        job_id,
+        candidate_id,
+        status,
+        applied_at,
+        created_at,
+        updated_at,
+        candidates (
+          full_name,
+          email
+        ),
+        jobs (
+          title,
+          department
+        )
+      `)
+      .eq("organization_id", orgId)
+      .order("applied_at", { ascending: false });
 
-  if (filters?.stage && filters.stage !== "All") {
-    query = query.eq("status", filters.stage.toLowerCase() as ApplicationStatus);
-  }
+    if (filters?.stage && filters.stage !== "All") {
+      query = query.eq("status", filters.stage.toLowerCase() as ApplicationStatus);
+    }
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  if (error || !data) {
-    return [];
-  }
+    if (error || !data) {
+      return [];
+    }
 
-  const typedData = data as unknown as ApplicationJoinQueryResult[];
+    const typedData = data as unknown as ApplicationJoinQueryResult[];
 
-  let results: ApplicationItemWithDetails[] = typedData.map((item) => ({
-    id: item.id,
-    organization_id: item.organization_id,
-    job_id: item.job_id,
-    candidate_id: item.candidate_id,
-    status: item.status,
-    applied_at: item.applied_at,
-    screening_started_at: item.screening_started_at,
-    screening_completed_at: item.screening_completed_at,
-    assessment_started_at: item.assessment_started_at,
-    assessment_completed_at: item.assessment_completed_at,
-    interview_started_at: item.interview_started_at,
-    interview_completed_at: item.interview_completed_at,
-    finalized_at: item.finalized_at,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    candidateName: item.candidates?.full_name || "Applicant",
-    candidateEmail: item.candidates?.email || "candidate@example.com",
-    jobTitle: item.jobs?.title || "Job Position",
-    jobDepartment: item.jobs?.department || "General",
-  }));
+    let results: ApplicationItemWithDetails[] = typedData.map((item) => ({
+      id: item.id,
+      organization_id: item.organization_id,
+      job_id: item.job_id,
+      candidate_id: item.candidate_id,
+      status: item.status,
+      applied_at: item.applied_at,
+      screening_started_at: item.screening_started_at,
+      screening_completed_at: item.screening_completed_at,
+      assessment_started_at: item.assessment_started_at,
+      assessment_completed_at: item.assessment_completed_at,
+      interview_started_at: item.interview_started_at,
+      interview_completed_at: item.interview_completed_at,
+      finalized_at: item.finalized_at,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      candidateName: item.candidates?.full_name || "Applicant",
+      candidateEmail: item.candidates?.email || "candidate@example.com",
+      jobTitle: item.jobs?.title || "Job Position",
+      jobDepartment: item.jobs?.department || "General",
+    }));
 
-  if (filters?.search && filters.search.trim().length > 0) {
-    const term = filters.search.trim().toLowerCase();
-    results = results.filter(
-      (app) =>
-        app.candidateName.toLowerCase().includes(term) ||
-        app.candidateEmail.toLowerCase().includes(term) ||
-        app.jobTitle.toLowerCase().includes(term) ||
-        app.jobDepartment.toLowerCase().includes(term)
-    );
-  }
+    if (filters?.search && filters.search.trim().length > 0) {
+      const term = filters.search.trim().toLowerCase();
+      results = results.filter(
+        (app) =>
+          app.candidateName.toLowerCase().includes(term) ||
+          app.candidateEmail.toLowerCase().includes(term) ||
+          app.jobTitle.toLowerCase().includes(term) ||
+          app.jobDepartment.toLowerCase().includes(term)
+      );
+    }
 
-  return results;
+    return results;
+  });
+
+  return result;
 }
 
 export async function getApplicationById(orgId: string, applicationId: string): Promise<Application> {
@@ -139,7 +151,7 @@ export async function getApplicationById(orgId: string, applicationId: string): 
 
   const { data, error } = await supabase
     .from("applications")
-    .select("*")
+    .select("id, organization_id, job_id, candidate_id, status, applied_at, created_at, updated_at")
     .eq("organization_id", orgId)
     .eq("id", applicationId)
     .single();
@@ -148,7 +160,7 @@ export async function getApplicationById(orgId: string, applicationId: string): 
     throw new NotFoundError("Application record not found.");
   }
 
-  return data;
+  return data as Application;
 }
 
 export async function submitPublicCandidateApplication(input: {
@@ -156,71 +168,108 @@ export async function submitPublicCandidateApplication(input: {
   organization_id: string;
   full_name: string;
   email: string;
-  phone?: string;
+  phone: string;
   location?: string;
   linkedin_url?: string;
   portfolio_url?: string;
   cv_text?: string;
 }): Promise<{ candidate_id: string; application_id: string }> {
+  // 1. Mandatory Phone Validation
+  if (!input.phone || input.phone.trim().length === 0) {
+    throw new ValidationError("Mobile phone number is required to submit your application.");
+  }
+
   const supabase = await createClient();
+  const emailLower = input.email.trim().toLowerCase();
+  const phoneTrimmed = input.phone.trim();
 
-  // 1. Insert or reuse candidate record
-  const { data: candData, error: candError } = await supabase
-    .from("candidates")
-    .insert({
-      organization_id: input.organization_id,
-      full_name: input.full_name.trim(),
-      email: input.email.trim().toLowerCase(),
-      phone: input.phone?.trim() || null,
-      location: input.location?.trim() || null,
-      linkedin_url: input.linkedin_url?.trim() || null,
-      portfolio_url: input.portfolio_url?.trim() || null,
-    })
-    .select("id")
-    .single();
+  const { result } = await measurePerformance("Submit Public Candidate Application", async () => {
+    // 2. Duplicate Check: Search existing candidates by email or phone
+    const { data: existingCands } = await supabase
+      .from("candidates")
+      .select("id, email, phone")
+      .eq("organization_id", input.organization_id)
+      .or(`email.eq.${emailLower},phone.eq.${phoneTrimmed}`);
 
-  if (candError || !candData) {
-    throw new DatabaseError(candError?.message || "Failed to create candidate record.");
-  }
+    let candidateId: string | null = null;
 
-  const candidateId = candData.id;
+    if (existingCands && existingCands.length > 0) {
+      candidateId = existingCands[0].id;
 
-  // 2. Insert application record
-  const { data: appData, error: appError } = await supabase
-    .from("applications")
-    .insert({
-      organization_id: input.organization_id,
-      job_id: input.job_id,
-      candidate_id: candidateId,
-      status: "applied",
-    })
-    .select("id")
-    .single();
+      // Duplicate Application Check for the exact same job position
+      const candIds = existingCands.map((c) => c.id);
+      const { data: existingApp } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("job_id", input.job_id)
+        .in("candidate_id", candIds)
+        .maybeSingle();
 
-  if (appError || !appData) {
-    throw new DatabaseError(appError?.message || "Failed to submit job application.");
-  }
+      if (existingApp) {
+        throw new DatabaseError("You have already submitted an application for this job position using this email or mobile number.");
+      }
+    } else {
+      // Create new candidate record
+      const { data: newCand, error: candError } = await supabase
+        .from("candidates")
+        .insert({
+          organization_id: input.organization_id,
+          full_name: input.full_name.trim(),
+          email: emailLower,
+          phone: phoneTrimmed,
+          location: input.location?.trim() || null,
+          linkedin_url: input.linkedin_url?.trim() || null,
+          portfolio_url: input.portfolio_url?.trim() || null,
+        })
+        .select("id")
+        .single();
 
-  const applicationId = appData.id;
+      if (candError || !newCand) {
+        throw new DatabaseError(candError?.message || "Failed to create candidate profile.");
+      }
 
-  // 3. Save candidate document if text provided
-  if (input.cv_text && input.cv_text.trim().length > 0) {
-    const storagePath = `${input.organization_id}/${applicationId}/${candidateId}/resume.txt`;
-    await supabase.from("candidate_documents").insert({
-      organization_id: input.organization_id,
-      candidate_id: candidateId,
-      application_id: applicationId,
-      document_type: "resume",
-      storage_path: storagePath,
-      original_filename: "resume.txt",
-      mime_type: "text/plain",
-      file_size: Buffer.byteLength(input.cv_text, "utf-8"),
-      extracted_text: input.cv_text.trim(),
-      extraction_status: "completed",
-    });
-  }
+      candidateId = newCand.id;
+    }
 
-  return { candidate_id: candidateId, application_id: applicationId };
+    // 3. Create initial application record
+    const { data: appData, error: appError } = await supabase
+      .from("applications")
+      .insert({
+        organization_id: input.organization_id,
+        job_id: input.job_id,
+        candidate_id: candidateId,
+        status: "applied",
+      })
+      .select("id")
+      .single();
+
+    if (appError || !appData) {
+      throw new DatabaseError(appError?.message || "Failed to submit job application.");
+    }
+
+    const applicationId = appData.id;
+
+    // 4. Save candidate document if text provided
+    if (input.cv_text && input.cv_text.trim().length > 0) {
+      const storagePath = `${input.organization_id}/${applicationId}/${candidateId}/resume.txt`;
+      await supabase.from("candidate_documents").insert({
+        organization_id: input.organization_id,
+        candidate_id: candidateId,
+        application_id: applicationId,
+        document_type: "resume",
+        storage_path: storagePath,
+        original_filename: "resume.txt",
+        mime_type: "text/plain",
+        file_size: Buffer.byteLength(input.cv_text, "utf-8"),
+        extracted_text: input.cv_text.trim(),
+        extraction_status: "completed",
+      });
+    }
+
+    return { candidate_id: candidateId, application_id: applicationId };
+  });
+
+  return result;
 }
 
 export async function createApplication(

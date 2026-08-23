@@ -818,6 +818,10 @@ export type Database = {
         Args: { _name: string; _slug: string };
         Returns: Database["public"]["Tables"]["organizations"]["Row"];
       };
+      get_dashboard_summary: {
+        Args: { _org_id: string };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +17,7 @@ export interface OrganizationContext {
   role: OrganizationRole;
 }
 
-export async function getCurrentUser(): Promise<User> {
+export const getCurrentUser = cache(async (): Promise<User> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,20 +29,19 @@ export async function getCurrentUser(): Promise<User> {
   }
 
   return user;
-}
+});
 
-export async function getCurrentProfile(): Promise<ProfileRow> {
+export const getCurrentProfile = cache(async (): Promise<ProfileRow> => {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, full_name, avatar_url, job_title, created_at, updated_at")
     .eq("id", user.id)
     .single();
 
   if (error || !profile) {
-    // Graceful fallback if profile trigger has not fired yet
     return {
       id: user.id,
       full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Recruiter",
@@ -53,9 +53,9 @@ export async function getCurrentProfile(): Promise<ProfileRow> {
   }
 
   return profile;
-}
+});
 
-export async function getUserOrganizations(): Promise<OrganizationRow[]> {
+export const getUserOrganizations = cache(async (): Promise<OrganizationRow[]> => {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
@@ -71,7 +71,7 @@ export async function getUserOrganizations(): Promise<OrganizationRow[]> {
   const orgIds = memberOrgs.map((m) => m.organization_id);
   const { data: orgs, error: orgsError } = await supabase
     .from("organizations")
-    .select("*")
+    .select("id, name, slug, created_by, created_at, updated_at")
     .in("id", orgIds);
 
   if (orgsError || !orgs) {
@@ -79,11 +79,11 @@ export async function getUserOrganizations(): Promise<OrganizationRow[]> {
   }
 
   return orgs;
-}
+});
 
-export async function getOrganizationContext(
+export const getOrganizationContext = cache(async (
   requestedOrgId?: string
-): Promise<OrganizationContext | null> {
+): Promise<OrganizationContext | null> => {
   try {
     const user = await getCurrentUser();
     const supabase = await createClient();
@@ -101,14 +101,14 @@ export async function getOrganizationContext(
 
     let { data: memberships } = await supabase
       .from("organization_members")
-      .select("*")
+      .select("id, organization_id, user_id, role, created_at")
       .eq("user_id", user.id);
 
     if (!memberships || memberships.length === 0) {
       // Self-healing fallback: Check if user owns an existing organization
       const { data: ownedOrg } = await supabase
         .from("organizations")
-        .select("*")
+        .select("id, name, slug, created_by, created_at, updated_at")
         .eq("created_by", user.id)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -118,7 +118,7 @@ export async function getOrganizationContext(
         const { data: newMember } = await supabase
           .from("organization_members")
           .insert({ organization_id: ownedOrg.id, user_id: user.id, role: "owner" })
-          .select()
+          .select("id, organization_id, user_id, role, created_at")
           .single();
 
         if (newMember) {
@@ -141,7 +141,7 @@ export async function getOrganizationContext(
 
     const { data: org } = await supabase
       .from("organizations")
-      .select("*")
+      .select("id, name, slug, created_by, created_at, updated_at")
       .eq("id", activeMembership.organization_id)
       .single();
 
@@ -155,15 +155,15 @@ export async function getOrganizationContext(
       user,
       profile,
       organization: org,
-      membership: activeMembership,
-      role: activeMembership.role,
+      membership: activeMembership as OrganizationMemberRow,
+      role: activeMembership.role as OrganizationRole,
     };
   } catch {
     return null;
   }
-}
+});
 
-export async function getCurrentOrganization(requestedOrgId?: string): Promise<OrganizationRow> {
+export const getCurrentOrganization = cache(async (requestedOrgId?: string): Promise<OrganizationRow> => {
   const ctx = await getOrganizationContext(requestedOrgId);
 
   if (!ctx) {
@@ -173,27 +173,22 @@ export async function getCurrentOrganization(requestedOrgId?: string): Promise<O
   }
 
   return ctx.organization;
-}
+});
 
-export async function getCurrentMembership(orgId: string): Promise<OrganizationMemberRow> {
-  const user = await getCurrentUser();
-  const supabase = await createClient();
+export const getCurrentMembership = cache(async (orgId: string): Promise<OrganizationMemberRow> => {
+  const ctx = await getOrganizationContext(orgId);
 
-  const { data: membership, error } = await supabase
-    .from("organization_members")
-    .select("*")
-    .eq("organization_id", orgId)
-    .eq("user_id", user.id)
-    .single();
-
-  if (error || !membership) {
+  if (!ctx || ctx.organization.id !== orgId) {
     throw new ForbiddenError("Access denied. Active organization membership required.");
   }
 
-  return membership;
-}
+  return ctx.membership;
+});
 
-export async function getCurrentRole(orgId: string): Promise<OrganizationRole> {
-  const membership = await getCurrentMembership(orgId);
-  return membership.role;
-}
+export const getCurrentRole = cache(async (orgId: string): Promise<OrganizationRole> => {
+  const ctx = await getOrganizationContext(orgId);
+  if (!ctx) {
+    throw new ForbiddenError("Access denied. Active organization membership required.");
+  }
+  return ctx.role;
+});

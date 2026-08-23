@@ -13,6 +13,8 @@ import { Select } from "@/components/ui/select";
 import { useAuth } from "@/providers/auth-provider";
 import { canManageJobs } from "@/lib/auth/permissions";
 import { getJobByIdAction, updateJobAction, updateJobStatusAction } from "@/app/actions/jobs";
+import { getApplicationsAction } from "@/app/actions/applications";
+import { exportJobCandidatesToCsv } from "@/lib/utils/export-csv";
 import { Job } from "@/lib/services/job-service";
 import { EmploymentType, JobStatus, WorkplaceType } from "@/types/database.types";
 import {
@@ -30,6 +32,7 @@ import {
   XCircle,
   X,
   Save,
+  Download,
 } from "lucide-react";
 
 export default function JobDetailPage() {
@@ -44,6 +47,21 @@ export default function JobDetailPage() {
   const [loading, setLoading] = React.useState<boolean>(true);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [statusUpdating, setStatusUpdating] = React.useState<boolean>(false);
+  const [exporting, setExporting] = React.useState<boolean>(false);
+
+  const handleExportSingleJobCsv = async () => {
+    if (!job) return;
+    setExporting(true);
+    const res = await getApplicationsAction();
+    if (res.success && res.data) {
+      // Filter candidates STRICTLY for this single specific job position only!
+      const singleJobApps = res.data.filter((app) => app.job_id === job.id);
+      exportJobCandidatesToCsv(job.title, singleJobApps);
+    } else {
+      alert("Failed to retrieve candidate records for export.");
+    }
+    setExporting(false);
+  };
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
@@ -230,6 +248,21 @@ export default function JobDetailPage() {
         actions={
           isAuthorizedToManage ? (
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={exporting}
+                onClick={handleExportSingleJobCsv}
+                className="border-[#39D9FF]/30 text-[#39D9FF] hover:bg-[#39D9FF]/10 text-xs"
+              >
+                {exporting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Download className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Export Shortlist (CSV)
+              </Button>
+
               <Button variant="secondary" size="sm" onClick={openEditModal}>
                 <Edit3 className="h-3.5 w-3.5 mr-1.5" /> Edit Details
               </Button>

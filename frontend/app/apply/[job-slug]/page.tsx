@@ -8,7 +8,7 @@ import { getPublicJobBySlugAction } from "@/app/actions/jobs";
 import { submitPublicApplicationAction } from "@/app/actions/applications";
 import { runCvScreeningAction } from "@/app/actions/ai-screening";
 import { getOrGenerateAssessmentAction, submitAssessmentAnswerAction, finalizeAssessmentAction } from "@/app/actions/assessment";
-import { initializeInterviewAction, submitInterviewResponseAction, finalizeEvaluationAction } from "@/app/actions/interview";
+import { initializeInterviewAction, getNextInterviewQuestionAction, submitInterviewResponseAction, finalizeEvaluationAction } from "@/app/actions/interview";
 import { Job } from "@/lib/services/job-service";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand/brand-logo";
@@ -31,90 +31,6 @@ import {
   XCircle,
 } from "lucide-react";
 
-// Sample 10 Technical Assessment MCQs for the Candidate Test
-const SAMPLE_MCQS = [
-  {
-    id: 1,
-    question: "Which data structure is optimal for O(1) average-time lookups by unique key?",
-    options: ["Binary Search Tree", "Hash Table", "LinkedList", "Stack"],
-    correct: 1,
-  },
-  {
-    id: 2,
-    question: "In Retrieval-Augmented Generation (RAG), what is the primary role of a Vector Database?",
-    options: [
-      "Executing raw SQL joins on relational schemas",
-      "Storing and querying high-dimensional dense embeddings semantically",
-      "Compiling TypeScript code to WebAssembly",
-      "Managing HTTP request throttling",
-    ],
-    correct: 1,
-  },
-  {
-    id: 3,
-    question: "What does the 'pure function' property mean in functional programming?",
-    options: [
-      "It mutates global state asynchronously",
-      "Given the same inputs, it always returns the same output with no side effects",
-      "It requires a database connection string",
-      "It can only return integer values",
-    ],
-    correct: 1,
-  },
-  {
-    id: 4,
-    question: "Which HTTP status code signifies a resource was successfully created?",
-    options: ["200 OK", "201 Created", "204 No Content", "302 Found"],
-    correct: 1,
-  },
-  {
-    id: 5,
-    question: "What is the primary benefit of vector index structures like HNSW (Hierarchical Navigable Small World)?",
-    options: [
-      "Compressing images to WebP format",
-      "Accelerating approximate nearest neighbor (ANN) similarity search",
-      "Encrypting password hashes",
-      "Validating JSON schema types",
-    ],
-    correct: 1,
-  },
-  {
-    id: 6,
-    question: "In Next.js App Router, which directive designates a component to execute on the browser client?",
-    options: ["'use server'", "'use client'", "'use browser'", "'use react'"],
-    correct: 1,
-  },
-  {
-    id: 7,
-    question: "What is the main objective of database normalization?",
-    options: [
-      "Increasing data redundancy for faster reads",
-      "Minimizing data redundancy and ensuring data dependency integrity",
-      "Converting tables into CSV files",
-      "Disabling foreign key constraints",
-    ],
-    correct: 1,
-  },
-  {
-    id: 8,
-    question: "Which metric evaluates LLM retrieval precision by checking relevant document rank?",
-    options: ["Mean Reciprocal Rank (MRR)", "Latency p99", "Throughput RPM", "CPU Core Usage"],
-    correct: 0,
-  },
-  {
-    id: 9,
-    question: "What mechanism handles race conditions when multiple worker threads update shared memory?",
-    options: ["Garbage Collection", "Mutex / Semaphore locks", "DNS Resolution", "CSS Flexbox"],
-    correct: 1,
-  },
-  {
-    id: 10,
-    question: "In Git, what command creates a new local branch and switches to it in one step?",
-    options: ["git branch new-branch", "git checkout -b new-branch", "git commit -m new-branch", "git push new-branch"],
-    correct: 1,
-  },
-];
-
 export default function PublicCandidateApplyPage() {
   const params = useParams();
   const jobSlugOrId = (params?.["job-slug"] as string) || "";
@@ -125,8 +41,13 @@ export default function PublicCandidateApplyPage() {
   const [loading, setLoading] = React.useState(true);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
 
-  // Application Flow Step: 1 = Form, 2 = Assessment, 3 = AI Interview, 4 = Success, 5 = Knockout Failed
-  const [flowStep, setFlowStep] = React.useState<1 | 2 | 3 | 4 | 5>(1);
+  // Application Flow Step: 1 = Form, 2 = Assessment, 3 = AI Interview, 4 = Success
+  const [flowStep, setFlowStep] = React.useState<1 | 2 | 3 | 4>(1);
+
+  // Active Database Record IDs
+  const [activeApplicationId, setActiveApplicationId] = React.useState("");
+  const [activeAssessmentId, setActiveAssessmentId] = React.useState("");
+  const [activeInterviewId, setActiveInterviewId] = React.useState("");
 
   // Candidate Form Inputs
   const [fullName, setFullName] = React.useState("");
@@ -139,21 +60,30 @@ export default function PublicCandidateApplyPage() {
   const [formSubmitting, setFormSubmitting] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
 
-  // Assessment Step State
+  // Assessment Step State (10 Python-Generated MCQs)
+  const [customMcqs, setCustomMcqs] = React.useState<
+    Array<{ id: string; assessment_id: string; question: string; options: string[] }>
+  >([]);
   const [currentMcqIndex, setCurrentMcqIndex] = React.useState(0);
   const [selectedMcqAnswers, setSelectedMcqAnswers] = React.useState<Record<number, number>>({});
   const [timeLeft, setTimeLeft] = React.useState(30);
   const [assessmentScore, setAssessmentScore] = React.useState(0);
 
   // AI Interview State
+  const [interviewQuestion, setInterviewQuestion] = React.useState<{
+    id: string;
+    question_text: string;
+    question_number: number;
+    total_questions: number;
+  } | null>(null);
   const [candidateResponse, setCandidateResponse] = React.useState("");
   const [interviewSubmitting, setInterviewSubmitting] = React.useState(false);
 
-  // Screening & AI Assessment State
+  // Screening & AI Processing State
   const [isScreening, setIsScreening] = React.useState(false);
   const [screeningMsg, setScreeningMsg] = React.useState("AI Multi-Agent CV Screening in progress...");
   const [isKnockedOut, setIsKnockedOut] = React.useState(false);
-  const [customMcqs, setCustomMcqs] = React.useState<Array<{ id: string; question: string; options: string[] }>>([]);
+
   // Fetch Job details on mount using public slug query
   React.useEffect(() => {
     if (!jobSlugOrId) return;
@@ -174,36 +104,71 @@ export default function PublicCandidateApplyPage() {
     };
   }, [jobSlugOrId]);
 
-  const activeMcqs = customMcqs.length > 0 ? customMcqs : SAMPLE_MCQS.map(m => ({ id: String(m.id), question: m.question, options: m.options }));
+  const activeMcqs = customMcqs;
 
   const handleNextQuestion = React.useCallback(async () => {
-    const activeList = customMcqs.length > 0 ? customMcqs : SAMPLE_MCQS.map(m => ({ id: String(m.id), question: m.question, options: m.options }));
-    const currentQ = activeList[currentMcqIndex];
+    if (customMcqs.length === 0) return;
+    const currentQ = customMcqs[currentMcqIndex];
     const selectedIdx = selectedMcqAnswers[currentMcqIndex] ?? 0;
     const selectedOptChar = String.fromCharCode(65 + selectedIdx);
+    const timeTaken = Math.max(1, 30 - timeLeft);
+    const assId = currentQ?.assessment_id || activeAssessmentId;
 
-    if (currentQ && currentQ.id) {
+    if (currentQ && currentQ.id && assId) {
       // Record answer via Python backend
-      submitAssessmentAnswerAction("assessment_active", currentQ.id, currentMcqIndex + 1, selectedOptChar, 30 - timeLeft).catch(() => {});
+      await submitAssessmentAnswerAction(
+        assId,
+        currentQ.id,
+        currentMcqIndex + 1,
+        selectedOptChar,
+        timeTaken
+      );
     }
 
-    if (currentMcqIndex < activeList.length - 1) {
+    if (currentMcqIndex < customMcqs.length - 1) {
       setCurrentMcqIndex((prev) => prev + 1);
       setTimeLeft(30);
     } else {
-      // Complete Assessment
-      finalizeAssessmentAction("assessment_active").catch(() => {});
-      let correctCount = 0;
-      SAMPLE_MCQS.forEach((mcq, idx) => {
-        if (selectedMcqAnswers[idx] === mcq.correct) {
-          correctCount += 1;
+      // Complete Assessment & Score Server-Side
+      if (assId) {
+        const finalRes = await finalizeAssessmentAction(assId);
+        if (finalRes.success && finalRes.data) {
+          const finalScore = Math.round(finalRes.data.score || 0);
+          setAssessmentScore(finalScore);
+          if (!finalRes.data.passed) {
+            setIsKnockedOut(true);
+            return;
+          }
         }
-      });
-      const finalScore = Math.round((correctCount / activeList.length) * 100);
-      setAssessmentScore(finalScore);
-      setFlowStep(3); // Advance to AI Interview Room
+      }
+
+      // Passed assessment -> Advance to AI Interview Room
+      setFlowStep(3);
+      if (activeApplicationId) {
+        const initRes = await initializeInterviewAction(activeApplicationId);
+        const initData = initRes.data as { interview_id?: string } | undefined;
+        if (initRes.success && initData?.interview_id) {
+          const intId = initData.interview_id;
+          setActiveInterviewId(intId);
+          const nextQRes = await getNextInterviewQuestionAction(intId);
+          if (nextQRes.success && nextQRes.data) {
+            const nqData = nextQRes.data as {
+              current_question?: { id?: string; question_text: string; question_number?: number };
+              total_questions?: number;
+            };
+            if (nqData.current_question) {
+              setInterviewQuestion({
+                id: nqData.current_question.id || "q1",
+                question_text: nqData.current_question.question_text,
+                question_number: nqData.current_question.question_number || 1,
+                total_questions: nqData.total_questions || 5,
+              });
+            }
+          }
+        }
+      }
     }
-  }, [currentMcqIndex, customMcqs, selectedMcqAnswers, timeLeft]);
+  }, [currentMcqIndex, customMcqs, selectedMcqAnswers, timeLeft, activeAssessmentId, activeApplicationId]);
 
   // 30-Second Countdown Timer for Assessment Step
   React.useEffect(() => {
@@ -232,6 +197,11 @@ export default function PublicCandidateApplyPage() {
       return;
     }
 
+    if (!phone.trim()) {
+      setFormError("Mobile phone number is mandatory to submit your application.");
+      return;
+    }
+
     if (!job) {
       setFormError("Job details not loaded.");
       return;
@@ -246,7 +216,7 @@ export default function PublicCandidateApplyPage() {
         organization_id: job.organization_id,
         full_name: fullName.trim(),
         email: email.trim(),
-        phone: phone.trim() || undefined,
+        phone: phone.trim(),
         location: location.trim() || undefined,
         linkedin_url: linkedIn.trim() || undefined,
         portfolio_url: portfolio.trim() || undefined,
@@ -272,20 +242,26 @@ export default function PublicCandidateApplyPage() {
         }
 
         // Step B: Load personalized 10 MCQs from Python FastAPI AI backend
-        setScreeningMsg("Generating personalized technical assessment MCQs...");
+        setScreeningMsg("Generating 10 personalized technical assessment MCQs...");
         const mcqRes = await getOrGenerateAssessmentAction(appId);
 
         if (mcqRes.success && mcqRes.data && mcqRes.data.length > 0) {
-          setCustomMcqs(mcqRes.data.map(q => ({
-            id: q.id,
-            question: q.question,
-            options: [q.option_a, q.option_b, q.option_c, q.option_d]
-          })));
+          const assId = mcqRes.data[0].assessment_id || "";
+          setActiveAssessmentId(assId);
+          setCustomMcqs(
+            mcqRes.data.map((q) => ({
+              id: q.id,
+              assessment_id: q.assessment_id || assId,
+              question: q.question,
+              options: [q.option_a, q.option_b, q.option_c, q.option_d],
+            }))
+          );
+          setFlowStep(2);
+          setCurrentMcqIndex(0);
+          setTimeLeft(30);
+        } else {
+          setFormError(mcqRes.error || "Failed to generate assessment questions.");
         }
-
-        setFlowStep(2);
-        setCurrentMcqIndex(0);
-        setTimeLeft(30);
       } else {
         setFormError(res.error || "Failed to submit job application.");
       }
@@ -297,33 +273,46 @@ export default function PublicCandidateApplyPage() {
     }
   };
 
-  // State to hold application ID
-  const [activeApplicationId, setActiveApplicationId] = React.useState("");
-
-  // Complete Interview & Finish Flow
+  // Complete Interview Question / Finalize AI Interview
   const handleCompleteInterview = async () => {
     setInterviewSubmitting(true);
     try {
-      if (activeApplicationId) {
-        // Step A: Initialize Interview session
-        const initRes = await initializeInterviewAction(activeApplicationId);
-        const initData = initRes.data as { interview_id?: string; initial_questions?: Array<{ id: string }> } | undefined;
-        if (initRes.success && initData?.interview_id && initData?.initial_questions?.[0]?.id) {
-          // Step B: Submit candidate response
-          await submitInterviewResponseAction(
-            initData.interview_id,
-            initData.initial_questions[0].id,
-            candidateResponse.trim() || "Candidate demonstrated relevant technical proficiency and clear communication during the interview."
-          );
+      if (activeInterviewId && interviewQuestion) {
+        const responseText = voiceInterview.transcript || candidateResponse || "Candidate answered technical interview question.";
+        await submitInterviewResponseAction(activeInterviewId, interviewQuestion.id, responseText);
+        setCandidateResponse("");
+        voiceInterview.setTranscript("");
+
+        // Fetch next adaptive question or check if session completed
+        const nextRes = await getNextInterviewQuestionAction(activeInterviewId);
+        if (nextRes.success && nextRes.data) {
+          const nqData = nextRes.data as {
+            completed?: boolean;
+            current_question?: { id?: string; question_text: string; question_number?: number };
+            total_questions?: number;
+          };
+          if (!nqData.completed && nqData.current_question) {
+            setInterviewQuestion({
+              id: nqData.current_question.id || "q_next",
+              question_text: nqData.current_question.question_text,
+              question_number: nqData.current_question.question_number || 1,
+              total_questions: nqData.total_questions || 5,
+            });
+            setInterviewSubmitting(false);
+            return;
+          }
         }
-        // Step C: Generate consolidated hiring evaluation scorecard
+      }
+
+      // Generate final evaluation scorecard upon interview completion
+      if (activeApplicationId) {
         await finalizeEvaluationAction(activeApplicationId);
       }
+      setFlowStep(4);
     } catch {
-      // Graceful fallback
+      setFlowStep(4);
     } finally {
       setInterviewSubmitting(false);
-      setFlowStep(4); // Application Complete Success
     }
   };
 
@@ -496,10 +485,13 @@ export default function PublicCandidateApplyPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-[#A7AFBC]">Phone Number</label>
+                      <label className="text-xs font-semibold text-[#A7AFBC]">
+                        Phone Number <span className="text-[#FF5C67]">*</span>
+                      </label>
                       <input
                         type="tel"
-                        placeholder="+1 (555) 000-0000"
+                        required
+                        placeholder="+92 300 1234567"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-[#0D0F12] border border-[#242932] text-sm text-[#F5F7FA] focus:outline-none focus:border-[#39D9FF]"
@@ -716,7 +708,7 @@ export default function PublicCandidateApplyPage() {
               {/* Simli AI Video Avatar Player */}
               <SimliAvatarPlayer
                 isSpeaking={voiceInterview.isSpeaking}
-                currentText="Walk me through a challenging production architecture problem you solved recently and how you verified its reliability."
+                currentText={interviewQuestion?.question_text || "Walk me through a challenging production architecture problem you solved recently."}
               />
 
               {/* Assessment Score Badge */}
@@ -729,12 +721,12 @@ export default function PublicCandidateApplyPage() {
               <div className="p-5 rounded-xl bg-[#0D0F12] border border-[#242932] space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono text-[#39D9FF] uppercase tracking-wider block font-bold">
-                    Current Question
+                    Question {interviewQuestion?.question_number || 1} of {interviewQuestion?.total_questions || 5}
                   </span>
                   <button
                     onClick={() =>
                       voiceInterview.speakText(
-                        "Walk me through a challenging production architecture problem you solved recently and how you verified its reliability."
+                        interviewQuestion?.question_text || "Describe a challenging engineering decision you made recently."
                       )
                     }
                     className="text-xs font-mono text-[#39D9FF] hover:underline flex items-center gap-1"
@@ -743,7 +735,7 @@ export default function PublicCandidateApplyPage() {
                   </button>
                 </div>
                 <p className="text-sm font-semibold text-[#F5F7FA] font-sans">
-                  &quot;Walk me through a challenging production architecture problem you solved recently and how you verified its reliability.&quot;
+                  &quot;{interviewQuestion?.question_text || "Describe a challenging engineering decision you made recently and how you verified its performance."}&quot;
                 </p>
               </div>
 
@@ -809,13 +801,24 @@ export default function PublicCandidateApplyPage() {
                   size="md"
                   disabled={interviewSubmitting}
                   onClick={handleCompleteInterview}
+                  className="shadow-[0_0_16px_rgba(57,217,255,0.25)]"
                 >
                   {interviewSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      Evaluating Answer...
+                    </>
+                  ) : interviewQuestion && (interviewQuestion.question_number || 1) < (interviewQuestion.total_questions || 5) ? (
+                    <>
+                      Submit Answer &amp; Next Question
+                      <ChevronRight className="h-4 w-4 ml-1.5" />
+                    </>
                   ) : (
-                    <Award className="h-4 w-4 mr-1.5" />
+                    <>
+                      <Award className="h-4 w-4 mr-1.5" />
+                      Complete &amp; Finalize AI Interview
+                    </>
                   )}
-                  Complete &amp; Submit AI Interview
                 </Button>
               </div>
             </div>

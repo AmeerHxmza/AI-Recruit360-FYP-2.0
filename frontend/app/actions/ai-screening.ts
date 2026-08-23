@@ -1,4 +1,3 @@
-"use me";
 "use server";
 
 import { aiServiceClient } from "@/lib/api/ai-service-client";
@@ -8,10 +7,10 @@ export async function runCvScreeningAction(applicationId: string) {
   try {
     const supabase = await createClient();
 
-    // Fetch application details
+    // Fetch application details with explicit column selection
     const { data: app, error } = await supabase
       .from("applications")
-      .select("*")
+      .select("id, organization_id, job_id, candidate_id")
       .eq("id", applicationId)
       .single();
 
@@ -19,9 +18,15 @@ export async function runCvScreeningAction(applicationId: string) {
       return { success: false, error: "Application record not found." };
     }
 
-    const { data: job } = await supabase.from("jobs").select("*").eq("id", app.job_id).single();
-    const { data: cand } = await supabase.from("candidates").select("*").eq("id", app.candidate_id).single();
-    const { data: docs } = await supabase.from("candidate_documents").select("*").eq("application_id", applicationId);
+    const [jobRes, candRes, docsRes] = await Promise.all([
+      supabase.from("jobs").select("id, title, description, requirements").eq("id", app.job_id).single(),
+      supabase.from("candidates").select("id, full_name, email").eq("id", app.candidate_id).single(),
+      supabase.from("candidate_documents").select("extracted_text").eq("application_id", applicationId).limit(1),
+    ]);
+
+    const job = jobRes.data;
+    const cand = candRes.data;
+    const docs = docsRes.data;
 
     if (!job || !cand) {
       return { success: false, error: "Associated job position or candidate profile not found." };

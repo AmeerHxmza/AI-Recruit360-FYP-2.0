@@ -4,6 +4,7 @@ import { canManageCandidates } from "@/lib/auth/permissions";
 import { ForbiddenError, NotFoundError, DatabaseError } from "@/lib/utils/errors";
 import { validateEmail } from "@/lib/utils/validation";
 import { Database, ApplicationStatus } from "@/types/database.types";
+import { measurePerformance } from "@/lib/performance/logger";
 
 export type Candidate = Database["public"]["Tables"]["candidates"]["Row"];
 export type CandidateDocument = Database["public"]["Tables"]["candidate_documents"]["Row"];
@@ -65,42 +66,46 @@ export async function getCandidatesForOrg(
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
 
-  const page = Math.max(1, filters?.page || 1);
-  const pageSize = Math.max(1, Math.min(100, filters?.pageSize || 20));
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const { result } = await measurePerformance("DB Query (getCandidatesForOrg)", async () => {
+    const page = Math.max(1, filters?.page || 1);
+    const pageSize = Math.max(1, Math.min(100, filters?.pageSize || 20));
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
 
-  let query = supabase
-    .from("candidates")
-    .select("*", { count: "exact" })
-    .eq("organization_id", orgId)
-    .order("created_at", { ascending: false });
+    let query = supabase
+      .from("candidates")
+      .select("id, organization_id, full_name, email, phone, location, linkedin_url, portfolio_url, created_at, updated_at", { count: "exact" })
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: false });
 
-  if (filters?.search && filters.search.trim().length > 0) {
-    const term = filters.search.trim();
-    query = query.or(
-      `full_name.ilike.%${term}%,email.ilike.%${term}%,headline.ilike.%${term}%,location.ilike.%${term}%`
-    );
-  }
+    if (filters?.search && filters.search.trim().length > 0) {
+      const term = filters.search.trim();
+      query = query.or(
+        `full_name.ilike.%${term}%,email.ilike.%${term}%,location.ilike.%${term}%`
+      );
+    }
 
-  query = query.range(from, to);
+    query = query.range(from, to);
 
-  const { data, count, error } = await query;
+    const { data, count, error } = await query;
 
-  if (error) {
-    throw new DatabaseError("Failed to retrieve candidate directory.");
-  }
+    if (error) {
+      throw new DatabaseError("Failed to retrieve candidate directory.");
+    }
 
-  const total = count || 0;
-  const totalPages = Math.ceil(total / pageSize) || 1;
+    const total = count || 0;
+    const totalPages = Math.ceil(total / pageSize) || 1;
 
-  return {
-    data: data || [],
-    page,
-    pageSize,
-    total,
-    totalPages,
-  };
+    return {
+      data: (data || []) as Candidate[],
+      page,
+      pageSize,
+      total,
+      totalPages,
+    };
+  });
+
+  return result;
 }
 
 export async function getCandidateById(orgId: string, candidateId: string): Promise<Candidate> {
@@ -109,7 +114,7 @@ export async function getCandidateById(orgId: string, candidateId: string): Prom
 
   const { data, error } = await supabase
     .from("candidates")
-    .select("*")
+    .select("id, organization_id, full_name, email, phone, location, linkedin_url, portfolio_url, created_at, updated_at")
     .eq("organization_id", orgId)
     .eq("id", candidateId)
     .single();
@@ -118,7 +123,7 @@ export async function getCandidateById(orgId: string, candidateId: string): Prom
     throw new NotFoundError("Candidate profile not found.");
   }
 
-  return data;
+  return data as Candidate;
 }
 
 export async function createCandidate(
@@ -289,7 +294,7 @@ export async function getCandidateDocuments(
 
   const { data: docs, error } = await supabase
     .from("candidate_documents")
-    .select("*")
+    .select("id, organization_id, candidate_id, application_id, document_type, storage_path, original_filename, mime_type, file_size, extraction_status, created_at, updated_at")
     .eq("organization_id", orgId)
     .eq("candidate_id", candidateId)
     .order("created_at", { ascending: false });
@@ -305,14 +310,14 @@ export async function getCandidateDocuments(
     try {
       const { data: signedData } = await supabase.storage
         .from("candidate-documents")
-        .createSignedUrl(doc.storage_path, 3600); // 1 hour expiration
+        .createSignedUrl(doc.storage_path, 3600);
       signedUrl = signedData?.signedUrl || null;
     } catch {
       signedUrl = null;
     }
 
     result.push({
-      ...doc,
+      ...(doc as CandidateDocument),
       signedUrl,
     });
   }
