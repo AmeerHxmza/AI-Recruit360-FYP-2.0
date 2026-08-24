@@ -2,6 +2,7 @@ import logging
 from app.providers.factory import get_ai_provider
 from app.schemas.interview import GeneratedInterviewQuestion, NextInterviewQuestionResponse
 from app.db.supabase import get_supabase_client
+from app.services.ai_activity import log_ai_activity
 
 logger = logging.getLogger("ai_service.services.interview.question_generator")
 
@@ -15,9 +16,16 @@ async def get_or_create_interview_session(application_id: str) -> dict:
     if res.data and len(res.data) > 0:
         return res.data[0]
 
-    # Retrieve organization_id from application record
-    app_rec = supabase.table("applications").select("organization_id").eq("id", application_id).execute()
-    org_id = app_rec.data[0]["organization_id"] if app_rec.data and len(app_rec.data) > 0 else None
+    # Retrieve organization_id and status from application record
+    app_rec = supabase.table("applications").select("organization_id, status").eq("id", application_id).execute()
+    if not app_rec.data or len(app_rec.data) == 0:
+        raise ValueError(f"Application {application_id} not found.")
+        
+    app_record = app_rec.data[0]
+    if app_record.get("status") != "interview":
+        raise ValueError(f"Application {application_id} is not in interview state. Unauthorized operation.")
+        
+    org_id = app_record.get("organization_id")
 
     # Create new interview record
     int_payload = {
@@ -29,6 +37,16 @@ async def get_or_create_interview_session(application_id: str) -> dict:
         int_payload["organization_id"] = org_id
 
     new_int = supabase.table("interviews").insert(int_payload).execute()
+    
+    interview_id = new_int.data[0]["id"]
+    if org_id:
+        await log_ai_activity(
+            application_id=application_id,
+            event_type="interview_started",
+            organization_id=org_id,
+            metadata={"interview_id": interview_id}
+        )
+        
     return new_int.data[0]
 
 async def generate_next_interview_question(interview_id: str) -> NextInterviewQuestionResponse:
@@ -56,6 +74,17 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
     current_count = len(existing_questions)
 
     if current_count >= total_allowed:
+        if interview.get("status") != "completed":
+            supabase.table("interviews").update({"status": "completed"}).eq("id", interview_id).execute()
+            org_id = app.get("organization_id")
+            if org_id:
+                await log_ai_activity(
+                    application_id=interview["application_id"],
+                    event_type="interview_completed",
+                    organization_id=org_id,
+                    metadata={"interview_id": interview_id, "questions_answered": current_count}
+                )
+
         return NextInterviewQuestionResponse(
             interview_id=interview_id,
             completed=True,

@@ -1,13 +1,19 @@
 import logging
 from app.db.supabase import get_supabase_client
 from app.schemas.evaluation import FinalCandidateEvaluationPayload
+from app.services.ai_activity import log_ai_activity
 
 logger = logging.getLogger("ai_service.services.evaluation.evaluator")
 
 async def generate_final_candidate_evaluation(application_id: str) -> FinalCandidateEvaluationPayload:
     supabase = get_supabase_client()
 
-    # 1. Fetch CV Screening Score
+    # 1. Check interview status
+    int_check = supabase.table("interviews").select("status").eq("application_id", application_id).execute()
+    if not int_check.data or int_check.data[0].get("status") != "completed":
+        raise ValueError(f"Interview for application {application_id} is not completed. Unauthorized evaluation.")
+
+    # 2. Fetch CV Screening Score
     scr_res = supabase.table("cv_screenings").select("match_score, matched_skills, missing_skills, reasoning_summary").eq("application_id", application_id).execute()
     cv_score = scr_res.data[0]["match_score"] if scr_res.data else 75.0
     matched_skills = scr_res.data[0].get("matched_skills", []) if scr_res.data else []
@@ -113,5 +119,16 @@ async def generate_final_candidate_evaluation(application_id: str) -> FinalCandi
 
     # Update application status to evaluation
     supabase.table("applications").update({"status": "evaluation"}).eq("id", application_id).execute()
+
+    if org_id:
+        await log_ai_activity(
+            application_id=application_id,
+            event_type="candidate_evaluated",
+            organization_id=org_id,
+            metadata={
+                "overall_score": result.overall_score,
+                "recommendation": result.recommendation
+            }
+        )
 
     return result

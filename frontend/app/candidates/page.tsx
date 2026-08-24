@@ -4,12 +4,13 @@ import { getCandidatesForOrg, getCandidateCounts } from "@/lib/services/candidat
 import { CandidatesClientView } from "@/components/candidates/candidates-client-view";
 import { Loader2 } from "lucide-react";
 import { redirect } from "next/navigation";
+import { ApplicationShell } from "@/components/layout/application-shell";
 
 export const revalidate = 0; // Dynamic server component
 
 function CandidatesSkeleton() {
   return (
-    <div className="min-h-screen bg-[#08090B] p-6 space-y-6">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-24 rounded-lg bg-[#12151A] border border-[#242932] animate-pulse" />
@@ -25,11 +26,9 @@ function CandidatesSkeleton() {
   );
 }
 
-async function CandidatesServerData() {
+async function CandidatesServerData({ role }: { role: string }) {
   const ctx = await getOrganizationContext();
-  if (!ctx) {
-    redirect("/onboarding/organization");
-  }
+  if (!ctx) redirect("/onboarding/organization");
 
   const [candidatesResult, counts] = await Promise.all([
     getCandidatesForOrg(ctx.organization.id, { page: 1, pageSize: 20 }),
@@ -40,16 +39,25 @@ async function CandidatesServerData() {
     <CandidatesClientView
       initialCandidatesResult={candidatesResult}
       initialCounts={counts}
-      role={ctx.role}
-      orgName={ctx.organization.name}
+      role={role}
     />
   );
 }
 
-export default function CandidatesPage() {
+export default async function CandidatesPage() {
+  const ctx = await getOrganizationContext();
+  if (!ctx) redirect("/onboarding/organization");
+
+  const orgName = ctx.organization.name;
+
   return (
-    <Suspense fallback={<CandidatesSkeleton />}>
-      <CandidatesServerData />
-    </Suspense>
+    <ApplicationShell
+      activeNavId="candidates"
+      pageBreadcrumb={[orgName || "AI-Recruit360", "Directory", "Candidates"]}
+    >
+      <Suspense fallback={<CandidatesSkeleton />}>
+        <CandidatesServerData role={ctx.role} />
+      </Suspense>
+    </ApplicationShell>
   );
 }

@@ -456,7 +456,7 @@ export default function CandidateDetailPage() {
           </Card>
 
           {/* AI Analysis Integration */}
-          <CandidateIntelligencePanel intelligence={intelligence} />
+          <CandidateIntelligencePanel intelligence={intelligence} onStatusChange={refreshData} />
         </div>
 
         {/* Right Column: Metadata Panel */}

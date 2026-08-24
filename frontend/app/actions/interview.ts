@@ -52,3 +52,14 @@ export async function finalizeEvaluationAction(applicationId: string): Promise<A
     return { success: false, error: errorMsg };
   }
 }
+
+export async function transcribeAudioAction(formData: FormData): Promise<ActionResult<{ transcript: string }>> {
+  try {
+    const data = await aiServiceClient.transcribeAudioFile(formData);
+    return { success: true, data };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to transcribe audio.";
+    return { success: false, error: errorMsg };
+  }
+}
+

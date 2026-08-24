@@ -4,12 +4,13 @@ import { getInterviewsForOrgWithDetails } from "@/lib/services/interview-service
 import { InterviewsClientView } from "@/components/interviews/interviews-client-view";
 import { Loader2 } from "lucide-react";
 import { redirect } from "next/navigation";
+import { ApplicationShell } from "@/components/layout/application-shell";
 
 export const revalidate = 0; // Dynamic server component
 
 function InterviewsSkeleton() {
   return (
-    <div className="min-h-screen bg-[#08090B] p-6 space-y-6">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-24 rounded-lg bg-[#12151A] border border-[#242932] animate-pulse" />
@@ -25,27 +26,34 @@ function InterviewsSkeleton() {
   );
 }
 
-async function InterviewsServerData() {
+async function InterviewsServerData({ role }: { role: string }) {
   const ctx = await getOrganizationContext();
-  if (!ctx) {
-    redirect("/onboarding/organization");
-  }
+  if (!ctx) redirect("/onboarding/organization");
 
   const interviews = await getInterviewsForOrgWithDetails(ctx.organization.id);
 
   return (
     <InterviewsClientView
       initialInterviews={interviews}
-      role={ctx.role}
-      orgName={ctx.organization.name}
+      role={role}
     />
   );
 }
 
-export default function InterviewsPage() {
+export default async function InterviewsPage() {
+  const ctx = await getOrganizationContext();
+  if (!ctx) redirect("/onboarding/organization");
+
+  const orgName = ctx.organization.name;
+
   return (
-    <Suspense fallback={<InterviewsSkeleton />}>
-      <InterviewsServerData />
-    </Suspense>
+    <ApplicationShell
+      activeNavId="interviews"
+      pageBreadcrumb={[orgName || "AI-Recruit360", "Interviews", "Rooms"]}
+    >
+      <Suspense fallback={<InterviewsSkeleton />}>
+        <InterviewsServerData role={ctx.role} />
+      </Suspense>
+    </ApplicationShell>
   );
 }

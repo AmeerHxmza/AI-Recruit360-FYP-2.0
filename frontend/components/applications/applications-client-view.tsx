@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { ApplicationShell } from "@/components/layout/application-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Section } from "@/components/layout/section";
 import { Input } from "@/components/ui/input";
@@ -47,15 +45,12 @@ import {
 interface ApplicationsClientViewProps {
   initialApplications: ApplicationItemWithDetails[];
   role: OrganizationRole;
-  orgName: string;
 }
 
 export function ApplicationsClientView({
   initialApplications,
   role,
-  orgName,
 }: ApplicationsClientViewProps) {
-  const router = useRouter();
   const isAuthorizedToManage = canManageApplications(role);
 
   const [applications, setApplications] = React.useState<ApplicationItemWithDetails[]>(initialApplications);
@@ -224,9 +219,9 @@ export function ApplicationsClientView({
   };
 
   return (
-    <ApplicationShell pageBreadcrumb={[orgName || "AI-Recruit360", "Applications"]}>
+    <div className="animate-in fade-in duration-500">
       <PageHeader
-        title="Pipeline Applications"
+        title="Application Pipeline"
         description="Track and manage candidates through each stage of the AI recruitment lifecycle."
         badge={
           <Badge variant="ai">
@@ -510,6 +505,6 @@ export function ApplicationsClientView({
           </div>
         </div>
       )}
-    </ApplicationShell>
+    </div>
   );
 }

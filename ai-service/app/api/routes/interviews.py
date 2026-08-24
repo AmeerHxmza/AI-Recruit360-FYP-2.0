@@ -6,7 +6,7 @@ AI Adaptive Interview API — rate-limited.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -89,4 +89,17 @@ async def generate_interview_tts(request: Request, req: TTSRequest):
         logger.error(f"TTS audio error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/stt")
+@limiter.limit("30/minute")
+async def process_speech_to_text(request: Request, audio: UploadFile = File(...)):
+    """Transcribe audio bytes to text using OpenAI Whisper."""
+    try:
+        from app.services.interview.stt import transcribe_audio_file
+        content = await audio.read()
+        transcript = await transcribe_audio_file(content, audio.filename)
+        return {"transcript": transcript}
+    except Exception as e:
+        logger.error(f"STT audio error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 

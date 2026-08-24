@@ -3,9 +3,11 @@
  * Features request timeouts, retry policies, and structured error handling.
  */
 
-const AI_SERVICE_BASE_URL = typeof window !== "undefined" 
-  ? "/api/py" 
-  : (process.env.AI_SERVICE_URL || "http://localhost:8000/api/v1");
+if (typeof window !== "undefined") {
+  console.error("CRITICAL SECURITY ERROR: aiServiceClient cannot be imported or executed in the browser.");
+}
+
+const AI_SERVICE_BASE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000/api/v1";
 const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "recruit360_shared_backend_secret_2026";
 const DEFAULT_TIMEOUT_MS = 45000; // 45s maximum timeout for AI processing
 
@@ -14,12 +16,20 @@ async function aiServiceFetch<T>(
   options: RequestInit = {},
   retries = 2
 ): Promise<T> {
+  if (typeof window !== "undefined") {
+    throw new Error("SECURITY VIOLATION: AI Service cannot be called from the browser.");
+  }
+
   const url = `${AI_SERVICE_BASE_URL}${endpoint}`;
-  const headers = {
-    "Content-Type": "application/json",
-    "x-ai-service-secret": SHARED_SECRET,
-    ...options.headers,
-  };
+  const headers = new Headers(options.headers || {});
+  headers.set("x-ai-service-secret", SHARED_SECRET);
+  
+  if (options.body instanceof FormData) {
+    // Let browser set the multipart/form-data boundary automatically
+    headers.delete("Content-Type");
+  } else if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   let lastError: Error | null = null;
 
@@ -124,8 +134,8 @@ export const aiServiceClient = {
    */
   generateAssessment: async (payload: {
     application_id: string;
-  }): Promise<PythonMCQItem[]> => {
-    return aiServiceFetch<PythonMCQItem[]>("/assessments/generate", {
+  }): Promise<{ status: "ready" | "generating"; message?: string; questions?: PythonMCQItem[] }> => {
+    return aiServiceFetch<{ status: "ready" | "generating"; message?: string; questions?: PythonMCQItem[] }>("/assessments/generate", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -211,6 +221,16 @@ export const aiServiceClient = {
     return aiServiceFetch("/evaluations/generate", {
       method: "POST",
       body: JSON.stringify({ application_id: applicationId }),
+    });
+  },
+
+  /**
+   * Transcribe recorded audio file
+   */
+  transcribeAudioFile: async (formData: FormData): Promise<{ transcript: string }> => {
+    return aiServiceFetch<{ transcript: string }>("/interviews/stt", {
+      method: "POST",
+      body: formData,
     });
   },
 };

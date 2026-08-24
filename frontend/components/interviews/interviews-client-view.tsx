@@ -2,15 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ApplicationShell } from "@/components/layout/application-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Section } from "@/components/layout/section";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { Select } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableHeader,
@@ -19,24 +16,15 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { canManageInterviews } from "@/lib/auth/permissions";
-import { getInterviewsAction, createInterviewAction } from "@/app/actions/interviews";
-import { getApplicationsAction } from "@/app/actions/applications";
 import { InterviewItemWithDetails } from "@/lib/services/interview-service";
-import { ApplicationItemWithDetails } from "@/lib/services/application-service";
-import { InterviewStatus, InterviewType, OrganizationRole } from "@/types/database.types";
-import { Video, Clock, CheckCircle2, Sparkles, ExternalLink, Plus, Loader2, AlertCircle, X, Calendar } from "lucide-react";
+import { Video, Clock, CheckCircle2, Sparkles, ExternalLink, Loader2, AlertCircle, Calendar } from "lucide-react";
 
 interface InterviewsClientViewProps {
   initialInterviews: InterviewItemWithDetails[];
-  role: OrganizationRole;
-  orgName: string;
 }
 
 export function InterviewsClientView({
   initialInterviews,
-  role,
-  orgName,
 }: InterviewsClientViewProps) {
   const router = useRouter();
 
@@ -105,9 +93,9 @@ export function InterviewsClientView({
   }, [interviews]);
 
   return (
-    <ApplicationShell pageBreadcrumb={[orgName || "AI-Recruit360", "Interviews"]}>
+    <div className="animate-in fade-in duration-500">
       <PageHeader
-        title="AI Interview Room Management"
+        title="AI Interview Rooms"
         description="Schedule, monitor, and review candidate voice AI adaptive interview sessions."
         badge={
           <Badge variant="ai">
@@ -235,6 +223,6 @@ export function InterviewsClientView({
           </div>
         )}
       </Section>
-    </ApplicationShell>
+    </div>
   );
 }

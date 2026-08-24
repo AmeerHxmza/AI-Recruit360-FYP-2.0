@@ -1,15 +1,13 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ApplicationShell } from "@/components/layout/application-shell";
+import Image from "next/image";
 import { PageHeader } from "@/components/layout/page-header";
 import { Section } from "@/components/layout/section";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -38,8 +36,6 @@ import {
   MapPin,
   Globe,
   Clock,
-  X,
-  UserPlus,
   Mail,
   Trash2,
   ChevronLeft,
@@ -55,14 +51,12 @@ interface CandidatesClientViewProps {
     recentCount: number;
   };
   role: OrganizationRole;
-  orgName: string;
 }
 
 export function CandidatesClientView({
   initialCandidatesResult,
   initialCounts,
   role,
-  orgName,
 }: CandidatesClientViewProps) {
   const router = useRouter();
   const isAuthorizedToManage = canManageCandidates(role);
@@ -166,7 +160,7 @@ export function CandidatesClientView({
   };
 
   return (
-    <ApplicationShell pageBreadcrumb={[orgName || "AI-Recruit360", "Candidates"]}>
+    <div className="animate-in fade-in duration-500">
       <PageHeader
         title="Candidate Directory"
         description="Workspace candidate profiles, contact details, and document intelligence storage."
@@ -428,6 +422,6 @@ export function CandidatesClientView({
           </div>
         </div>
       )}
-    </ApplicationShell>
+    </div>
   );
 }

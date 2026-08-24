@@ -19,12 +19,20 @@ export interface CandidateIntelligence {
     missingSkills: string[];
     recommendation: string;
     evidence: string;
+    createdAt: string;
   } | null;
   assessment: {
     score: number;
     totalQuestions: number;
     correctAnswers: number;
     status: string;
+    createdAt: string;
+    completedAt: string | null;
+    questions: {
+      questionText: string;
+      selectedOption: string | null;
+      isCorrect: boolean | null;
+    }[];
   } | null;
   interview: {
     status: string;
@@ -34,6 +42,12 @@ export interface CandidateIntelligence {
     relevanceScore: number | null;
     transcript: string | null;
     feedback: string | null;
+    createdAt: string;
+    completedAt: string | null;
+    responses: {
+      questionText: string;
+      responseText: string;
+    }[];
   } | null;
   finalEvaluation: {
     overallScore: number;
@@ -42,6 +56,9 @@ export interface CandidateIntelligence {
     interviewWeight: number;
     recommendation: string;
     evidence: string;
+    strengths: string[];
+    weaknesses: string[];
+    createdAt: string;
   } | null;
 }
 
@@ -110,19 +127,52 @@ export async function getCandidateIntelligence(candidateId: string): Promise<Can
         missingSkills: mss,
         recommendation: cvRes.data.recommendation || "",
         evidence: ev,
+        createdAt: cvRes.data.created_at,
       };
     }
 
     if (asstRes.data) {
+      // Fetch assessment questions via answers
+      const { data: qData } = await supabase
+        .from("assessment_answers")
+        .select(`
+          selected_option, 
+          is_correct,
+          assessment_questions!inner (
+            question
+          )
+        `)
+        .eq("assessment_id", asstRes.data.id);
+
       result.assessment = {
         score: asstRes.data.score || 0,
         totalQuestions: asstRes.data.total_questions || 0,
         correctAnswers: asstRes.data.correct_answers || 0,
         status: asstRes.data.status || "pending",
+        createdAt: asstRes.data.created_at,
+        completedAt: asstRes.data.completed_at || null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        questions: (qData || []).map((q: any) => ({
+          questionText: q.assessment_questions?.question || "",
+          selectedOption: q.selected_option,
+          isCorrect: q.is_correct,
+        })),
       };
     }
 
     if (intRes.data) {
+      // Fetch interview responses
+      const { data: irData } = await supabase
+        .from("interview_responses")
+        .select(`
+          response_text,
+          interview_questions!inner (
+            question_text
+          )
+        `)
+        .eq("interview_id", intRes.data.id)
+        .order("created_at", { ascending: true });
+
       result.interview = {
         status: intRes.data.status || "pending",
         overallScore: intRes.data.overall_score,
@@ -130,7 +180,14 @@ export async function getCandidateIntelligence(candidateId: string): Promise<Can
         communicationScore: null,
         relevanceScore: null,
         transcript: null,
-        feedback: null,
+        feedback: null, // Feedback is in final evaluation
+        createdAt: intRes.data.created_at,
+        completedAt: intRes.data.completed_at || null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        responses: (irData || []).map((r: any) => ({
+          questionText: r.interview_questions?.question_text || "",
+          responseText: r.response_text || "",
+        })),
       };
     }
 
@@ -146,6 +203,9 @@ export async function getCandidateIntelligence(candidateId: string): Promise<Can
         interviewWeight: 35,
         recommendation: evalRes.data.recommendation || "",
         evidence: fEv,
+        strengths: Array.isArray(evalRes.data.strengths) ? (evalRes.data.strengths as string[]) : [],
+        weaknesses: Array.isArray(evalRes.data.weaknesses) ? (evalRes.data.weaknesses as string[]) : [],
+        createdAt: evalRes.data.created_at,
       };
     }
 

@@ -5,10 +5,40 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function getOrGenerateAssessmentAction(applicationId: string) {
   try {
-    const questions = await aiServiceClient.generateAssessment({
+    const aiResponse = await aiServiceClient.generateAssessment({
       application_id: applicationId,
     });
-    return { success: true, data: questions };
+    
+    // Also fetch the assessment status and existing answers for state recovery
+    const supabase = await createClient();
+    const { data: assessment } = await supabase
+      .from("assessments")
+      .select("*, assessment_answers(question_id, selected_option)")
+      .eq("application_id", applicationId)
+      .single();
+
+    if (aiResponse.status === "generating") {
+      return {
+        success: true,
+        data: {
+          status: "generating",
+          message: aiResponse.message || "Generating...",
+          questions: [],
+          assessment: assessment || null,
+          answers: assessment?.assessment_answers || []
+        }
+      }
+    }
+
+    return { 
+      success: true, 
+      data: {
+        status: "ready",
+        questions: aiResponse.questions || [],
+        assessment: assessment || null,
+        answers: assessment?.assessment_answers || []
+      }
+    };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to load personalized assessment.";
     return { success: false, error: msg };

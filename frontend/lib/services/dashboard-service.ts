@@ -49,120 +49,42 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
 
   try {
     const { result, durationMs: dbDuration } = await measurePerformance("DB Query (Dashboard Summary)", async () => {
-      // Fetching all necessary components via Supabase optimized parallel queries
-      const [
-        activeJobsRes,
-        applicationsRes,
-        qualifiedAppsRes,
-        interviewsRes,
-        funnelRes,
-        recentAppsRes,
-        cvScreeningsRes,
-      ] = await Promise.all([
-        supabase.from("jobs").select("id", { count: "exact", head: true }).eq("organization_id", orgId).eq("status", "active"),
-        supabase.from("applications").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("applications").select("id", { count: "exact", head: true }).eq("organization_id", orgId).in("status", ["assessment", "interview", "evaluation", "shortlisted"]),
-        supabase.from("interviews").select("id", { count: "exact", head: true }).eq("organization_id", orgId).neq("status", "abandoned").neq("status", "cancelled"),
-        supabase.from("applications").select("status").eq("organization_id", orgId),
-        supabase
-          .from("applications")
-          .select(`
-            id, 
-            status, 
-            applied_at, 
-            candidates(full_name, email), 
-            jobs(title),
-            cv_screenings(match_score),
-            assessments(score),
-            interviews(overall_score)
-          `)
-          .eq("organization_id", orgId)
-          .order("applied_at", { ascending: false })
-          .limit(8),
-        supabase.from("cv_screenings").select("match_score").eq("organization_id", orgId),
-      ]);
+      const { data, error } = await supabase.rpc("get_dashboard_summary", { _org_id: orgId });
 
-      const activeJobs = activeJobsRes.count || 0;
-      const totalApplications = applicationsRes.count || 0;
-      const qualifiedCandidates = qualifiedAppsRes.count || 0;
-      const aiInterviews = interviewsRes.count || 0;
-
-      const funnel = {
-        applied: 0,
-        screening: 0,
-        assessment: 0,
-        interview: 0,
-        evaluation: 0,
-        shortlisted: 0,
-        rejected: 0,
-        knocked_out: 0,
-        total: 0,
-      };
-
-      if (funnelRes.data) {
-        funnel.total = funnelRes.data.length;
-        funnelRes.data.forEach((app) => {
-          const s = app.status as keyof typeof funnel;
-          if (s in funnel && s !== "total") {
-            funnel[s]++;
-          }
-        });
+      if (error || !data) {
+        throw new DatabaseError("Failed to fetch dashboard summary from database.");
       }
 
+      // The RPC function returns a JSON object that perfectly matches the DashboardData structure,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const recentApplications = (recentAppsRes.data || []).map((app: any) => {
-        const cand = app.candidates;
-        const job = app.jobs;
-        
-        // Extract array values from joined tables, safely fall back to null
-        const cvs = Array.isArray(app.cv_screenings) ? app.cv_screenings[0] : app.cv_screenings;
-        const asst = Array.isArray(app.assessments) ? app.assessments[0] : app.assessments;
-        const intv = Array.isArray(app.interviews) ? app.interviews[0] : app.interviews;
-
-        return {
-          id: app.id,
-          candidateName: cand?.full_name || "Applicant",
-          candidateEmail: cand?.email || "N/A",
-          jobTitle: job?.title || "Job Position",
-          status: app.status,
-          cvMatch: cvs?.match_score ?? null,
-          assessmentScore: asst?.score ?? null,
-          interviewScore: intv?.overall_score ?? null,
-          createdAt: app.applied_at,
-        };
-      });
-
-      const totalScreened = cvScreeningsRes.data?.length || 0;
-      let averageMatchScore = 0;
-      let qualifiedCount = 0;
-      const knockedOutCount = funnel.knocked_out;
-
-      if (totalScreened > 0) {
-        let totalScoreSum = 0;
-        cvScreeningsRes.data!.forEach((row) => {
-          const score = row.match_score || 0;
-          totalScoreSum += score;
-          if (score >= 70) qualifiedCount++;
-        });
-        averageMatchScore = Math.round(totalScoreSum / totalScreened);
-      }
-
+      const payload = data as any;
+      
       return {
         metrics: {
-          activeJobs,
-          totalApplications,
-          qualifiedCandidates,
-          aiInterviews,
+          activeJobs: payload.metrics?.activeJobs || 0,
+          totalApplications: payload.metrics?.totalApplications || 0,
+          qualifiedCandidates: payload.metrics?.qualifiedCandidates || 0,
+          aiInterviews: payload.metrics?.aiInterviews || 0,
         },
-        funnel,
-        recentApplications,
+        funnel: {
+          applied: payload.funnel?.applied || 0,
+          screening: payload.funnel?.screening || 0,
+          assessment: payload.funnel?.assessment || 0,
+          interview: payload.funnel?.interview || 0,
+          evaluation: payload.funnel?.evaluation || 0,
+          shortlisted: payload.funnel?.shortlisted || 0,
+          rejected: payload.funnel?.rejected || 0,
+          knocked_out: payload.funnel?.knocked_out || 0,
+          total: payload.funnel?.total || 0,
+        },
+        recentApplications: Array.isArray(payload.recentApplications) ? payload.recentApplications : [],
         aiSummary: {
-          totalScreened,
-          averageMatchScore,
-          qualifiedCount,
-          knockedOutCount,
+          totalScreened: payload.aiSummary?.totalScreened || 0,
+          averageMatchScore: payload.aiSummary?.averageMatchScore || 0,
+          qualifiedCount: payload.aiSummary?.qualifiedCount || 0,
+          knockedOutCount: payload.aiSummary?.knockedOutCount || 0,
         },
-      };
+      } as DashboardData;
     });
 
     if (process.env.NODE_ENV === "development") {

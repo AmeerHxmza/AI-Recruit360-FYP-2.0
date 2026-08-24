@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ApplicationShell } from "@/components/layout/application-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
@@ -32,12 +31,10 @@ import {
 interface DashboardClientViewProps {
   initialData: DashboardData;
   userName: string;
-  orgName: string;
 }
 
-export function DashboardClientView({ initialData, userName, orgName }: DashboardClientViewProps) {
+export function DashboardClientView({ initialData, userName }: DashboardClientViewProps) {
   const router = useRouter();
-  const [activeNav, setActiveNav] = React.useState("dashboard");
   const [data] = React.useState<DashboardData>(initialData);
 
   const getStatusBadge = (status: string) => {
@@ -56,15 +53,7 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
   // Removed formatDate
 
   return (
-    <ApplicationShell
-      activeNavId={activeNav}
-      onNavigate={setActiveNav}
-      pageBreadcrumb={[
-        orgName || "AI-Recruit360",
-        "Command Center",
-        "Overview",
-      ]}
-    >
+    <div className="animate-in fade-in duration-500">
       {/* Dashboard Header */}
       <DashboardHeader
         userName={userName}
@@ -247,6 +236,6 @@ export function DashboardClientView({ initialData, userName, orgName }: Dashboar
           <InsightsPanel recentApplications={data.recentApplications} />
         </div>
       </div>
-    </ApplicationShell>
+    </div>
   );
 }

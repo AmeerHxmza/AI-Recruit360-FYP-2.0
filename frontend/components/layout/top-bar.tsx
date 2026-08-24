@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Search, Bell, Sparkles, Menu, ChevronRight, X, ArrowRight, User, Briefcase, FileText } from "lucide-react";
+import { Search, Bell, Menu, ChevronRight, X, ArrowRight, User, Briefcase, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 

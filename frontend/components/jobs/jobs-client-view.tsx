@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ApplicationShell } from "@/components/layout/application-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Section } from "@/components/layout/section";
 import { Button } from "@/components/ui/button";
@@ -24,23 +23,21 @@ import { EmploymentType, JobStatus, OrganizationRole, WorkplaceType } from "@/ty
 import {
   Plus,
   Search,
-  Briefcase,
-  ExternalLink,
   Loader2,
   AlertCircle,
-  Building2,
+  Briefcase,
   MapPin,
   Clock,
   FilterX,
+  Building2,
 } from "lucide-react";
 
 interface JobsClientViewProps {
   initialJobs: Job[];
   role: OrganizationRole;
-  orgName: string;
 }
 
-export function JobsClientView({ initialJobs, role, orgName }: JobsClientViewProps) {
+export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
   const router = useRouter();
   const isAuthorizedToManage = canManageJobs(role);
 
@@ -153,9 +150,9 @@ export function JobsClientView({ initialJobs, role, orgName }: JobsClientViewPro
   };
 
   return (
-    <ApplicationShell pageBreadcrumb={[orgName || "AI-Recruit360", "Jobs"]}>
+    <div className="animate-in fade-in duration-500">
       <PageHeader
-        title="Jobs"
+        title="Jobs Directory"
         description="Create positions, publish application links, and monitor candidate activity."
         actions={
           isAuthorizedToManage ? (
@@ -393,6 +390,6 @@ export function JobsClientView({ initialJobs, role, orgName }: JobsClientViewPro
           </>
         )}
       </Section>
-    </ApplicationShell>
+    </div>
   );
 }

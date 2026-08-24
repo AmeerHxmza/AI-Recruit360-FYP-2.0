@@ -14,8 +14,8 @@ import { canManageJobs } from "@/lib/auth/permissions";
 import { createJobAction } from "@/app/actions/jobs";
 import { analyzeJobDescriptionAction } from "@/app/actions/ai";
 import { JobAnalysis } from "@/lib/ai/schemas/job-analysis-schema";
-import { EmploymentType, JobStatus, WorkplaceType } from "@/types/database.types";
-import { Sparkles, ArrowLeft, ArrowRight, Save, AlertCircle, Loader2, CheckCircle2, Copy, ExternalLink, Building2, MapPin } from "lucide-react";
+import { EmploymentType, WorkplaceType } from "@/types/database.types";
+import { Sparkles, ArrowLeft, ArrowRight, AlertCircle, Loader2, CheckCircle2, Copy, ExternalLink, Building2, MapPin } from "lucide-react";
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -91,7 +91,7 @@ export default function CreateJobPage() {
       } else {
         setSubmitErrorMsg(res.error || "Failed to publish job position.");
       }
-    } catch (err: unknown) {
+    } catch {
       setSubmitErrorMsg("An unexpected error occurred while publishing the job.");
     }
     setIsSubmitting(false);

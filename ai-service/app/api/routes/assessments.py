@@ -5,9 +5,9 @@ MCQ Assessment API — rate-limited.
 """
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 
 from app.core.rate_limit import limiter
@@ -28,12 +28,12 @@ class FinalizeAssessmentRequest(BaseModel):
     assessment_id: str
 
 
-@router.post("/generate", response_model=List[CandidatePublicMCQItem])
+@router.post("/generate")
 @limiter.limit(settings.RATE_LIMIT_ASSESSMENT)
-async def generate_assessment(request: Request, req: GenerateAssessmentRequest):
+async def generate_assessment(request: Request, req: GenerateAssessmentRequest, background_tasks: BackgroundTasks):
     """Generate 10 personalized MCQs for a candidate assessment."""
     try:
-        return await generate_personalized_mcqs(application_id=req.application_id)
+        return await generate_personalized_mcqs(application_id=req.application_id, background_tasks=background_tasks)
     except Exception as e:
         logger.error(f"Assessment generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

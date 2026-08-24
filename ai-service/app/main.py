@@ -114,6 +114,19 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
         },
     )
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    # Log the full stack trace securely to the backend logs
+    logger.exception(f"Unhandled exception on {request.method} {request.url.path}: {str(exc)}")
+    # Return a masked 500 response to the client
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "error",
+            "message": "Something went wrong. Please try again."
+        }
+    )
+
 # ── CORS Middleware (NO wildcard — explicit origins only) ─────────────────────
 app.add_middleware(
     CORSMiddleware,

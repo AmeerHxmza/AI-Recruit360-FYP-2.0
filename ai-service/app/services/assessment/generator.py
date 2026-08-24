@@ -5,6 +5,7 @@ from app.providers.factory import get_ai_provider
 from app.schemas.assessment import GeneratedAssessmentPayload, GeneratedMCQItem, CandidatePublicMCQItem
 from app.db.supabase import get_supabase_client, run_sync
 from app.core.exceptions import AssessmentGenerationError
+from app.services.ai_activity import log_ai_activity
 
 logger = logging.getLogger("ai_service.services.assessment.generator")
 
@@ -19,80 +20,8 @@ Rules:
 5. Provide skill_category and difficulty ('easy', 'medium', 'hard').
 6. CRITICAL: Analyze the candidate's profile summary for specific projects. Generate meaningful technical questions that evaluate the candidate's understanding of the technologies used in those specific projects, mapping them to the job requirements."""
 
-async def generate_personalized_mcqs(application_id: str) -> List[CandidatePublicMCQItem]:
+async def _generate_mcqs_background_task(application_id: str, assessment_id: str, job_title: str, job_description: str, cv_summary: str, matched_skills: List[str]):
     supabase = get_supabase_client()
-
-    # Check if assessment already exists for this application (Idempotency)
-    existing_assessment = await run_sync(
-        lambda: supabase.table("assessments").select("*").eq("application_id", application_id).execute()
-    )
-
-    if existing_assessment.data and len(existing_assessment.data) > 0:
-        assessment_id = existing_assessment.data[0]["id"]
-        q_res = await run_sync(
-            lambda: supabase.table("assessment_questions")
-            .select("*")
-            .eq("assessment_id", assessment_id)
-            .order("question_number")
-            .execute()
-        )
-        if q_res.data and len(q_res.data) >= 10:
-            logger.info(f"Returning existing {len(q_res.data)} assessment questions for application {application_id}")
-            return [
-                CandidatePublicMCQItem(
-                    id=q["id"],
-                    assessment_id=q["assessment_id"],
-                    question_number=q["question_number"],
-                    question=q.get("question") or q.get("question_text", ""),
-                    option_a=q["option_a"],
-                    option_b=q["option_b"],
-                    option_c=q["option_c"],
-                    option_d=q["option_d"],
-                    skill_category=q.get("skill_category", "General"),
-                    difficulty=q.get("difficulty", "medium")
-                )
-                for q in q_res.data
-            ]
-
-    # Fetch required data (Application, Job, and CV Screening)
-    app_res = await run_sync(
-        lambda: supabase.table("applications").select("*, jobs(*)").eq("id", application_id).execute()
-    )
-    if not app_res.data or len(app_res.data) == 0:
-        raise AssessmentGenerationError(f"Application {application_id} not found.")
-    
-    app_record = app_res.data[0]
-    org_id = app_record.get("organization_id")
-    job_record = app_record.get("jobs", {})
-    job_title = job_record.get("title", "Technical Position")
-    job_description = job_record.get("description", "")
-
-    # Fetch screening result for candidate skills/summary
-    screen_res = await run_sync(
-        lambda: supabase.table("cv_screenings").select("*").eq("application_id", application_id).execute()
-    )
-    screening = screen_res.data[0] if screen_res.data and len(screen_res.data) > 0 else {}
-    matched_skills = screening.get("matched_skills", ["Software Engineering"])
-    cv_summary = screening.get("reasoning_summary", "General Technical Candidate")
-
-    # Create new assessment record if none exists
-    if not existing_assessment.data or len(existing_assessment.data) == 0:
-        ass_payload = {
-            "application_id": application_id,
-            "total_questions": 10,
-            "status": "pending"
-        }
-        if org_id:
-            ass_payload["organization_id"] = org_id
-
-        ass_ins = await run_sync(
-            lambda: supabase.table("assessments").insert(ass_payload).execute()
-        )
-        assessment_id = ass_ins.data[0]["id"]
-    else:
-        assessment_id = existing_assessment.data[0]["id"]
-
-    # Call AI Provider to generate 10 MCQs
     provider = get_ai_provider()
     prompt = (
         f"TARGET POSITION: {job_title}\n\n"
@@ -130,27 +59,144 @@ async def generate_personalized_mcqs(application_id: str) -> List[CandidatePubli
             "difficulty": item.difficulty
         })
 
-    q_res = await run_sync(
+    await run_sync(
         lambda: supabase.table("assessment_questions").insert(batch_rows).execute()
     )
 
-    inserted_public_items: List[CandidatePublicMCQItem] = []
-    if q_res.data:
-        for db_q in q_res.data:
-            inserted_public_items.append(CandidatePublicMCQItem(
-                id=db_q["id"],
-                assessment_id=assessment_id,
-                question_number=db_q["question_number"],
-                question=db_q.get("question") or db_q.get("question_text", ""),
-                option_a=db_q["option_a"],
-                option_b=db_q["option_b"],
-                option_c=db_q["option_c"],
-                option_d=db_q["option_d"],
-                skill_category=db_q.get("skill_category", "General"),
-                difficulty=db_q.get("difficulty", "medium")
-            ))
+    # Update assessment status to ready/in_progress
+    await run_sync(
+        lambda: supabase.table("assessments").update({"status": "in_progress"}).eq("id", assessment_id).execute()
+    )
 
-    return inserted_public_items
+    # Log AI Activity
+    await log_ai_activity(
+        application_id=application_id,
+        event_type="assessment_generated",
+        metadata={
+            "assessment_id": assessment_id,
+            "total_questions": len(raw_result.questions)
+        }
+    )
+
+
+async def generate_personalized_mcqs(application_id: str, background_tasks = None) -> dict:
+    supabase = get_supabase_client()
+
+    # Check if assessment already exists for this application (Idempotency)
+    existing_assessment = await run_sync(
+        lambda: supabase.table("assessments").select("*").eq("application_id", application_id).execute()
+    )
+
+    if existing_assessment.data and len(existing_assessment.data) > 0:
+        assessment_id = existing_assessment.data[0]["id"]
+        q_res = await run_sync(
+            lambda: supabase.table("assessment_questions")
+            .select("*")
+            .eq("assessment_id", assessment_id)
+            .order("question_number")
+            .execute()
+        )
+        if q_res.data and len(q_res.data) >= 10:
+            logger.info(f"Returning existing {len(q_res.data)} assessment questions for application {application_id}")
+            return {
+                "status": "ready",
+                "questions": [
+                    CandidatePublicMCQItem(
+                        id=q["id"],
+                        assessment_id=q["assessment_id"],
+                        question_number=q["question_number"],
+                        question=q.get("question") or q.get("question_text", ""),
+                        option_a=q["option_a"],
+                        option_b=q["option_b"],
+                        option_c=q["option_c"],
+                        option_d=q["option_d"],
+                        skill_category=q.get("skill_category", "General"),
+                        difficulty=q.get("difficulty", "medium")
+                    ).dict()
+                    for q in q_res.data
+                ]
+            }
+        elif assessment.get("status") == "pending":
+            return {"status": "generating", "message": "Assessment generation is already in progress."}
+
+    # Fetch required data (Application, Job, and CV Screening)
+    app_res = await run_sync(
+        lambda: supabase.table("applications").select("*, jobs(*)").eq("id", application_id).execute()
+    )
+    if not app_res.data or len(app_res.data) == 0:
+        raise AssessmentGenerationError(f"Application {application_id} not found.")
+    
+    app_record = app_res.data[0]
+    
+    if app_record.get("status") != "screening":
+        raise AssessmentGenerationError(f"Application {application_id} is not in screening state. Unauthorized operation.")
+        
+    org_id = app_record.get("organization_id")
+    job_record = app_record.get("jobs", {})
+    job_title = job_record.get("title", "Technical Position")
+    job_description = job_record.get("description", "")
+
+    # Fetch screening result for candidate skills/summary
+    screen_res = await run_sync(
+        lambda: supabase.table("cv_screenings").select("*").eq("application_id", application_id).execute()
+    )
+    screening = screen_res.data[0] if screen_res.data and len(screen_res.data) > 0 else {}
+    matched_skills = screening.get("matched_skills", ["Software Engineering"])
+    cv_summary = screening.get("reasoning_summary", "General Technical Candidate")
+
+    # Create new assessment record if none exists
+    if not existing_assessment.data or len(existing_assessment.data) == 0:
+        ass_payload = {
+            "application_id": application_id,
+            "total_questions": 10,
+            "status": "pending"
+        }
+        if org_id:
+            ass_payload["organization_id"] = org_id
+
+        ass_ins = await run_sync(
+            lambda: supabase.table("assessments").insert(ass_payload).execute()
+        )
+        assessment_id = ass_ins.data[0]["id"]
+    else:
+        assessment_id = existing_assessment.data[0]["id"]
+
+    if background_tasks:
+        background_tasks.add_task(
+            _generate_mcqs_background_task,
+            application_id, assessment_id, job_title, job_description, cv_summary, matched_skills
+        )
+        return {"status": "generating", "message": "Assessment generation started in background."}
+    else:
+        # Fallback to synchronous generation if no background tasks provided
+        await _generate_mcqs_background_task(application_id, assessment_id, job_title, job_description, cv_summary, matched_skills)
+        
+        # Fetch the newly generated questions
+        q_res = await run_sync(
+            lambda: supabase.table("assessment_questions")
+            .select("*")
+            .eq("assessment_id", assessment_id)
+            .order("question_number")
+            .execute()
+        )
+        return {
+            "status": "ready",
+            "questions": [
+                CandidatePublicMCQItem(
+                    id=q["id"],
+                    assessment_id=q["assessment_id"],
+                    question_number=q["question_number"],
+                    question=q.get("question") or q.get("question_text", ""),
+                    option_a=q["option_a"],
+                    option_b=q["option_b"],
+                    option_c=q["option_c"],
+                    option_d=q["option_d"],
+                    skill_category=q.get("skill_category", "General"),
+                    difficulty=q.get("difficulty", "medium")
+                ).dict()
+                for q in (q_res.data or [])
+            ]
+        }
 
 def generate_fallback_mcqs(job_title: str, skills: List[str]) -> GeneratedAssessmentPayload:
     primary_skill = skills[0] if skills else "Software Engineering"

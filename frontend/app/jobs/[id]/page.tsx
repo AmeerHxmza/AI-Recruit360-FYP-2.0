@@ -24,17 +24,13 @@ import {
   Sparkles,
   Loader2,
   AlertCircle,
-  Building2,
-  MapPin,
-  Clock,
-  Briefcase,
   PlayCircle,
   PauseCircle,
   XCircle,
   X,
   Save,
   Copy,
-  ExternalLink,
+  ExternalLink
 } from "lucide-react";
 
 export default function JobDetailPage() {

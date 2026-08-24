@@ -5,7 +5,6 @@ import { ApplicationShell } from "@/components/layout/application-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabList, TabTrigger, TabContent } from "@/components/ui/tabs";
 import { Sparkles, User, Settings, Shield, Save } from "lucide-react";

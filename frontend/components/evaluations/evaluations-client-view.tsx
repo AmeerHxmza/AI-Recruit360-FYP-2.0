@@ -10,9 +10,6 @@ import { MatchScore } from "@/components/dashboard/match-score";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { Select } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableHeader,
@@ -21,11 +18,10 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { canManageEvaluations } from "@/lib/auth/permissions";
 import { getEvaluationsAction } from "@/app/actions/evaluations";
 import { FinalEvaluationItemWithDetails } from "@/lib/services/evaluation-service";
 import { FinalRecommendation, OrganizationRole } from "@/types/database.types";
-import { BarChart3, ShieldCheck, CheckCircle2, Clock, ExternalLink, Plus, Loader2, AlertCircle, X, Sparkles } from "lucide-react";
+import { BarChart3, ShieldCheck, CheckCircle2, Clock, ExternalLink, Loader2, AlertCircle, Sparkles } from "lucide-react";
 
 interface EvaluationsClientViewProps {
   initialEvaluations: FinalEvaluationItemWithDetails[];
@@ -35,11 +31,9 @@ interface EvaluationsClientViewProps {
 
 export function EvaluationsClientView({
   initialEvaluations,
-  role,
   orgName,
 }: EvaluationsClientViewProps) {
   const router = useRouter();
-  const isAuthorizedToManage = canManageEvaluations(role);
 
   const [evaluations, setEvaluations] = React.useState<FinalEvaluationItemWithDetails[]>(initialEvaluations);
   const [loading, setLoading] = React.useState<boolean>(false);

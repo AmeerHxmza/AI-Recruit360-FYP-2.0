@@ -14,6 +14,7 @@ from app.services.screening.agents import (
     synthesize_screening_decision,
 )
 from app.schemas.screening import ScreeningDecisionResult
+from app.services.ai_activity import log_ai_activity
 
 logger = logging.getLogger("ai_service.services.screening.orchestrator")
 
@@ -148,27 +149,19 @@ async def run_screening_pipeline(application_id: str) -> Optional[ScreeningDecis
             .execute()
         )
 
-        # Log AI Activity (non-blocking, best-effort)
+        # Log AI Activity
         if organization_id:
-            try:
-                await run_sync(
-                    lambda: supabase.table("ai_activity_logs")
-                    .insert({
-                        "organization_id": organization_id,
-                        "application_id": application_id,
-                        "job_id": job_id,
-                        "event_type": "cv_screened",
-                        "status": "success",
-                        "metadata": {
-                            "match_score": decision.match_score,
-                            "qualified": decision.qualified,
-                            "recommendation": decision.recommendation,
-                        },
-                    })
-                    .execute()
-                )
-            except Exception as log_err:
-                logger.warning(f"AI activity log write failed: {log_err}")
+            await log_ai_activity(
+                application_id=application_id,
+                event_type="cv_screened",
+                organization_id=organization_id,
+                metadata={
+                    "job_id": job_id,
+                    "match_score": decision.match_score,
+                    "qualified": decision.qualified,
+                    "recommendation": decision.recommendation,
+                }
+            )
 
     except Exception as db_err:
         logger.warning(f"Supabase DB sync warning during CV screening: {db_err}")
