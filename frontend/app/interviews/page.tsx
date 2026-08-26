@@ -26,7 +26,7 @@ function InterviewsSkeleton() {
   );
 }
 
-async function InterviewsServerData({ role }: { role: string }) {
+async function InterviewsServerData() {
   const ctx = await getOrganizationContext();
   if (!ctx) redirect("/onboarding/organization");
 
@@ -35,7 +35,6 @@ async function InterviewsServerData({ role }: { role: string }) {
   return (
     <InterviewsClientView
       initialInterviews={interviews}
-      role={role}
     />
   );
 }
@@ -52,7 +51,7 @@ export default async function InterviewsPage() {
       pageBreadcrumb={[orgName || "AI-Recruit360", "Interviews", "Rooms"]}
     >
       <Suspense fallback={<InterviewsSkeleton />}>
-        <InterviewsServerData role={ctx.role} />
+        <InterviewsServerData />
       </Suspense>
     </ApplicationShell>
   );

@@ -33,8 +33,19 @@ class WorkerSettings:
         task_generate_evaluation,
     ]
 
-    # Redis connection for the worker
-    redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
+    from arq.cron import cron
+    from app.workers.tasks import cleanup_abandoned_interviews
+    cron_jobs = [
+        cron(cleanup_abandoned_interviews, minute=set(range(0, 60, 5)))
+    ]
+
+    # Redis connection for the worker with cloud network resiliency
+    _rs = RedisSettings.from_dsn(settings.REDIS_URL)
+    _rs.conn_timeout = 10
+    _rs.conn_retries = 10
+    _rs.conn_retry_delay = 2
+    _rs.retry_on_timeout = True
+    redis_settings = _rs
 
     # How many concurrent jobs this worker will process
     max_jobs = 10

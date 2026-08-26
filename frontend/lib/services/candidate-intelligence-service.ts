@@ -103,13 +103,27 @@ export async function getCandidateIntelligence(candidateId: string): Promise<Can
       appliedAt: app.applied_at,
     };
 
-    // 2. Fetch all intelligence concurrently based on application_id
-    const [cvRes, asstRes, intRes, evalRes] = await Promise.all([
-      supabase.from("cv_screenings").select("*").eq("application_id", appId).limit(1).maybeSingle(),
-      supabase.from("assessments").select("*").eq("application_id", appId).limit(1).maybeSingle(),
-      supabase.from("interviews").select("*").eq("application_id", appId).limit(1).maybeSingle(),
-      supabase.from("final_evaluations").select("*").eq("application_id", appId).limit(1).maybeSingle(),
-    ]);
+    // 2. Fetch all intelligence concurrently based on application_id using a single nested select
+    const { data: pipelineData, error: pipelineError } = await supabase
+      .from("applications")
+      .select(`
+        cv_screenings (*),
+        assessments (*),
+        interviews (*),
+        final_evaluations (*)
+      `)
+      .eq("id", appId)
+      .single();
+
+    if (pipelineError) throw pipelineError;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getFirst = (item: any) => Array.isArray(item) ? item[0] : item;
+
+    const cvRes = { data: getFirst(pipelineData.cv_screenings) || null };
+    const asstRes = { data: getFirst(pipelineData.assessments) || null };
+    const intRes = { data: getFirst(pipelineData.interviews) || null };
+    const evalRes = { data: getFirst(pipelineData.final_evaluations) || null };
 
     if (cvRes.data) {
       const ms = Array.isArray(cvRes.data.matched_skills) ? (cvRes.data.matched_skills as string[]) : [];
@@ -161,11 +175,15 @@ export async function getCandidateIntelligence(candidateId: string): Promise<Can
     }
 
     if (intRes.data) {
-      // Fetch interview responses
+      // Fetch interview responses with real-time scoring dimensions
       const { data: irData } = await supabase
         .from("interview_responses")
         .select(`
           response_text,
+          technical_score,
+          communication_score,
+          relevance_score,
+          ai_feedback,
           interview_questions!inner (
             question_text
           )
@@ -173,18 +191,46 @@ export async function getCandidateIntelligence(candidateId: string): Promise<Can
         .eq("interview_id", intRes.data.id)
         .order("created_at", { ascending: true });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const responses: any[] = irData || [];
+      const validTech = responses.filter(r => r.technical_score != null).map(r => Number(r.technical_score));
+      const validComm = responses.filter(r => r.communication_score != null).map(r => Number(r.communication_score));
+      const validRel = responses.filter(r => r.relevance_score != null).map(r => Number(r.relevance_score));
+
+      const avgTech = validTech.length > 0 ? Math.round(validTech.reduce((a, b) => a + b, 0) / validTech.length) : null;
+      const avgComm = validComm.length > 0 ? Math.round(validComm.reduce((a, b) => a + b, 0) / validComm.length) : null;
+      const avgRel = validRel.length > 0 ? Math.round(validRel.reduce((a, b) => a + b, 0) / validRel.length) : null;
+
+      let calculatedOverall: number | null = intRes.data.overall_score != null ? Number(intRes.data.overall_score) : null;
+      if (calculatedOverall == null && evalRes.data?.interview_score != null) {
+        calculatedOverall = Number(evalRes.data.interview_score);
+      }
+      if (calculatedOverall == null && avgTech != null && avgComm != null && avgRel != null) {
+        calculatedOverall = Math.round(avgTech * 0.4 + avgComm * 0.3 + avgRel * 0.3);
+      }
+
+      let fb = "";
+      if (evalRes.data?.ai_summary) {
+        fb = evalRes.data.ai_summary;
+      } else {
+        const fbParts = responses.map(r => r.ai_feedback).filter(Boolean);
+        if (fbParts.length > 0) fb = fbParts.join(" ");
+      }
+
+      const isCompleted = intRes.data.status === "completed" || evalRes.data != null || (responses.length > 0 && calculatedOverall != null);
+
       result.interview = {
-        status: intRes.data.status || "pending",
-        overallScore: intRes.data.overall_score,
-        technicalScore: null,
-        communicationScore: null,
-        relevanceScore: null,
+        status: isCompleted ? "completed" : (intRes.data.status || "pending"),
+        overallScore: calculatedOverall,
+        technicalScore: avgTech ?? calculatedOverall,
+        communicationScore: avgComm ?? calculatedOverall,
+        relevanceScore: avgRel ?? calculatedOverall,
         transcript: null,
-        feedback: null, // Feedback is in final evaluation
+        feedback: fb || (isCompleted ? "AI technical interview completed and evaluated." : null),
         createdAt: intRes.data.created_at,
         completedAt: intRes.data.completed_at || null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        responses: (irData || []).map((r: any) => ({
+        responses: responses.map((r: any) => ({
           questionText: r.interview_questions?.question_text || "",
           responseText: r.response_text || "",
         })),

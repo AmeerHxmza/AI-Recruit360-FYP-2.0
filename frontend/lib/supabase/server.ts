@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Database } from "@/types/database.types";
+import { cache } from "react";
 
-export async function createClient() {
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -31,11 +32,11 @@ export async function createClient() {
       },
     },
   });
-}
+});
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-export async function createAdminClient() {
+export const createAdminClient = cache(async () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -52,4 +53,4 @@ export async function createAdminClient() {
       persistSession: false
     }
   });
-}
+});

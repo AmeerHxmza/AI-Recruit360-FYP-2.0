@@ -58,9 +58,21 @@ async def screen_application(request: Request, req: ScreenApplicationRequest, ba
 
 
 @router.post("/extract-cv")
-@limiter.limit("30/minute")
+@limiter.limit("5/minute")
 async def extract_cv_document(request: Request, file: UploadFile = File(...)):
     """Extract plain text from a PDF/DOCX CV upload."""
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File size exceeds 10MB limit.")
+        
+    allowed_mimes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain"
+    ]
+    if file.content_type not in allowed_mimes:
+        raise HTTPException(status_code=415, detail="Unsupported MIME type. Only PDF, DOCX, and TXT are allowed.")
+
     try:
         content = await file.read()
         extracted_text = extract_text_from_bytes(

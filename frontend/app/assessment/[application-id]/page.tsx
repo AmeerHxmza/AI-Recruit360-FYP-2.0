@@ -30,7 +30,7 @@ export default function CandidateAssessmentPage() {
   const [finalResult, setFinalResult] = React.useState<PythonAssessmentFinalResult | null>(null);
 
   // Fetch Assessment with Polling
-  const fetchAssessmentRef = React.useRef<() => void>();
+  const fetchAssessmentRef = React.useRef<() => void>(undefined);
   
   const fetchAssessment = React.useCallback(async () => {
     if (!applicationId) return;
@@ -40,9 +40,10 @@ export default function CandidateAssessmentPage() {
       
       if (res.success && res.data) {
         if (res.data.status === "generating") {
-          // Keep polling if generating
+          // Keep polling while generating without dropping the loading spinner
+          setLoading(true);
           if (fetchAssessmentRef.current) {
-            setTimeout(fetchAssessmentRef.current, 3000);
+            setTimeout(fetchAssessmentRef.current, 2500);
           }
           return;
         }
@@ -59,7 +60,7 @@ export default function CandidateAssessmentPage() {
               correct_answers: assessment.correct_answers || 0,
               score: assessment.score || 0,
               percentage: assessment.percentage || 0,
-              passed: (assessment.percentage || 0) >= 70, // Fallback passing criteria
+              passed: (assessment.percentage || 0) >= 60,
             });
             setAssessmentComplete(true);
           } else {
@@ -67,6 +68,8 @@ export default function CandidateAssessmentPage() {
             const answeredCount = answers.length;
             setCurrentIdx(Math.min(answeredCount, res.data.questions.length - 1));
           }
+          setLoading(false);
+          return;
         } else {
           setError("Failed to load assessment. You may not be qualified for this step.");
         }
@@ -76,9 +79,8 @@ export default function CandidateAssessmentPage() {
     } catch (err) {
       console.error(err);
       setError("An unexpected error occurred.");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, [applicationId]);
 
   React.useEffect(() => {

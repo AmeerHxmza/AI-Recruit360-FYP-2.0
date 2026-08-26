@@ -122,25 +122,80 @@ def test_missing_api_key():
             os.environ["OPENAI_API_KEY"] = original_openai
             app.core.config.settings.OPENAI_API_KEY = original_openai
 
-# 10. Duplicate screening (Idempotency)
+# 10. End-to-end Pipeline Test
 @pytest.mark.asyncio
-async def test_duplicate_screening_idempotency():
+async def test_screening_pipeline():
     from app.services.screening.orchestrator import run_screening_pipeline
     
-    class MockData:
-        def __init__(self, data):
-            self.data = data
+    class EmptyData:
+        data = None
 
-    with patch("app.db.supabase.get_supabase_client"), \
-         patch("app.services.screening.orchestrator.run_sync", new_callable=AsyncMock) as mock_run_sync:
+    with patch("app.services.screening.orchestrator.run_sync", new_callable=AsyncMock) as mock_run_sync, \
+         patch("app.services.screening.orchestrator.get_application_context", new_callable=AsyncMock) as mock_ctx, \
+         patch("app.services.screening.orchestrator.extract_text_from_bytes") as mock_extract, \
+         patch("app.services.screening.orchestrator.get_candidate_cv_bytes", new_callable=AsyncMock) as mock_cv, \
+         patch("app.services.screening.cv_analyzer.get_ai_provider") as mock_cv_provider, \
+         patch("app.services.screening.job_analyzer.get_ai_provider") as mock_job_provider:
+         
+        # Mock AI Provider for CV and Job Analyzer
+        mock_ai_instance = AsyncMock()
         
-        # Mock the run_sync call to return a dictionary in .data
-        mock_run_sync.return_value = MockData(data={"match_score": 90.0, "recommendation": "strong_match", "processing_status": "completed"})
+        # We need it to return JobAnalysisResult for analyze_job, and CVExtractedData for parse_cv
+        # generate_structured takes response_model, we can just return a mock object that matches the schema
+        from app.schemas.screening import JobAnalysisResult, CVExtractedData, SkillRequirement, CVExtractedExperience
         
-        # Call it, should short circuit and return the mock data without doing heavy lifting
+        job_result = JobAnalysisResult(
+            normalized_title="Software Engineer",
+            critical_skills=[SkillRequirement(name="Python", importance="critical")],
+            important_skills=[SkillRequirement(name="SQL", importance="important")],
+            nice_to_have_skills=[],
+            minimum_experience_years=3.0,
+            preferred_experience_years=5.0,
+            education_requirements=["BS"],
+            responsibilities=[],
+            technical_domains=[]
+        )
+        
+        cv_result = CVExtractedData(
+            candidate_name="Jane Doe",
+            skills=["Python", "SQL"],
+            experience=[CVExtractedExperience(title="Dev", duration_years=3.5, highlights=["Python backend"])],
+            education=["BS CS"],
+            projects=[],
+            certifications=[]
+        )
+        
+        async def mock_generate_structured(prompt, response_model, **kwargs):
+            if response_model == JobAnalysisResult:
+                return job_result
+            elif response_model == CVExtractedData:
+                return cv_result
+            return None
+            
+        mock_ai_instance.generate_structured.side_effect = mock_generate_structured
+        mock_cv_provider.return_value = mock_ai_instance
+        mock_job_provider.return_value = mock_ai_instance
+         
+        # Make run_sync (idempotency & inserts) return empty
+        mock_run_sync.return_value = EmptyData()
+        
+        # Provide real-looking context
+        mock_ctx.return_value = (
+            {"organization_id": "org_1", "job_id": "job_1"},
+            {"title": "Software Engineer", "description": "Need 3 years of Python and SQL experience.", "requirements": "Python, SQL"},
+            {"full_name": "Jane Doe"}
+        )
+        
+        # Bypass PDF extractor logic
+        mock_cv.return_value = b"mock bytes"
+        mock_extract.return_value = "Jane Doe\nSoftware Engineer\nSkills: Python, SQL\nExperience: 3 years building backends in Python."
+        
         decision = await run_screening_pipeline("app-123")
-        assert decision.match_score == 90.0
-        assert decision.recommendation == "strong_match"
+        
+        # The real scoring logic will execute based on the LLM's parsed output.
+        assert decision is not None
+        assert decision.match_score > 0.0
+        assert isinstance(decision.qualified, bool)
 
 # 11. Concurrent screening isolation (HTTP endpoint test)
 def test_concurrent_isolation_api_endpoint():

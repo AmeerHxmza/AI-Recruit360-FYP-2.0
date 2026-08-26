@@ -17,6 +17,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { InterviewItemWithDetails } from "@/lib/services/interview-service";
+import { getInterviewsAction } from "@/app/actions/interviews";
+import { InterviewStatus } from "@/types/database.types";
 import { Video, Clock, CheckCircle2, Sparkles, ExternalLink, Loader2, AlertCircle, Calendar } from "lucide-react";
 
 interface InterviewsClientViewProps {

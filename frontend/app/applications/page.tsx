@@ -21,11 +21,10 @@ function ApplicationsSkeleton() {
   );
 }
 
-async function ApplicationsServerData({ role }: { role: string }) {
-  const ctx = await getOrganizationContext();
-  if (!ctx) redirect("/onboarding/organization");
+import { OrganizationRole } from "@/types/database.types";
 
-  const applications = await getApplicationsForOrgWithDetails(ctx.organization.id);
+async function ApplicationsServerData({ role, orgId }: { role: OrganizationRole, orgId: string }) {
+  const applications = await getApplicationsForOrgWithDetails(orgId);
 
   return (
     <ApplicationsClientView
@@ -47,7 +46,7 @@ export default async function ApplicationsPage() {
       pageBreadcrumb={[orgName || "AI-Recruit360", "Recruitment", "Pipeline"]}
     >
       <Suspense fallback={<ApplicationsSkeleton />}>
-        <ApplicationsServerData role={ctx.role} />
+        <ApplicationsServerData role={ctx.role} orgId={ctx.organization.id} />
       </Suspense>
     </ApplicationShell>
   );

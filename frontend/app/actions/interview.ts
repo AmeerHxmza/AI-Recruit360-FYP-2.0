@@ -62,4 +62,22 @@ export async function transcribeAudioAction(formData: FormData): Promise<ActionR
     return { success: false, error: errorMsg };
   }
 }
+export async function getSimliTokenAction(): Promise<ActionResult<{ session_token: string }>> {
+  try {
+    const data = await aiServiceClient.getSimliToken();
+    return { success: true, data };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to fetch simli token.";
+    return { success: false, error: errorMsg };
+  }
+}
 
+export async function degradeAvatarAction(interviewId: string): Promise<ActionResult<{ status: string }>> {
+  try {
+    const data = await aiServiceClient.degradeAvatar(interviewId);
+    return { success: true, data };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to degrade avatar.";
+    return { success: false, error: errorMsg };
+  }
+}

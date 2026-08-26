@@ -105,3 +105,28 @@ async def task_generate_evaluation(
     except Exception as exc:
         logger.error(f"[ARQ] Final evaluation failed for application_id={application_id}: {exc}")
         raise
+
+# ── Maintenance Tasks ─────────────────────────────────────────────────────────
+
+async def cleanup_abandoned_interviews(ctx: dict) -> None:
+    """Cron job to transition idle in_progress interviews to abandoned."""
+    from app.db.supabase import get_supabase_client, run_sync
+    import datetime
+    
+    logger.info("[ARQ] Running cleanup_abandoned_interviews")
+    try:
+        threshold = (datetime.datetime.utcnow() - datetime.timedelta(minutes=15)).isoformat()
+        supabase = get_supabase_client()
+        
+        res = await run_sync(
+            lambda: supabase.table("interviews")
+            .update({"status": "abandoned"})
+            .eq("status", "in_progress")
+            .lt("updated_at", threshold)
+            .execute()
+        )
+        
+        if res.data and len(res.data) > 0:
+            logger.info(f"[ARQ] Abandoned {len(res.data)} idle interviews.")
+    except Exception as exc:
+        logger.error(f"[ARQ] Cleanup abandoned interviews failed: {exc}")

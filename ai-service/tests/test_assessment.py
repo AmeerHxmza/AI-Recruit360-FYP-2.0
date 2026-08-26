@@ -33,7 +33,7 @@ async def test_generate_mcqs_idempotency(mock_run_sync):
     # Mocking existing questions
     mock_existing_questions = MagicMock()
     mock_existing_questions.data = [
-        {"id": f"q_{i}", "assessment_id": "ass_123", "question_number": i, "option_a": "A", "option_b": "B", "option_c": "C", "option_d": "D"}
+        {"id": f"q_{i}", "assessment_id": "ass_123", "question_number": i, "question": f"Question #{i}", "option_a": "A", "option_b": "B", "option_c": "C", "option_d": "D"}
         for i in range(1, 11)
     ]
     
@@ -44,8 +44,8 @@ async def test_generate_mcqs_idempotency(mock_run_sync):
     
     result = await generate_personalized_mcqs(application_id="app_123")
     
-    assert len(result) == 10
-    assert result[0].assessment_id == "ass_123"
+    assert len(result["questions"]) == 10
+    assert result["questions"][0]["assessment_id"] == "ass_123"
     # Ensure AI provider was NOT called
     assert mock_run_sync.call_count == 2
 
@@ -101,7 +101,7 @@ async def test_finalize_assessment_scoring(mock_get_supabase):
     }
     
     ass_res = MagicMock()
-    ass_res.data = [{"id": "ass_123", "application_id": "app_123", "total_questions": 10}]
+    ass_res.data = [{"id": "ass_123", "application_id": "app_123", "total_questions": 10, "status": "pending"}]
     table_mocks["assessments"].select.return_value.eq.return_value.execute.return_value = ass_res
     
     ans_res = MagicMock()

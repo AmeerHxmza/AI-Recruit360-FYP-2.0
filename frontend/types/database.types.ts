@@ -206,8 +206,6 @@ export type Database = {
           email: string;
           phone: string | null;
           location: string | null;
-          headline: string | null;
-          summary: string | null;
           linkedin_url: string | null;
           portfolio_url: string | null;
           created_at: string;
@@ -220,8 +218,6 @@ export type Database = {
           email: string;
           phone?: string | null;
           location?: string | null;
-          headline?: string | null;
-          summary?: string | null;
           linkedin_url?: string | null;
           portfolio_url?: string | null;
           created_at?: string;
@@ -234,8 +230,6 @@ export type Database = {
           email?: string;
           phone?: string | null;
           location?: string | null;
-          headline?: string | null;
-          summary?: string | null;
           linkedin_url?: string | null;
           portfolio_url?: string | null;
           created_at?: string;

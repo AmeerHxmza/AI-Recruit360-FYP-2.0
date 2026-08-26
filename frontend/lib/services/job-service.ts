@@ -208,7 +208,7 @@ export async function createJob(
       status: input.status || "active",
       published_at: new Date().toISOString(),
     })
-    .select("*")
+    .select("id, organization_id, created_by, title, slug, department, location, employment_type, workplace_type, description, responsibilities, qualifications, requirements, status, published_at, closed_at, created_at, updated_at")
     .single();
 
   if (error || !data) {
@@ -254,7 +254,7 @@ export async function updateJob(
     .update(updatePayload)
     .eq("organization_id", orgId)
     .eq("id", jobId)
-    .select("*")
+    .select("id, organization_id, created_by, title, slug, department, location, employment_type, workplace_type, description, responsibilities, qualifications, requirements, status, published_at, closed_at, created_at, updated_at")
     .single();
 
   if (error || !data) {

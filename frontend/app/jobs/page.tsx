@@ -21,11 +21,10 @@ function JobsSkeleton() {
   );
 }
 
-async function JobsServerData({ role }: { role: string }) {
-  const ctx = await getOrganizationContext();
-  if (!ctx) redirect("/onboarding/organization");
+import { OrganizationRole } from "@/types/database.types";
 
-  const jobs = await getJobsForOrg(ctx.organization.id);
+async function JobsServerData({ role, orgId }: { role: OrganizationRole, orgId: string }) {
+  const jobs = await getJobsForOrg(orgId);
 
   return (
     <JobsClientView
@@ -47,7 +46,7 @@ export default async function JobsPage() {
       pageBreadcrumb={[orgName || "AI-Recruit360", "Jobs", "Directory"]}
     >
       <Suspense fallback={<JobsSkeleton />}>
-        <JobsServerData role={ctx.role} />
+        <JobsServerData role={ctx.role} orgId={ctx.organization.id} />
       </Suspense>
     </ApplicationShell>
   );

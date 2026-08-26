@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 const PYTHON_BACKEND_BASE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000/api/v1";
 const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "recruit360_shared_backend_secret_2026";
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Authorize: Verify the application is actually in the 'interview' state
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { data: application } = await supabase
       .from("applications")
       .select("status")

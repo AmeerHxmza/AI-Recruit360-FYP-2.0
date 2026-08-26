@@ -26,11 +26,8 @@ function DashboardSkeleton() {
   );
 }
 
-async function DashboardServerData({ userName }: { userName: string }) {
-  const ctx = await getOrganizationContext();
-  if (!ctx) redirect("/onboarding/organization");
-
-  const dashboardData = await getDashboardDataForOrg(ctx.organization.id);
+async function DashboardServerData({ userName, orgId }: { userName: string, orgId: string }) {
+  const dashboardData = await getDashboardDataForOrg(orgId);
 
   return (
     <DashboardClientView
@@ -53,7 +50,7 @@ export default async function DashboardPage() {
       pageBreadcrumb={[orgName || "AI-Recruit360", "Command Center", "Overview"]}
     >
       <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardServerData userName={userName} />
+        <DashboardServerData userName={userName} orgId={ctx.organization.id} />
       </Suspense>
     </ApplicationShell>
   );

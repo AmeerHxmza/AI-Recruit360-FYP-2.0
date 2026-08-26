@@ -40,56 +40,111 @@ export interface DashboardData {
   };
 }
 
+import { getCachedData } from "@/lib/redis/cache";
+
 export async function getDashboardDataForOrg(orgId: string): Promise<DashboardData> {
-  const { durationMs: authDuration } = await measurePerformance("Auth Check (Dashboard)", async () => {
+  await measurePerformance("Auth Check (Dashboard)", async () => {
     return await getCurrentOrganization(orgId);
-  });
+  }, "auth");
 
   const supabase = await createClient();
 
   try {
-    const { result, durationMs: dbDuration } = await measurePerformance("DB Query (Dashboard Summary)", async () => {
-      const { data, error } = await supabase.rpc("get_dashboard_summary", { _org_id: orgId });
+    const result = await getCachedData(`org:${orgId}:dashboard`, async () => {
+      const { result: dbData } = await measurePerformance("DB Query (Dashboard Summary)", async () => {
+        // Fetch all required data concurrently
+        const [jobsRes, appsRes, screenRes, intRes, asstRes, evalRes] = await Promise.all([
+          supabase.from("jobs").select("id, status").eq("organization_id", orgId),
+          supabase.from("applications").select(`
+            id, candidate_id, job_id, status, applied_at,
+            candidates (full_name, email),
+            jobs (title)
+          `).eq("organization_id", orgId).order("applied_at", { ascending: false }),
+          supabase.from("cv_screenings").select("application_id, match_score, recommendation").eq("organization_id", orgId),
+          supabase.from("interviews").select("application_id, overall_score, status").eq("organization_id", orgId),
+          supabase.from("assessments").select("application_id, score, status").eq("organization_id", orgId),
+          supabase.from("final_evaluations").select("application_id, overall_score, recommendation").eq("organization_id", orgId),
+        ]);
 
-      if (error || !data) {
-        throw new DatabaseError("Failed to fetch dashboard summary from database.");
-      }
+        const jobs = jobsRes.data || [];
+        const apps = appsRes.data || [];
+        const screenings = screenRes.data || [];
+        const interviews = intRes.data || [];
+        const assessments = asstRes.data || [];
+        const evaluations = evalRes.data || [];
 
-      // The RPC function returns a JSON object that perfectly matches the DashboardData structure,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload = data as any;
-      
-      return {
-        metrics: {
-          activeJobs: payload.metrics?.activeJobs || 0,
-          totalApplications: payload.metrics?.totalApplications || 0,
-          qualifiedCandidates: payload.metrics?.qualifiedCandidates || 0,
-          aiInterviews: payload.metrics?.aiInterviews || 0,
-        },
-        funnel: {
-          applied: payload.funnel?.applied || 0,
-          screening: payload.funnel?.screening || 0,
-          assessment: payload.funnel?.assessment || 0,
-          interview: payload.funnel?.interview || 0,
-          evaluation: payload.funnel?.evaluation || 0,
-          shortlisted: payload.funnel?.shortlisted || 0,
-          rejected: payload.funnel?.rejected || 0,
-          knocked_out: payload.funnel?.knocked_out || 0,
-          total: payload.funnel?.total || 0,
-        },
-        recentApplications: Array.isArray(payload.recentApplications) ? payload.recentApplications : [],
-        aiSummary: {
-          totalScreened: payload.aiSummary?.totalScreened || 0,
-          averageMatchScore: payload.aiSummary?.averageMatchScore || 0,
-          qualifiedCount: payload.aiSummary?.qualifiedCount || 0,
-          knockedOutCount: payload.aiSummary?.knockedOutCount || 0,
-        },
-      } as DashboardData;
-    });
+        // Build quick lookup maps
+        const screenMap = new Map(screenings.map(s => [s.application_id, s]));
+        const asstMap = new Map(assessments.map(a => [a.application_id, a]));
+        const intMap = new Map(interviews.map(i => [i.application_id, i]));
+        const evalMap = new Map(evaluations.map(e => [e.application_id, e]));
 
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[PERF DASHBOARD] Auth: ${authDuration}ms | DB: ${dbDuration}ms | Total: ${authDuration + dbDuration}ms`);
-    }
+        const activeJobs = jobs.filter(j => j.status === "active").length;
+        const totalApplications = apps.length;
+        const qualifiedCandidates = apps.filter(a =>
+          ["assessment", "interview", "evaluation", "shortlisted", "hired"].includes(a.status)
+        ).length;
+        const aiInterviews = interviews.filter(i => i.status !== "abandoned").length;
+
+        const funnel = {
+          applied: apps.filter(a => a.status === "applied").length,
+          screening: apps.filter(a => a.status === "screening").length,
+          assessment: apps.filter(a => a.status === "assessment").length,
+          interview: apps.filter(a => a.status === "interview").length,
+          evaluation: apps.filter(a => a.status === "evaluation" || a.status === "hired").length,
+          shortlisted: apps.filter(a => a.status === "shortlisted").length,
+          rejected: apps.filter(a => a.status === "rejected").length,
+          knocked_out: apps.filter(a => a.status === "knocked_out" || a.status === "assessment_failed").length,
+          total: totalApplications,
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const recentApplications = apps.slice(0, 8).map((a: any) => {
+          const sc = screenMap.get(a.id);
+          const ast = asstMap.get(a.id);
+          const it = intMap.get(a.id);
+          const ev = evalMap.get(a.id);
+
+          return {
+            id: a.id,
+            candidateName: a.candidates?.full_name || "Applicant",
+            candidateEmail: a.candidates?.email || "N/A",
+            jobTitle: a.jobs?.title || "Position",
+            status: a.status,
+            cvMatch: sc ? Number(sc.match_score) : null,
+            assessmentScore: ast ? Number(ast.score) : null,
+            interviewScore: ev ? Number(ev.overall_score) : (it ? Number(it.overall_score) : null),
+            createdAt: a.applied_at,
+          };
+        });
+
+        const totalScreened = screenings.length;
+        const averageMatchScore = totalScreened > 0
+          ? Math.round(screenings.reduce((acc, s) => acc + (Number(s.match_score) || 0), 0) / totalScreened)
+          : 0;
+        const qualifiedCount = screenings.filter(s => s.recommendation === "strong_match" || s.recommendation === "match").length;
+        const knockedOutCount = screenings.filter(s => s.recommendation === "no_match" || s.recommendation === "borderline").length;
+
+        return {
+          metrics: {
+            activeJobs,
+            totalApplications,
+            qualifiedCandidates,
+            aiInterviews,
+          },
+          funnel,
+          recentApplications,
+          aiSummary: {
+            totalScreened,
+            averageMatchScore,
+            qualifiedCount,
+            knockedOutCount,
+          },
+        } as DashboardData;
+      }, "db");
+
+      return dbData;
+    }, 5); // 5 seconds cache for real-time responsiveness
 
     return result;
   } catch (err: unknown) {

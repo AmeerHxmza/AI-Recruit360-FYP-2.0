@@ -9,7 +9,7 @@ if (typeof window !== "undefined") {
 
 const AI_SERVICE_BASE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000/api/v1";
 const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "recruit360_shared_backend_secret_2026";
-const DEFAULT_TIMEOUT_MS = 45000; // 45s maximum timeout for AI processing
+const DEFAULT_TIMEOUT_MS = 10000; // 10s strict timeout for AI processing
 
 async function aiServiceFetch<T>(
   endpoint: string,
@@ -225,12 +225,31 @@ export const aiServiceClient = {
   },
 
   /**
+   * Fetches Simli session token
+   */
+  getSimliToken: async (): Promise<{ session_token: string }> => {
+    return aiServiceFetch<{ session_token: string }>("/interviews/simli-token", {
+      method: "POST",
+    });
+  },
+
+  /**
    * Transcribe recorded audio file
    */
   transcribeAudioFile: async (formData: FormData): Promise<{ transcript: string }> => {
     return aiServiceFetch<{ transcript: string }>("/interviews/stt", {
       method: "POST",
       body: formData,
+    });
+  },
+
+  /**
+   * Mark interview as avatar_degraded
+   */
+  degradeAvatar: async (interviewId: string): Promise<{ status: string }> => {
+    return aiServiceFetch<{ status: string }>("/interviews/degrade-avatar", {
+      method: "POST",
+      body: JSON.stringify({ interview_id: interviewId }),
     });
   },
 };

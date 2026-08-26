@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class GeneratedInterviewQuestion(BaseModel):
+    id: Optional[str] = None
     question_number: int
     question_text: str
     question_type: str = Field(description="technical | behavioral | situational | follow_up")

@@ -21,7 +21,7 @@ export async function getInterviewsForOrg(orgId: string, applicationId?: string)
 
   let query = supabase
     .from("interviews")
-    .select("*")
+    .select("id, organization_id, application_id, status, interview_type, total_questions, questions_answered, overall_score, started_at, completed_at, created_at, updated_at")
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false });
 
@@ -48,7 +48,7 @@ export async function getInterviewsForOrgWithDetails(
   let query = supabase
     .from("interviews")
     .select(`
-      *,
+      id, organization_id, application_id, status, interview_type, total_questions, questions_answered, overall_score, started_at, completed_at, created_at, updated_at,
       applications (
         candidates (
           full_name,
@@ -126,7 +126,7 @@ export async function getInterviewById(orgId: string, interviewId: string): Prom
 
   const { data, error } = await supabase
     .from("interviews")
-    .select("*")
+    .select("id, organization_id, application_id, status, interview_type, total_questions, questions_answered, overall_score, started_at, completed_at, created_at, updated_at")
     .eq("organization_id", orgId)
     .eq("id", interviewId)
     .single();
@@ -148,7 +148,7 @@ export async function getInterviewByIdWithDetails(
   const { data, error } = await supabase
     .from("interviews")
     .select(`
-      *,
+      id, organization_id, application_id, status, interview_type, total_questions, questions_answered, overall_score, started_at, completed_at, created_at, updated_at,
       applications (
         candidates (
           full_name,
@@ -240,7 +240,7 @@ export async function createInterview(
       total_questions: input.total_questions || 8,
       status: "pending",
     })
-    .select("*")
+    .select("id, organization_id, application_id, status, interview_type, total_questions, questions_answered, overall_score, started_at, completed_at, created_at, updated_at")
     .single();
 
   if (error || !data) {
@@ -268,7 +268,7 @@ export async function updateInterviewStatus(
     .update({ status: newStatus })
     .eq("organization_id", orgId)
     .eq("id", interviewId)
-    .select("*")
+    .select("id, organization_id, application_id, status, interview_type, total_questions, questions_answered, overall_score, started_at, completed_at, created_at, updated_at")
     .single();
 
   if (error || !data) {
@@ -282,7 +282,7 @@ export async function getInterviewQuestions(interviewId: string): Promise<Interv
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("interview_questions")
-    .select("*")
+    .select("id, interview_id, question_number, question_text, question_type, source, skill_category, is_follow_up, created_at")
     .eq("interview_id", interviewId)
     .order("question_number", { ascending: true });
 

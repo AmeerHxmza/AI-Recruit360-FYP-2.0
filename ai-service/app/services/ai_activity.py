@@ -31,9 +31,22 @@ async def log_ai_activity(
         "metadata": metadata or {}
     }
     
+    if not organization_id and application_id:
+        try:
+            app_lookup = await run_sync(
+                lambda: supabase.table("applications").select("organization_id").eq("id", application_id).limit(1).execute()
+            )
+            if app_lookup.data and len(app_lookup.data) > 0:
+                organization_id = app_lookup.data[0].get("organization_id")
+        except Exception:
+            pass
+
     if organization_id:
         payload["organization_id"] = organization_id
-        
+    else:
+        logger.warning(f"Skipping ai_activity_logs insert for app {application_id}: missing organization_id")
+        return
+
     if duration_ms is not None:
         payload["metadata"]["duration_ms"] = duration_ms
 

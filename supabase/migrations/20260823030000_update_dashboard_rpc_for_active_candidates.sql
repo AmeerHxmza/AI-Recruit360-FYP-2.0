@@ -2,16 +2,6 @@
 CREATE OR REPLACE FUNCTION public.get_dashboard_summary(_org_id UUID)
 RETURNS JSONB AS $$
 DECLARE
-  _active_jobs INT := 0;
-  _total_candidates INT := 0;
-  _total_applications INT := 0;
-  _total_interviews INT := 0;
-  _shortlisted_count INT := 0;
-  _ai_analyses_count INT := 0;
-  
-  _funnel JSONB := '{}'::jsonb;
-  _recent_apps JSONB := '[]'::jsonb;
-  _ai_summary JSONB := '{}'::jsonb;
   _result JSONB;
 BEGIN
   -- Verify caller membership
@@ -19,54 +9,24 @@ BEGIN
     RAISE EXCEPTION 'Access denied to organization workspace data.';
   END IF;
 
-  -- 1. Counts
-  SELECT COUNT(*) INTO _active_jobs
-  FROM public.jobs
-  WHERE organization_id = _org_id AND status = 'active';
-
-  -- Only count candidates who have at least one active application (not completely rejected/knocked out across all jobs)
-  SELECT COUNT(DISTINCT a.candidate_id) INTO _total_candidates
-  FROM public.applications a
-  WHERE a.organization_id = _org_id 
-    AND a.status NOT IN ('rejected', 'knocked_out', 'assessment_failed');
-
-  SELECT COUNT(*) INTO _total_applications
-  FROM public.applications
-  WHERE organization_id = _org_id 
-    AND status NOT IN ('rejected', 'knocked_out', 'assessment_failed');
-
-  SELECT COUNT(*) INTO _total_interviews
-  FROM public.interviews i
-  JOIN public.applications a ON a.id = i.application_id
-  WHERE a.organization_id = _org_id 
-    AND a.status NOT IN ('rejected', 'knocked_out', 'assessment_failed')
-    AND i.status NOT IN ('abandoned', 'failed');
-
-  SELECT COUNT(*) INTO _shortlisted_count
-  FROM public.applications
-  WHERE organization_id = _org_id AND status = 'shortlisted';
-
-  SELECT COUNT(*) INTO _ai_analyses_count
-  FROM public.cv_screenings
-  WHERE organization_id = _org_id;
-
-  -- 2. Funnel Stage Aggregation (exclude negatives from total)
-  SELECT jsonb_build_object(
-    'total', COUNT(*),
-    'applied', COUNT(*) FILTER (WHERE status = 'applied'),
-    'screening', COUNT(*) FILTER (WHERE status = 'screening'),
-    'interview', COUNT(*) FILTER (WHERE status = 'interview'),
-    'evaluation', COUNT(*) FILTER (WHERE status = 'evaluation'),
-    'shortlisted', COUNT(*) FILTER (WHERE status = 'shortlisted'),
-    'hired', COUNT(*) FILTER (WHERE status = 'hired')
-  ) INTO _funnel
-  FROM public.applications
-  WHERE organization_id = _org_id 
-    AND status NOT IN ('rejected', 'knocked_out', 'assessment_failed');
-
-  -- 3. Recent 5 Applications with Candidate & Job Details
-  SELECT COALESCE(jsonb_agg(sub), '[]'::jsonb) INTO _recent_apps
-  FROM (
+  WITH dashboard_data AS (
+    SELECT
+      (SELECT COUNT(*) FROM public.jobs WHERE organization_id = _org_id AND status = 'active') as active_jobs,
+      (SELECT COUNT(*) FROM public.cv_screenings WHERE organization_id = _org_id) as ai_analyses_count
+  ),
+  app_data AS (
+    SELECT 
+      id,
+      status, 
+      candidate_id
+    FROM public.applications
+    WHERE organization_id = _org_id
+  ),
+  filtered_apps AS (
+    SELECT * FROM app_data 
+    WHERE status NOT IN ('rejected', 'knocked_out', 'assessment_failed')
+  ),
+  recent_apps AS (
     SELECT 
       a.id,
       a.status,
@@ -81,33 +41,50 @@ BEGIN
       AND a.status NOT IN ('rejected', 'knocked_out', 'assessment_failed')
     ORDER BY a.applied_at DESC
     LIMIT 5
-  ) sub;
-
-  -- 4. AI Screening Metrics Summary
+  ),
+  interview_data AS (
+    SELECT COUNT(i.id) as interview_count
+    FROM public.interviews i
+    JOIN filtered_apps a ON a.id = i.application_id
+    WHERE i.status NOT IN ('abandoned', 'failed')
+  ),
+  ai_metrics AS (
+    SELECT 
+      COALESCE(ROUND(AVG(match_score)), 0) as averageScore,
+      COUNT(*) FILTER (WHERE match_score >= 85) as strongMatches,
+      COUNT(*) FILTER (WHERE match_score >= 70 AND match_score < 85) as potentialMatches,
+      COUNT(*) FILTER (WHERE match_score < 70) as needsReview,
+      COUNT(*) as totalAnalyses
+    FROM public.cv_screenings
+    WHERE organization_id = _org_id
+  )
   SELECT jsonb_build_object(
-    'averageScore', COALESCE(ROUND(AVG(match_score)), 0),
-    'strongMatches', COUNT(*) FILTER (WHERE match_score >= 85),
-    'potentialMatches', COUNT(*) FILTER (WHERE match_score >= 70 AND match_score < 85),
-    'needsReview', COUNT(*) FILTER (WHERE match_score < 70),
-    'totalAnalyses', COUNT(*)
-  ) INTO _ai_summary
-  FROM public.cv_screenings
-  WHERE organization_id = _org_id;
-
-  -- Build final JSON payload
-  _result := jsonb_build_object(
     'metrics', jsonb_build_object(
-      'activeJobs', _active_jobs,
-      'totalCandidates', _total_candidates,
-      'totalApplications', _total_applications,
-      'totalInterviews', _total_interviews,
-      'shortlistedCount', _shortlisted_count,
-      'aiAnalysesCount', _ai_analyses_count
+      'activeJobs', (SELECT active_jobs FROM dashboard_data),
+      'totalCandidates', (SELECT COUNT(DISTINCT candidate_id) FROM filtered_apps),
+      'totalApplications', (SELECT COUNT(*) FROM filtered_apps),
+      'totalInterviews', (SELECT interview_count FROM interview_data),
+      'shortlistedCount', (SELECT COUNT(*) FROM app_data WHERE status = 'shortlisted'),
+      'aiAnalysesCount', (SELECT ai_analyses_count FROM dashboard_data)
     ),
-    'funnel', _funnel,
-    'recentApplications', _recent_apps,
-    'aiSummary', _ai_summary
-  );
+    'funnel', jsonb_build_object(
+      'total', (SELECT COUNT(*) FROM filtered_apps),
+      'applied', (SELECT COUNT(*) FROM filtered_apps WHERE status = 'applied'),
+      'screening', (SELECT COUNT(*) FROM filtered_apps WHERE status = 'screening'),
+      'interview', (SELECT COUNT(*) FROM filtered_apps WHERE status = 'interview'),
+      'evaluation', (SELECT COUNT(*) FROM filtered_apps WHERE status = 'evaluation'),
+      'shortlisted', (SELECT COUNT(*) FROM app_data WHERE status = 'shortlisted'),
+      'hired', (SELECT COUNT(*) FROM filtered_apps WHERE status = 'hired')
+    ),
+    'recentApplications', COALESCE((SELECT jsonb_agg(r) FROM recent_apps r), '[]'::jsonb),
+    'aiSummary', (SELECT jsonb_build_object(
+      'averageScore', averageScore,
+      'strongMatches', strongMatches,
+      'potentialMatches', potentialMatches,
+      'needsReview', needsReview,
+      'totalAnalyses', totalAnalyses
+    ) FROM ai_metrics)
+  ) INTO _result;
 
   RETURN _result;
 END;

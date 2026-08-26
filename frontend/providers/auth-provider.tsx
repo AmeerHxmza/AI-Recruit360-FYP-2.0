@@ -74,34 +74,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 1. Fetch user profile
         const { data: prof } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, full_name, avatar_url, job_title, created_at, updated_at")
           .eq("id", currentUser.id)
           .single();
 
-        if (prof) setProfile(prof);
+        if (prof) setProfile(prof as ProfileRow);
 
         // 2. Fetch organization memberships
         const { data: memberRows } = await supabase
           .from("organization_members")
-          .select("*")
+          .select("id, organization_id, user_id, role, created_at")
           .eq("user_id", currentUser.id);
 
         if (memberRows && memberRows.length > 0) {
           const orgIds = memberRows.map((m) => m.organization_id);
           const { data: orgs } = await supabase
             .from("organizations")
-            .select("*")
+            .select("id, name, slug, created_by, created_at, updated_at")
             .in("id", orgIds);
 
           if (orgs && orgs.length > 0) {
-            setOrganizations(orgs);
+            setOrganizations(orgs as OrganizationRow[]);
 
             // Determine active organization matching cookie preference if possible
             const activeMember = memberRows[0];
             const activeOrg = orgs.find((o) => o.id === activeMember.organization_id) || orgs[0];
-            setMembership(activeMember);
-            setRole(activeMember.role);
-            setOrganization(activeOrg);
+            setMembership(activeMember as OrganizationMemberRow);
+            setRole(activeMember.role as OrganizationRole);
+            setOrganization(activeOrg as OrganizationRow);
           } else {
             setOrganizations([]);
             setOrganization(null);

@@ -12,7 +12,7 @@ async def record_candidate_answer(submission: MCQAnswerSubmission) -> dict:
 
     # Retrieve real question with correct_option from database
     q_res = await run_sync(
-        lambda: supabase.table("assessment_questions").select("*, assessments(status)").eq("id", submission.question_id).execute()
+        lambda: supabase.table("assessment_questions").select("id, correct_option, assessments(status)").eq("id", submission.question_id).execute()
     )
     if not q_res.data or len(q_res.data) == 0:
         raise ValueError(f"Question with ID {submission.question_id} not found.")
@@ -62,7 +62,7 @@ async def finalize_assessment_session(assessment_id: str) -> AssessmentFinalResu
 
     # Get assessment record
     ass_res = await run_sync(
-        lambda: supabase.table("assessments").select("*").eq("id", assessment_id).execute()
+        lambda: supabase.table("assessments").select("id, application_id, status, total_questions, correct_answers, score, organization_id").eq("id", assessment_id).execute()
     )
     if not ass_res.data or len(ass_res.data) == 0:
         raise ValueError(f"Assessment {assessment_id} not found.")
@@ -83,7 +83,7 @@ async def finalize_assessment_session(assessment_id: str) -> AssessmentFinalResu
 
     # Get all submitted answers
     ans_res = await run_sync(
-        lambda: supabase.table("assessment_answers").select("*").eq("assessment_id", assessment_id).execute()
+        lambda: supabase.table("assessment_answers").select("is_correct").eq("assessment_id", assessment_id).execute()
     )
     answers = ans_res.data or []
 
@@ -99,7 +99,8 @@ async def finalize_assessment_session(assessment_id: str) -> AssessmentFinalResu
     # Update assessment record
     await run_sync(
         lambda: supabase.table("assessments").update({
-            "score": percentage,
+            "score": int(round(percentage)),
+            "percentage": percentage,
             "correct_answers": correct_count,
             "total_questions": total_q,
             "status": "completed",

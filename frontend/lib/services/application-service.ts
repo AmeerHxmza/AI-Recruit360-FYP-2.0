@@ -316,7 +316,7 @@ export async function createApplication(
       candidate_id: input.candidate_id,
       status: "applied",
     })
-    .select("*")
+    .select("id, organization_id, job_id, candidate_id, status, applied_at, screening_started_at, screening_completed_at, assessment_started_at, assessment_completed_at, interview_started_at, interview_completed_at, finalized_at, created_at, updated_at")
     .single();
 
   if (error || !data) {
@@ -344,7 +344,7 @@ export async function updateApplicationStatus(
     .update({ status: newStatus })
     .eq("organization_id", orgId)
     .eq("id", applicationId)
-    .select("*")
+    .select("id, organization_id, job_id, candidate_id, status, applied_at, screening_started_at, screening_completed_at, assessment_started_at, assessment_completed_at, interview_started_at, interview_completed_at, finalized_at, created_at, updated_at")
     .single();
 
   if (error || !data) {

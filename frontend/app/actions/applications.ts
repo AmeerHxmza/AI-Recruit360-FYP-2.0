@@ -36,48 +36,52 @@ export async function getApplicationsAction(filters?: {
   }
 }
 
+import { withPerfProfile } from "@/lib/performance/logger";
+
 export async function submitPublicApplicationAction(
   formData: FormData
 ): Promise<ActionResult<{ candidate_id: string; application_id: string }>> {
-  try {
-    const job_id = formData.get("job_id") as string;
-    const organization_id = formData.get("organization_id") as string;
-    const full_name = formData.get("full_name") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const location = formData.get("location") as string | undefined;
-    const linkedin_url = formData.get("linkedin_url") as string | undefined;
-    const portfolio_url = formData.get("portfolio_url") as string | undefined;
-    const cv_file = formData.get("cv_file") as File | null;
+  return withPerfProfile("submitPublicApplicationAction", async () => {
+    try {
+      const job_id = formData.get("job_id") as string;
+      const organization_id = formData.get("organization_id") as string;
+      const full_name = formData.get("full_name") as string;
+      const email = formData.get("email") as string;
+      const phone = formData.get("phone") as string;
+      const location = formData.get("location") as string | undefined;
+      const linkedin_url = formData.get("linkedin_url") as string | undefined;
+      const portfolio_url = formData.get("portfolio_url") as string | undefined;
+      const cv_file = formData.get("cv_file") as File | null;
 
-    if (!job_id || !organization_id || !full_name || !email || !phone) {
-      return { success: false, error: "Missing mandatory fields." };
+      if (!job_id || !organization_id || !full_name || !email || !phone) {
+        return { success: false, error: "Missing mandatory fields." };
+      }
+
+      const result = await submitPublicCandidateApplication({
+        job_id,
+        organization_id,
+        full_name,
+        email,
+        phone,
+        location,
+        linkedin_url,
+        portfolio_url,
+        cv_file: cv_file || undefined,
+      });
+
+      revalidatePath("/applications");
+      revalidatePath("/candidates");
+      revalidatePath("/dashboard");
+
+      return { success: true, data: result };
+    } catch (err: unknown) {
+      console.error("submitPublicApplicationAction Error:", err);
+      if (err instanceof AppError) {
+        return { success: false, error: err.message };
+      }
+      return { success: false, error: "Failed to submit application. Please check your information." };
     }
-
-    const result = await submitPublicCandidateApplication({
-      job_id,
-      organization_id,
-      full_name,
-      email,
-      phone,
-      location,
-      linkedin_url,
-      portfolio_url,
-      cv_file: cv_file || undefined,
-    });
-
-    revalidatePath("/applications");
-    revalidatePath("/candidates");
-    revalidatePath("/dashboard");
-
-    return { success: true, data: result };
-  } catch (err: unknown) {
-    console.error("submitPublicApplicationAction Error:", err);
-    if (err instanceof AppError) {
-      return { success: false, error: err.message };
-    }
-    return { success: false, error: "Failed to submit application. Please check your information." };
-  }
+  });
 }
 
 export async function createApplicationAction(input: {

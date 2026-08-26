@@ -224,7 +224,7 @@ export function DashboardClientView({ initialData, userName }: DashboardClientVi
                 <FileText className="h-8 w-8 text-[#68717E] mx-auto" />
                 <h4 className="text-xs font-bold text-[#F5F7FA]">No Submissions Yet</h4>
                 <p className="text-xs text-[#A7AFBC]">
-                  No candidate applications have been submitted to {orgName}.
+                  No candidate applications have been submitted to your organization.
                 </p>
               </div>
             )}

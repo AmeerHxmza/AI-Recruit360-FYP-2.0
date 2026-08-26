@@ -83,7 +83,7 @@ async def generate_interview_tts(request: Request, req: TTSRequest):
     """Generate text-to-speech audio for interview question narration."""
     try:
         from app.services.interview.tts import generate_female_voice_tts
-        audio_bytes = generate_female_voice_tts(req.text, tld=req.tld)
+        audio_bytes = await generate_female_voice_tts(req.text, tld=req.tld)
         return Response(content=audio_bytes, media_type="audio/mpeg")
     except Exception as e:
         logger.error(f"TTS audio error: {e}")
@@ -103,3 +103,55 @@ async def process_speech_to_text(request: Request, audio: UploadFile = File(...)
         logger.error(f"STT audio error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/simli-token")
+@limiter.limit("10/minute")
+async def get_simli_token(request: Request):
+    """Fetch Simli WebRTC Session Token."""
+    import httpx
+    try:
+        if not settings.SIMLI_API_KEY:
+            raise ValueError("SIMLI_API_KEY is missing.")
+            
+        url = "https://api.simli.ai/getSimliSessionToken"
+        # Optional: You can customize parameters according to Simli's docs, but typically apiKey is required.
+        # But wait, SimliClient calls generateSimliSessionToken locally in JS if it has the key.
+        # Wait, the prompt implies generating the token on the backend, or we can just send the API key if it's a test environment.
+        # Let's generate it in the backend for security.
+        payload = {
+            "apiKey": settings.SIMLI_API_KEY,
+            "config": {
+                "faceId": "tmp9c84fa1b-d102-4b2a-88cb-004353d712ce", # Simli Default Avatar or similar
+                "handleSilence": True,
+                "maxSessionLength": 3600,
+                "maxIdleTime": 300,
+                "model": "elevenlabs"
+            }
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, timeout=10.0)
+            response.raise_for_status()
+            data = response.json()
+            return {"session_token": data.get("session_token", "")}
+            
+    except Exception as e:
+        logger.error(f"Simli Token error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/degrade-avatar")
+@limiter.limit("5/minute")
+async def degrade_avatar(request: Request, req: NextQuestionRequest):
+    """Mark an interview as having a degraded avatar experience."""
+    try:
+        from app.db.supabase import get_supabase_client, run_sync
+        supabase = get_supabase_client()
+        await run_sync(
+            lambda: supabase.table("interviews")
+            .update({"status": "avatar_degraded"})
+            .eq("id", req.interview_id)
+            .execute()
+        )
+        return {"status": "avatar_degraded marked"}
+    except Exception as e:
+        logger.error(f"Degrade avatar error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -26,13 +26,12 @@ function CandidatesSkeleton() {
   );
 }
 
-async function CandidatesServerData({ role }: { role: string }) {
-  const ctx = await getOrganizationContext();
-  if (!ctx) redirect("/onboarding/organization");
+import { OrganizationRole } from "@/types/database.types";
 
+async function CandidatesServerData({ role, orgId }: { role: OrganizationRole, orgId: string }) {
   const [candidatesResult, counts] = await Promise.all([
-    getCandidatesForOrg(ctx.organization.id, { page: 1, pageSize: 20 }),
-    getCandidateCounts(ctx.organization.id),
+    getCandidatesForOrg(orgId, { page: 1, pageSize: 20 }),
+    getCandidateCounts(orgId),
   ]);
 
   return (
@@ -56,7 +55,7 @@ export default async function CandidatesPage() {
       pageBreadcrumb={[orgName || "AI-Recruit360", "Directory", "Candidates"]}
     >
       <Suspense fallback={<CandidatesSkeleton />}>
-        <CandidatesServerData role={ctx.role} />
+        <CandidatesServerData role={ctx.role} orgId={ctx.organization.id} />
       </Suspense>
     </ApplicationShell>
   );

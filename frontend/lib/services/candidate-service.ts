@@ -155,7 +155,7 @@ export async function createCandidate(
       linkedin_url: input.linkedin_url?.trim() || null,
       portfolio_url: input.portfolio_url?.trim() || null,
     })
-    .select("*")
+    .select("id, organization_id, full_name, email, phone, location, linkedin_url, portfolio_url, created_at, updated_at")
     .single();
 
   if (error || !data) {
@@ -202,7 +202,7 @@ export async function updateCandidate(
     .update(updatePayload)
     .eq("organization_id", orgId)
     .eq("id", candidateId)
-    .select("*")
+    .select("id, organization_id, full_name, email, phone, location, linkedin_url, portfolio_url, created_at, updated_at")
     .single();
 
   if (error || !data) {

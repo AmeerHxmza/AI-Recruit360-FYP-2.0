@@ -1,7 +1,7 @@
 import logging
 from app.providers.factory import get_ai_provider
 from app.schemas.interview import InterviewResponseEvaluation
-from app.db.supabase import get_supabase_client
+from app.db.supabase import get_supabase_client, run_sync
 
 logger = logging.getLogger("ai_service.services.interview.response_evaluator")
 
@@ -17,16 +17,16 @@ async def evaluate_interview_response(
     supabase = get_supabase_client()
 
     # SECURITY: Check interview status and existing answers
-    int_res = supabase.table("interviews").select("status").eq("id", interview_id).execute()
+    int_res = await run_sync(lambda: supabase.table("interviews").select("status").eq("id", interview_id).execute())
     if not int_res.data or int_res.data[0].get("status") == "completed":
         raise ValueError(f"Interview {interview_id} is completed or not found. Cannot evaluate response.")
 
-    existing = supabase.table("interview_responses").select("id").eq("question_id", question_id).execute()
+    existing = await run_sync(lambda: supabase.table("interview_responses").select("id").eq("question_id", question_id).execute())
     if existing.data and len(existing.data) > 0:
         raise ValueError(f"Question {question_id} has already been answered. Modification is not allowed.")
 
     # Get question text
-    q_res = supabase.table("interview_questions").select("*").eq("id", question_id).execute()
+    q_res = await run_sync(lambda: supabase.table("interview_questions").select("*").eq("id", question_id).execute())
     q_text = q_res.data[0]["question_text"] if q_res.data else "Technical Question"
 
     provider = get_ai_provider()
@@ -55,7 +55,7 @@ async def evaluate_interview_response(
         )
 
     # Insert or update interview_responses table
-    supabase.table("interview_responses").insert({
+    await run_sync(lambda: supabase.table("interview_responses").insert({
         "interview_id": interview_id,
         "question_id": question_id,
         "response_text": response_text,
@@ -64,6 +64,6 @@ async def evaluate_interview_response(
         "communication_score": eval_result.communication_score,
         "relevance_score": eval_result.relevance_score,
         "ai_feedback": eval_result.feedback
-    }).execute()
+    }).execute())
 
     return eval_result

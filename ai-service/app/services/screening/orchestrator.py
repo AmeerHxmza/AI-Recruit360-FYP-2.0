@@ -27,16 +27,16 @@ async def run_screening_pipeline(application_id: str) -> Optional[ScreeningDecis
     # 0. Idempotency Check (non-blocking)
     existing_screening = await run_sync(
         lambda: supabase.table("cv_screenings")
-        .select("*")
+        .select("match_score, recommendation, skills_score, experience_score, education_score, keyword_score, matched_skills, missing_skills, matched_experience, missing_requirements, evidence, reasoning_summary")
         .eq("application_id", application_id)
         .eq("processing_status", "completed")
-        .single()
+        .limit(1)
         .execute()
     )
 
-    if existing_screening.data:
+    if existing_screening.data and len(existing_screening.data) > 0:
         logger.info(f"Screening for {application_id} already completed. Returning existing.")
-        data = existing_screening.data
+        data = existing_screening.data[0]
         return ScreeningDecisionResult(
             match_score=data.get("match_score", 0.0),
             recommendation=data.get("recommendation", "no_match"),
@@ -66,8 +66,27 @@ async def run_screening_pipeline(application_id: str) -> Optional[ScreeningDecis
         cv_text = extract_text_from_bytes(cv_bytes, "cv.pdf", "application/pdf") # We guess PDF if unknown, extractor has fallbacks
     except Exception as e:
         logger.error(f"Failed to fetch/extract CV for {application_id}: {e}")
-        # Use fallback text if CV extraction fails completely
-        cv_text = f"{cand_data.get('full_name')} applied for {job_data.get('title')}."
+        await run_sync(
+            lambda: supabase.table("applications")
+            .update({"status": "extraction_failed"})
+            .eq("id", application_id)
+            .execute()
+        )
+        return ScreeningDecisionResult(
+            match_score=0.0,
+            recommendation="no_match",
+            qualified=False,
+            skills_score=0.0,
+            experience_score=0.0,
+            education_score=0.0,
+            relevance_score=0.0,
+            matched_skills=[],
+            missing_skills=[],
+            matched_experience=[],
+            missing_requirements=[],
+            evidence=[],
+            reasoning_summary=f"CV Extraction Failed: {e}"
+        )
 
     job_title = job_data.get("title", "")
     job_description = job_data.get("description", "")

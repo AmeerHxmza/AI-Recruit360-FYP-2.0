@@ -1,7 +1,7 @@
 "use server";
 
 import { aiServiceClient } from "@/lib/api/ai-service-client";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export async function getOrGenerateAssessmentAction(applicationId: string) {
   try {
@@ -10,7 +10,7 @@ export async function getOrGenerateAssessmentAction(applicationId: string) {
     });
     
     // Also fetch the assessment status and existing answers for state recovery
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { data: assessment } = await supabase
       .from("assessments")
       .select("*, assessment_answers(question_id, selected_option)")

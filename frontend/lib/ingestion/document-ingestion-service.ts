@@ -75,9 +75,9 @@ export async function ingestCandidateDocument(
 
   const supabase = await createClient();
 
-  // 5. Upload File to Supabase Private Storage Bucket ('candidate-documents')
+  // 5. Upload File to Supabase Private Storage Bucket ('candidate_documents')
   const { error: storageError } = await supabase.storage
-    .from("candidate-documents")
+    .from("candidate_documents")
     .upload(storagePath, fileBuffer, {
       contentType: fileType || "application/octet-stream",
       upsert: true,

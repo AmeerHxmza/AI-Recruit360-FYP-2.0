@@ -18,6 +18,11 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4o-mini"
+    
+    ELEVENLABS_API_KEY: Optional[str] = None
+    ELEVENLABS_VOICE_ID: str = "EXAVITQu4vr4xnSDxMaL"  # Bella
+    
+    SIMLI_API_KEY: Optional[str] = None
 
     # ── Security ─────────────────────────────────────────────────────────────────
     AI_SERVICE_SHARED_SECRET: str = "recruit360_shared_backend_secret_2026"

@@ -17,6 +17,7 @@ import {
 } from "@/lib/services/job-service";
 import { AppError } from "@/lib/utils/errors";
 import { JobStatus } from "@/types/database.types";
+import { getCachedData, invalidateCachePrefix } from "@/lib/redis/cache";
 
 export interface ActionResult<T> {
   success: boolean;
@@ -50,19 +51,26 @@ export async function getJobByIdAction(jobId: string): Promise<ActionResult<Job>
   }
 }
 
+import { withPerfProfile } from "@/lib/performance/logger";
+
 export async function getPublicJobBySlugAction(slug: string): Promise<ActionResult<Job>> {
-  try {
-    const job = await getPublicJobBySlug(slug);
-    if (!job) {
-      return { success: false, error: "Job position not found or no longer active." };
+  return withPerfProfile(`getPublicJobBySlugAction(${slug})`, async () => {
+    try {
+      const job = await getCachedData(`public:job:slug:${slug}`, async () => {
+        return await getPublicJobBySlug(slug);
+      }, 300); // 5 min cache
+      
+      if (!job) {
+        return { success: false, error: "Job position not found or no longer active." };
+      }
+      return { success: true, data: job };
+    } catch (err: unknown) {
+      if (err instanceof AppError) {
+        return { success: false, error: err.message };
+      }
+      return { success: false, error: "Failed to load job details." };
     }
-    return { success: true, data: job };
-  } catch (err: unknown) {
-    if (err instanceof AppError) {
-      return { success: false, error: err.message };
-    }
-    return { success: false, error: "Failed to load job details." };
-  }
+  });
 }
 
 export async function createJobAction(input: CreateJobInput): Promise<ActionResult<Job>> {
@@ -70,6 +78,9 @@ export async function createJobAction(input: CreateJobInput): Promise<ActionResu
     const org = await getCurrentOrganization();
     const job = await createJob(org.id, input);
 
+    await invalidateCachePrefix(`public:job:slug:${job.slug}`);
+    await invalidateCachePrefix(`org:${org.id}:jobCounts`);
+    
     revalidatePath("/jobs");
     revalidatePath("/dashboard");
 
@@ -89,6 +100,9 @@ export async function updateJobAction(
   try {
     const org = await getCurrentOrganization();
     const job = await updateJob(org.id, jobId, input);
+
+    await invalidateCachePrefix(`public:job:slug:${job.slug}`);
+    await invalidateCachePrefix(`org:${org.id}:jobCounts`);
 
     revalidatePath("/jobs");
     revalidatePath(`/jobs/${jobId}`);
@@ -111,6 +125,9 @@ export async function updateJobStatusAction(
     const org = await getCurrentOrganization();
     const job = await updateJobStatus(org.id, jobId, status);
 
+    await invalidateCachePrefix(`public:job:slug:${job.slug}`);
+    await invalidateCachePrefix(`org:${org.id}:jobCounts`);
+
     revalidatePath("/jobs");
     revalidatePath(`/jobs/${jobId}`);
     revalidatePath("/dashboard");
@@ -129,7 +146,9 @@ export async function getJobCountsAction(): Promise<
 > {
   try {
     const org = await getCurrentOrganization();
-    const counts = await getJobCounts(org.id);
+    const counts = await getCachedData(`org:${org.id}:jobCounts`, async () => {
+      return await getJobCounts(org.id);
+    }, 60); // 1 minute cache
     return { success: true, data: counts };
   } catch (err: unknown) {
     if (err instanceof AppError) {

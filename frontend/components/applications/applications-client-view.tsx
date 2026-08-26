@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { Section } from "@/components/layout/section";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ export function ApplicationsClientView({
   initialApplications,
   role,
 }: ApplicationsClientViewProps) {
+  const router = useRouter();
   const isAuthorizedToManage = canManageApplications(role);
 
   const [applications, setApplications] = React.useState<ApplicationItemWithDetails[]>(initialApplications);
