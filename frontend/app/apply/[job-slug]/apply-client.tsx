@@ -19,6 +19,7 @@ import {
   Briefcase,
   FileText,
 } from "lucide-react";
+import { JobContentRenderer } from "@/components/jobs/job-content-renderer";
 
 export default function PublicCandidateApplyClient({ initialJob }: { initialJob: Job }) {
   const router = useRouter();
@@ -184,21 +185,21 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
                   </span>
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-[#242932]">
-                  <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                    Description
+                <div className="space-y-3 pt-3 border-t border-[#242932]">
+                  <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#39D9FF]" />
+                    Job Description
                   </h3>
-                  <p className="text-xs text-[#A7AFBC] leading-relaxed whitespace-pre-line">
-                    {job.description || "No overview provided."}
-                  </p>
+                  <JobContentRenderer content={job.description || "No overview provided."} />
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-[#242932]">
-                  <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                    Requirements
+                <div className="space-y-3 pt-4 border-t border-[#242932]">
+                  <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#35D07F]" />
+                    Role Requirements
                   </h3>
-                  <div className="text-xs text-[#A7AFBC] leading-relaxed whitespace-pre-line bg-[#0D0F12] p-3 rounded-lg border border-[#242932]">
-                    {job.requirements || "Standard job qualifications apply."}
+                  <div className="p-3.5 rounded-xl bg-[#0D0F12] border border-[#242932]">
+                    <JobContentRenderer content={job.requirements || "Standard job qualifications apply."} />
                   </div>
                 </div>
               </div>

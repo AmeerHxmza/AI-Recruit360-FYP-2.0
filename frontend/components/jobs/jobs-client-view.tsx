@@ -30,6 +30,8 @@ import {
   Clock,
   FilterX,
   Building2,
+  Copy,
+  Check,
 } from "lucide-react";
 
 interface JobsClientViewProps {
@@ -44,6 +46,21 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
   const [jobs, setJobs] = React.useState<Job[]>(initialJobs);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const [copiedJobId, setCopiedJobId] = React.useState<string | null>(null);
+
+  const handleCopyLink = async (e: React.MouseEvent, slugOrId: string, id: string) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/apply/${slugOrId}`;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      }
+      setCopiedJobId(id);
+      setTimeout(() => setCopiedJobId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy", err);
+    }
+  };
 
   // Filters
   const [searchQuery, setSearchQuery] = React.useState<string>("");
@@ -339,10 +356,30 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
                       </TableCell>
                       <TableCell>{getStatusBadge(job.status)}</TableCell>
                       <TableCell className="text-xs text-[#68717E] font-mono">{formatDate(job.created_at)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleCopyLink(e, job.slug || job.id, job.id)}
+                          className="h-8 text-xs text-[#A7AFBC] hover:text-[#39D9FF] hover:bg-[#39D9FF]/10 gap-1 px-2"
+                          title="Copy public candidate application link"
+                        >
+                          {copiedJobId === job.id ? (
+                            <>
+                              <Check className="h-3 w-3 text-[#35D07F]" />
+                              <span className="text-[#35D07F] font-semibold text-[11px]">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3" />
+                              <span className="text-[11px]">Share</span>
+                            </>
+                          )}
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
+                          onClick={() => router.push(`/jobs/${job.id}`)}
                           className="h-8 text-xs text-[#39D9FF] hover:text-[#63E3FF] hover:bg-[#39D9FF]/10"
                         >
                           Manage
@@ -370,19 +407,20 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
                     {getStatusBadge(job.status)}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-[#A7AFBC] border-t border-[#242932] pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#A7AFBC] border-t border-[#242932] pt-2">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3.5 w-3.5 text-[#68717E]" />
                       <span>{job.location}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Building2 className="h-3.5 w-3.5 text-[#68717E]" />
-                      <span>{formatWorkplaceType(job.workplace_type)}</span>
-                    </div>
-                    <div className="flex items-center gap-1 ml-auto font-mono text-[11px] text-[#68717E]">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatDate(job.created_at)}</span>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleCopyLink(e, job.slug || job.id, job.id)}
+                      className="h-7 text-xs text-[#39D9FF] hover:bg-[#39D9FF]/10 gap-1 px-2"
+                    >
+                      {copiedJobId === job.id ? <Check className="h-3 w-3 text-[#35D07F]" /> : <Copy className="h-3 w-3" />}
+                      <span className="text-[10px]">{copiedJobId === job.id ? "Copied" : "Copy Link"}</span>
+                    </Button>
                   </div>
                 </div>
               ))}

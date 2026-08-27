@@ -3,15 +3,19 @@ import { ApplicationShell } from "@/components/layout/application-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { getOrganizationContext } from "@/lib/auth/session";
 import { getJobByIdAction } from "@/app/actions/jobs";
 import { getApplicationsAction } from "@/app/actions/applications";
 import { EmploymentType, WorkplaceType } from "@/types/database.types";
 import { analyzeJobDescriptionAction } from "@/app/actions/ai";
+import { JobContentRenderer } from "@/components/jobs/job-content-renderer";
+import { JobApplicationLinkCard } from "@/components/jobs/job-application-link-card";
 import {
   ArrowLeft,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -27,7 +31,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   // Eliminate Request Waterfalls using Promise.all safely
   const [jobRes, appsRes] = await Promise.all([
     getJobByIdAction(jobId),
-    getApplicationsAction() // TODO: This should be paginated or filtered by job_id on the backend
+    getApplicationsAction()
   ]);
 
   if (!jobRes.success || !jobRes.data) {
@@ -49,7 +53,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   const job = jobRes.data;
 
-  // Pipeline Stats calculation
+  // Cumulative Pipeline Stats calculation
   let pipelineStats = {
     applied: 0,
     screening: 0,
@@ -65,22 +69,18 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   if (appsRes.success && appsRes.data) {
     const jobApps = appsRes.data.filter(a => a.job_id === job.id);
     pipelineStats = {
-      applied: jobApps.filter(a => a.status === "applied").length,
-      screening: jobApps.filter(a => a.status === "screening").length,
-      assessment: jobApps.filter(a => a.status === "assessment").length,
-      interview: jobApps.filter(a => a.status === "interview").length,
-      evaluation: jobApps.filter(a => a.status === "evaluation" || a.status === "hired").length,
-      shortlisted: jobApps.filter(a => a.status === "shortlisted").length,
-      knockedOut: jobApps.filter(a => a.status === "knocked_out" || a.status === "assessment_failed" || a.status === "rejected").length,
+      applied: jobApps.length,
+      screening: jobApps.filter(a => ["screening", "knocked_out", "assessment", "assessment_failed", "interview", "evaluation", "shortlisted", "rejected", "hired"].includes(a.status)).length,
+      assessment: jobApps.filter(a => ["assessment", "assessment_failed", "interview", "evaluation", "shortlisted", "hired"].includes(a.status)).length,
+      interview: jobApps.filter(a => ["interview", "evaluation", "shortlisted", "hired"].includes(a.status)).length,
+      evaluation: jobApps.filter(a => ["evaluation", "shortlisted", "hired"].includes(a.status)).length,
+      shortlisted: jobApps.filter(a => ["shortlisted", "hired"].includes(a.status)).length,
+      knockedOut: jobApps.filter(a => ["knocked_out", "assessment_failed", "rejected"].includes(a.status)).length,
       totalApplicants: jobApps.length,
       qualified: jobApps.filter(a => ["assessment", "interview", "evaluation", "shortlisted", "hired"].includes(a.status)).length,
     };
   }
 
-  // Pre-fetch AI Analysis asynchronously without blocking the render deeply
-  // Actually, we can fetch it, but to avoid blocking if it's slow, we would use a Suspense boundary.
-  // For now, we will await it if it's fast enough, otherwise the user instructions ask us not to wait.
-  // However, `analyzeJobDescriptionAction` is reasonably fast as it uses lightweight prompt.
   const aiRes = await analyzeJobDescriptionAction({
     title: job.title,
     description: job.description || "Not provided",
@@ -130,25 +130,28 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         {/* Candidate Pipeline Horizontal Funnel */}
         <Card className="p-6 border-[#242932] bg-[#12151A] shadow-lg">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-bold text-[#F5F7FA] font-display">Candidate Pipeline</h3>
+            <h3 className="text-sm font-bold text-[#F5F7FA] font-display">Candidate Pipeline Funnel</h3>
+            <span className="text-xs font-mono text-[#39D9FF] bg-[#39D9FF]/10 px-2.5 py-1 rounded border border-[#39D9FF]/20">
+              {pipelineStats.totalApplicants} Total Candidates
+            </span>
           </div>
           
-          <div className="flex flex-col md:flex-row items-stretch gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             {[
               { label: "Applied", count: pipelineStats.applied, color: "#39D9FF" },
               { label: "Screening", count: pipelineStats.screening, color: "#63E3FF" },
               { label: "Assessment", count: pipelineStats.assessment, color: "#F5B942" },
               { label: "Interview", count: pipelineStats.interview, color: "#35D07F" },
-              { label: "Evaluated", count: pipelineStats.evaluation, color: "#A7AFBC" },
+              { label: "Evaluated", count: pipelineStats.evaluation, color: "#8957FF" },
               { label: "Shortlisted", count: pipelineStats.shortlisted, color: "#00E5A3" },
               { label: "Knocked Out", count: pipelineStats.knockedOut, color: "#FF5C67" },
             ].map((stage, idx) => (
-              <div key={idx} className="flex-1 flex flex-col p-4 rounded-xl border border-[#1C2027] bg-[#0D0F12] relative overflow-hidden group hover:border-[#242932] transition-colors">
+              <div key={idx} className="flex flex-col p-3.5 rounded-xl border border-[#1C2027] bg-[#0D0F12] relative overflow-hidden group hover:border-[#242932] transition-colors">
                 <div 
-                  className="absolute top-0 left-0 w-full h-1 opacity-80" 
+                  className="absolute top-0 left-0 w-full h-1 opacity-90" 
                   style={{ backgroundColor: stage.color }} 
                 />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#A7AFBC] mb-2 z-10">{stage.label}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#A7AFBC] mb-1.5 z-10">{stage.label}</span>
                 <span className="text-2xl font-bold font-display text-[#F5F7FA] z-10">{stage.count}</span>
               </div>
             ))}
@@ -160,23 +163,23 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           
           {/* Left Column: Job Description & Specifications */}
           <div className="lg:col-span-8 space-y-6">
-            <Card className="p-6 border-[#242932] bg-[#12151A] space-y-5">
+            <Card className="p-6 border-[#242932] bg-[#12151A] space-y-6">
               <div className="flex items-center justify-between border-b border-[#242932] pb-3">
-                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                  Description
+                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#39D9FF]" />
+                  Job Description &amp; Overview
                 </h3>
               </div>
-              <div className="prose prose-invert text-xs text-[#A7AFBC] leading-relaxed whitespace-pre-line">
-                {job.description || "No description provided."}
-              </div>
+              
+              <JobContentRenderer content={job.description || "No description provided."} />
 
-              <div className="pt-4 border-t border-[#1C2027] space-y-2">
-                <h4 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                  Requirements
-                </h4>
-                <div className="text-xs text-[#A7AFBC] leading-relaxed whitespace-pre-line font-sans">
-                  {job.requirements || "No specific qualifications listed."}
-                </div>
+              <div className="pt-5 border-t border-[#242932] space-y-4">
+                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#35D07F]" />
+                  Role Requirements &amp; Qualifications
+                </h3>
+                
+                <JobContentRenderer content={job.requirements || "No specific qualifications listed."} />
               </div>
             </Card>
             
@@ -187,7 +190,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-[#39D9FF]" />
                     <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                      AI Job Analysis
+                      AI Job Analysis &amp; Screening Criteria
                     </h3>
                   </div>
                 </div>
@@ -216,19 +219,19 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                   </div>
                   
                   <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-[#F5F7FA] font-display">Experience & Education</h4>
+                    <h4 className="text-sm font-bold text-[#F5F7FA] font-display">Experience &amp; Education</h4>
                     <div className="space-y-2 text-xs">
-                      <div className="flex justify-between p-2 rounded bg-[#0D0F12] border border-[#1C2027]">
+                      <div className="flex justify-between p-2.5 rounded-lg bg-[#0D0F12] border border-[#1C2027]">
                         <span className="text-[#A7AFBC]">Minimum Experience:</span>
-                        <span className="font-mono text-[#F5F7FA]">{jobAnalysis.experience.minimum_years ?? 0} years</span>
+                        <span className="font-mono text-[#F5F7FA] font-bold">{jobAnalysis.experience.minimum_years ?? 0} years</span>
                       </div>
-                      <div className="flex justify-between p-2 rounded bg-[#0D0F12] border border-[#1C2027]">
+                      <div className="flex justify-between p-2.5 rounded-lg bg-[#0D0F12] border border-[#1C2027]">
                         <span className="text-[#A7AFBC]">Preferred Experience:</span>
-                        <span className="font-mono text-[#F5F7FA]">{jobAnalysis.experience.preferred_years ?? jobAnalysis.experience.minimum_years ?? 0} years</span>
+                        <span className="font-mono text-[#F5F7FA] font-bold">{jobAnalysis.experience.preferred_years ?? jobAnalysis.experience.minimum_years ?? 0} years</span>
                       </div>
-                      <div className="flex justify-between p-2 rounded bg-[#0D0F12] border border-[#1C2027]">
+                      <div className="flex justify-between p-2.5 rounded-lg bg-[#0D0F12] border border-[#1C2027]">
                         <span className="text-[#A7AFBC]">Degree Required:</span>
-                        <span className="font-mono text-[#F5F7FA]">{jobAnalysis.education.required ? "Yes" : "No"}</span>
+                        <span className="font-mono text-[#F5F7FA] font-bold">{jobAnalysis.education.required ? "Yes" : "No"}</span>
                       </div>
                     </div>
                   </div>
@@ -239,39 +242,27 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
           {/* Right Column: Link & Stats */}
           <div className="lg:col-span-4 space-y-6">
-            <Card elevated className="p-5 border-[#39D9FF]/40 bg-[#171B21] space-y-3.5 shadow-xl">
-              <div className="flex items-center justify-between border-b border-[#242932] pb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-                  <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                    Application Link
-                  </h3>
-                </div>
-              </div>
-
-              <p className="text-xs text-[#A7AFBC] leading-relaxed">
-                Share this link with candidates to allow them to apply.
-              </p>
-
-              <div className="p-2.5 rounded-lg bg-[#0D0F12] border border-[#242932] flex items-center justify-between text-xs font-mono text-[#39D9FF] truncate">
-                <span className="truncate">/apply/{job.slug || job.id}</span>
-              </div>
-            </Card>
+            <JobApplicationLinkCard slugOrId={job.slug || job.id} jobTitle={job.title} />
 
             <Card className="p-5 border-[#242932] bg-[#12151A] space-y-4">
-              <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display border-b border-[#242932] pb-3">
-                Application Statistics
-              </h3>
+              <div className="flex items-center justify-between border-b border-[#242932] pb-3">
+                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+                  Position Statistics
+                </h3>
+                <Link href="/candidates" className="text-xs text-[#39D9FF] hover:text-[#63E3FF] flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" /> View Candidates
+                </Link>
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#1C2027] text-center">
-                  <div className="text-xl font-bold text-[#F5F7FA]">{pipelineStats.totalApplicants}</div>
-                  <div className="text-[10px] text-[#A7AFBC] uppercase tracking-wider">Total Applicants</div>
+                <div className="p-3.5 rounded-xl bg-[#0D0F12] border border-[#1C2027] text-center space-y-1">
+                  <div className="text-2xl font-bold font-display text-[#F5F7FA]">{pipelineStats.totalApplicants}</div>
+                  <div className="text-[10px] text-[#A7AFBC] uppercase tracking-wider font-semibold">Total Applicants</div>
                 </div>
-                <div className="p-3 rounded-lg bg-[#0D0F12] border border-[#1C2027] text-center">
-                  <div className="text-xl font-bold text-[#35D07F]">
+                <div className="p-3.5 rounded-xl bg-[#0D0F12] border border-[#35D07F]/20 text-center space-y-1">
+                  <div className="text-2xl font-bold font-display text-[#35D07F]">
                     {pipelineStats.qualified}
                   </div>
-                  <div className="text-[10px] text-[#A7AFBC] uppercase tracking-wider">Qualified</div>
+                  <div className="text-[10px] text-[#35D07F] uppercase tracking-wider font-semibold">Qualified</div>
                 </div>
               </div>
             </Card>

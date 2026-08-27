@@ -25,7 +25,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized or invalid application state" }, { status: 403 });
     }
 
-    // 2. Proxy to Python TTS endpoint securely
+    // 2. Direct Low-Latency OpenAI TTS generation if API key is configured
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const openaiRes = await fetch("https://api.openai.com/v1/audio/speech", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "tts-1",
+            voice: "nova",
+            input: text,
+            speed: 1.05,
+          }),
+        });
+
+        if (openaiRes.ok) {
+          const audioBuffer = await openaiRes.arrayBuffer();
+          return new NextResponse(audioBuffer, {
+            status: 200,
+            headers: {
+              "Content-Type": "audio/mpeg",
+            },
+          });
+        }
+      } catch (e) {
+        console.warn("Direct OpenAI TTS failed, falling back to Python service:", e);
+      }
+    }
+
+    // 3. Fallback: Proxy to Python TTS endpoint securely
     const targetUrl = `${PYTHON_BACKEND_BASE_URL}/interviews/tts`;
     
     const pythonResponse = await fetch(targetUrl, {

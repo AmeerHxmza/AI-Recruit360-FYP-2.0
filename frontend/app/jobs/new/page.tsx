@@ -16,6 +16,7 @@ import { analyzeJobDescriptionAction } from "@/app/actions/ai";
 import { JobAnalysis } from "@/lib/ai/schemas/job-analysis-schema";
 import { EmploymentType, WorkplaceType } from "@/types/database.types";
 import { Sparkles, ArrowLeft, ArrowRight, AlertCircle, Loader2, CheckCircle2, Copy, ExternalLink, Building2, MapPin } from "lucide-react";
+import { JobApplicationLinkCard } from "@/components/jobs/job-application-link-card";
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -295,32 +296,25 @@ export default function CreateJobPage() {
   );
 
   const renderStep5 = () => {
-    if (createdJobId) {
+    if (createdJobId && createdJobSlug) {
       return (
         <div className="py-8 text-center space-y-6 max-w-lg mx-auto">
           <div className="h-16 w-16 bg-[#35D07F]/10 border border-[#35D07F]/30 rounded-full flex items-center justify-center mx-auto mb-2 text-[#35D07F] shadow-[0_0_24px_rgba(53,208,127,0.2)]">
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-bold font-display text-[#F5F7FA]">Job Published</h3>
-            <p className="text-sm text-[#A7AFBC]">Your candidate application link is ready.</p>
+            <h3 className="text-2xl font-bold font-display text-[#F5F7FA]">Position Successfully Published</h3>
+            <p className="text-xs text-[#A7AFBC]">Your candidate application link is live and ready to receive applicants.</p>
           </div>
           
-          <div className="p-4 bg-[#0D0F12] border border-[#242932] rounded-xl flex items-center justify-between">
-            <span className="text-sm font-mono text-[#39D9FF] truncate mr-4">
-              /apply/{createdJobSlug}
-            </span>
-            <Button variant="outline" size="sm" onClick={handleCopyLink} className="shrink-0">
-              <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Link
-            </Button>
-          </div>
+          <JobApplicationLinkCard slugOrId={createdJobSlug} jobTitle={title} />
           
-          <div className="pt-4 flex items-center justify-center gap-4">
-            <Button variant="secondary" onClick={() => router.push(`/jobs/${createdJobId}`)}>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            <Button variant="secondary" size="sm" onClick={() => router.push(`/jobs/${createdJobId}`)}>
               View Job Dashboard
             </Button>
-            <Button onClick={() => window.open(`/apply/${createdJobSlug}`, "_blank")}>
-              Open Application Page <ExternalLink className="h-4 w-4 ml-1.5" />
+            <Button variant="ai" size="sm" onClick={() => router.push("/jobs")}>
+              Go to Jobs Directory
             </Button>
           </div>
         </div>

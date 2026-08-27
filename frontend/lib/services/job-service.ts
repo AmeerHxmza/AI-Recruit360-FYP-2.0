@@ -84,7 +84,7 @@ export async function getJobsForOrg(orgId: string, filters?: JobFilters): Promis
       .eq("organization_id", orgId)
       .in("job_id", jobs.map(j => j.id));
 
-    const qualifiedStatuses = ["assessment", "interview", "evaluation", "shortlisted"];
+    const qualifiedStatuses = ["assessment", "interview", "evaluation", "shortlisted", "hired"];
     
     const enrichedJobs = jobs.map((job) => {
       const jobApps = (apps || []).filter(a => a.job_id === job.id);
