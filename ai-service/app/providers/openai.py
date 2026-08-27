@@ -40,7 +40,12 @@ class OpenAIProvider:
         retry=retry_if_exception_type(Exception),
         reraise=True
     )
-    async def generate_text(self, prompt: str, system_prompt: str | None = None) -> str:
+    async def generate_text(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        temperature: float = 0.2
+    ) -> str:
         if not self.client:
             logger.warning("OPENAI_API_KEY is unconfigured. Using heuristic fallback response.")
             return (
@@ -58,7 +63,7 @@ class OpenAIProvider:
                 response = await self.client.chat.completions.create(
                     model=self.model_name,
                     messages=messages,
-                    temperature=0.2,
+                    temperature=temperature,
                     max_tokens=1500
                 )
 
@@ -78,7 +83,11 @@ class OpenAIProvider:
         reraise=True
     )
     async def generate_structured(
-        self, prompt: str, schema: Type[T], system_prompt: str | None = None
+        self,
+        prompt: str,
+        schema: Type[T],
+        system_prompt: str | None = None,
+        temperature: float = 0.2
     ) -> T:
         schema_json = json.dumps(schema.model_json_schema(), indent=2)
         augmented_prompt = (
@@ -88,7 +97,11 @@ class OpenAIProvider:
             f"Return ONLY raw JSON."
         )
 
-        raw_text = await self.generate_text(prompt=augmented_prompt, system_prompt=system_prompt)
+        raw_text = await self.generate_text(
+            prompt=augmented_prompt,
+            system_prompt=system_prompt,
+            temperature=temperature
+        )
 
         clean_json = re.sub(r"^```json\s*", "", raw_text, flags=re.IGNORECASE)
         clean_json = re.sub(r"^```\s*", "", clean_json, flags=re.IGNORECASE)

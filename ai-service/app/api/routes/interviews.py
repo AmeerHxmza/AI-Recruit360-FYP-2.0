@@ -112,24 +112,24 @@ async def get_simli_token(request: Request):
         if not settings.SIMLI_API_KEY:
             raise ValueError("SIMLI_API_KEY is missing.")
             
-        url = "https://api.simli.ai/getSimliSessionToken"
-        # Optional: You can customize parameters according to Simli's docs, but typically apiKey is required.
-        # But wait, SimliClient calls generateSimliSessionToken locally in JS if it has the key.
-        # Wait, the prompt implies generating the token on the backend, or we can just send the API key if it's a test environment.
-        # Let's generate it in the backend for security.
+        url = "https://api.simli.ai/compose/token"
         payload = {
-            "apiKey": settings.SIMLI_API_KEY,
-            "config": {
-                "faceId": "tmp9c84fa1b-d102-4b2a-88cb-004353d712ce", # Simli Default Avatar or similar
-                "handleSilence": True,
-                "maxSessionLength": 3600,
-                "maxIdleTime": 300,
-                "model": "elevenlabs"
-            }
+            "faceId": settings.SIMLI_FACE_ID or "cace3ef7-a4c4-425d-a8cf-a5358eb0c427",
+            "handleSilence": True,
+            "maxSessionLength": 3600,
+            "maxIdleTime": 300
         }
         
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=10.0)
+            response = await client.post(
+                url,
+                json=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "x-simli-api-key": settings.SIMLI_API_KEY
+                },
+                timeout=15.0
+            )
             response.raise_for_status()
             data = response.json()
             return {"session_token": data.get("session_token", "")}

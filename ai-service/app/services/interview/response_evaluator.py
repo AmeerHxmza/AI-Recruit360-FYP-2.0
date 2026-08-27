@@ -66,4 +66,29 @@ async def evaluate_interview_response(
         "ai_feedback": eval_result.feedback
     }).execute())
 
+    # Dynamically update interviews table with updated questions_answered count & overall_score
+    try:
+        resp_all = await run_sync(lambda: supabase.table("interview_responses").select("technical_score, communication_score, relevance_score").eq("interview_id", interview_id).execute())
+        if resp_all.data and len(resp_all.data) > 0:
+            scores = []
+            for r in resp_all.data:
+                ts = r.get("technical_score")
+                cs = r.get("communication_score")
+                rs = r.get("relevance_score")
+                item_scores = [s for s in (ts, cs, rs) if s is not None]
+                if item_scores:
+                    scores.append(sum(item_scores) / len(item_scores))
+            avg_score = round(sum(scores) / len(scores), 1) if scores else None
+
+            update_payload = {
+                "questions_answered": len(resp_all.data),
+                "overall_score": avg_score
+            }
+            if len(resp_all.data) >= 5:
+                update_payload["status"] = "completed"
+
+            await run_sync(lambda: supabase.table("interviews").update(update_payload).eq("id", interview_id).execute())
+    except Exception as update_err:
+        logger.warning(f"Failed to update interview aggregate metrics: {update_err}")
+
     return eval_result

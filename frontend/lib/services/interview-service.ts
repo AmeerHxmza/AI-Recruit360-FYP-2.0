@@ -9,6 +9,7 @@ export type InterviewQuestion = Database["public"]["Tables"]["interview_question
 export type InterviewResponse = Database["public"]["Tables"]["interview_responses"]["Row"];
 
 export interface InterviewItemWithDetails extends Interview {
+  candidateId: string;
   candidateName: string;
   candidateEmail: string;
   jobTitle: string;
@@ -50,7 +51,9 @@ export async function getInterviewsForOrgWithDetails(
     .select(`
       id, organization_id, application_id, status, interview_type, total_questions, questions_answered, overall_score, started_at, completed_at, created_at, updated_at,
       applications (
+        candidate_id,
         candidates (
+          id,
           full_name,
           email
         ),
@@ -58,6 +61,12 @@ export async function getInterviewsForOrgWithDetails(
           title,
           department
         )
+      ),
+      interview_responses (
+        id,
+        technical_score,
+        communication_score,
+        relevance_score
       )
     `)
     .eq("organization_id", orgId)
@@ -87,7 +96,9 @@ export async function getInterviewsForOrgWithDetails(
     created_at: string;
     updated_at: string;
     applications: {
+      candidate_id?: string;
       candidates: {
+        id?: string;
         full_name: string;
         email: string;
       } | null;
@@ -96,28 +107,66 @@ export async function getInterviewsForOrgWithDetails(
         department: string | null;
       } | null;
     } | null;
+    interview_responses?: {
+      id: string;
+      technical_score: number | null;
+      communication_score: number | null;
+      relevance_score: number | null;
+    }[];
   }
 
   const typedData = data as unknown as InterviewJoinQueryResult[];
 
-  return typedData.map((item) => ({
-    id: item.id,
-    organization_id: item.organization_id,
-    application_id: item.application_id,
-    status: item.status,
-    interview_type: item.interview_type,
-    total_questions: item.total_questions,
-    questions_answered: item.questions_answered,
-    overall_score: item.overall_score,
-    started_at: item.started_at,
-    completed_at: item.completed_at,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    candidateName: item.applications?.candidates?.full_name || "Interview Candidate",
-    candidateEmail: item.applications?.candidates?.email || "candidate@example.com",
-    jobTitle: item.applications?.jobs?.title || "Job Position",
-    jobDepartment: item.applications?.jobs?.department || "General",
-  }));
+  return typedData.map((item) => {
+    const responses = item.interview_responses || [];
+    const responseCount = responses.length;
+    
+    // Resolve answered questions count
+    const resolvedAnswered = item.questions_answered && item.questions_answered > 0
+      ? item.questions_answered
+      : responseCount > 0
+      ? responseCount
+      : item.status === "completed"
+      ? (item.total_questions || 5)
+      : 0;
+
+    // Resolve overall score from responses if needed
+    let resolvedScore = item.overall_score;
+    if (resolvedScore == null && responseCount > 0) {
+      const scores: number[] = [];
+      for (const r of responses) {
+        const itemScores = [r.technical_score, r.communication_score, r.relevance_score].filter((s): s is number => s != null);
+        if (itemScores.length > 0) {
+          scores.push(itemScores.reduce((a, b) => a + b, 0) / itemScores.length);
+        }
+      }
+      if (scores.length > 0) {
+        resolvedScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+      }
+    }
+
+    const candId = item.applications?.candidates?.id || item.applications?.candidate_id || "";
+
+    return {
+      id: item.id,
+      organization_id: item.organization_id,
+      application_id: item.application_id,
+      status: item.status,
+      interview_type: item.interview_type,
+      total_questions: item.total_questions || 5,
+      questions_answered: resolvedAnswered,
+      overall_score: resolvedScore,
+      started_at: item.started_at,
+      completed_at: item.completed_at,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      candidateId: candId,
+      candidateName: item.applications?.candidates?.full_name || "Interview Candidate",
+      candidateEmail: item.applications?.candidates?.email || "candidate@example.com",
+      jobTitle: item.applications?.jobs?.title || "Job Position",
+      jobDepartment: item.applications?.jobs?.department || "General",
+    };
+  });
 }
 
 export async function getInterviewById(orgId: string, interviewId: string): Promise<Interview> {
@@ -182,7 +231,9 @@ export async function getInterviewByIdWithDetails(
     created_at: string;
     updated_at: string;
     applications: {
+      candidate_id?: string;
       candidates: {
+        id?: string;
         full_name: string;
         email: string;
       } | null;
@@ -208,6 +259,7 @@ export async function getInterviewByIdWithDetails(
     completed_at: item.completed_at,
     created_at: item.created_at,
     updated_at: item.updated_at,
+    candidateId: item.applications?.candidates?.id || item.applications?.candidate_id || "",
     candidateName: item.applications?.candidates?.full_name || "Interview Candidate",
     candidateEmail: item.applications?.candidates?.email || "candidate@example.com",
     jobTitle: item.applications?.jobs?.title || "Job Position",
@@ -288,6 +340,21 @@ export async function getInterviewQuestions(interviewId: string): Promise<Interv
 
   if (error) {
     throw new DatabaseError("Failed to retrieve interview questions.");
+  }
+
+  return data || [];
+}
+
+export async function getInterviewResponses(interviewId: string): Promise<InterviewResponse[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("interview_responses")
+    .select("*")
+    .eq("interview_id", interviewId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return [];
   }
 
   return data || [];

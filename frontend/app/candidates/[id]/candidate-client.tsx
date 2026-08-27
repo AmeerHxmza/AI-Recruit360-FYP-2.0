@@ -19,6 +19,7 @@ import {
   getCandidateDocumentsAction,
   getCandidateIntelligenceAction,
 } from "@/app/actions/candidates";
+import { updateApplicationStatusAction } from "@/app/actions/applications";
 import { Candidate, CandidateApplicationItem, CandidateDocumentWithUrl } from "@/lib/services/candidate-service";
 import { CandidateIntelligence } from "@/lib/services/candidate-intelligence-service";
 import { CandidateIntelligencePanel } from "@/components/candidates/candidate-intelligence-panel";
@@ -199,7 +200,15 @@ export function CandidateClient({
       <PageHeader
         title={candidate.full_name}
         description={`${candidate.location || "Workspace Applicant"}`}
-        badge={<Badge variant="ai">PostgreSQL Candidate</Badge>}
+        badge={
+          intelligence?.application ? (
+            <Badge variant="ai" className="capitalize text-xs">
+              Stage: {intelligence.application.status.replace("_", " ")}
+            </Badge>
+          ) : (
+            <Badge variant="outline">Candidate Profile</Badge>
+          )
+        }
         breadcrumbs={
           <button
             type="button"
@@ -212,36 +221,45 @@ export function CandidateClient({
         actions={
           isAuthorizedToManage ? (
             <div className="flex items-center gap-2">
-              {intelligence?.application?.status === "evaluation" && (
+              {intelligence?.application && (
                 <>
-                  <Button variant="primary" size="sm" onClick={() => {}}>
-                    Shortlist
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={intelligence.application.status === "shortlisted"}
+                    onClick={async () => {
+                      if (!intelligence.application?.id) return;
+                      await updateApplicationStatusAction(intelligence.application.id, "shortlisted");
+                      await refreshData();
+                      router.refresh();
+                    }}
+                  >
+                    Shortlist Candidate
                   </Button>
-                  <Button variant="outline" size="sm" className="border-[#FF5C67]/40 text-[#FF5C67]" onClick={() => {}}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#FF5C67]/40 text-[#FF5C67] hover:bg-[#FF5C67]/10"
+                    disabled={intelligence.application.status === "rejected"}
+                    onClick={async () => {
+                      if (!intelligence.application?.id) return;
+                      await updateApplicationStatusAction(intelligence.application.id, "rejected");
+                      await refreshData();
+                      router.refresh();
+                    }}
+                  >
                     Reject
                   </Button>
                 </>
               )}
-              {(intelligence?.application?.status === "applied" || intelligence?.application?.status === "screening" || intelligence?.application?.status === "assessment" || intelligence?.application?.status === "interview") && (
-                <Button variant="ai" size="sm" onClick={() => {}}>
-                  View Progress
-                </Button>
-              )}
-              {intelligence?.application?.status === "knocked_out" && (
-                <Button variant="secondary" size="sm" onClick={() => {}}>
-                  View Screening
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" onClick={openEditModal}>
-                <Edit3 className="h-3.5 w-3.5 mr-1.5" /> Edit Profile
-              </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setIsDeleteModalOpen(true)}
-                className="border-[#FF5C67]/40 text-[#FF5C67] hover:bg-[#FF5C67]/10"
+                className="text-[#68717E] hover:text-[#FF5C67] hover:bg-[#FF5C67]/10 text-xs"
+                title="Delete candidate record"
               >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           ) : undefined

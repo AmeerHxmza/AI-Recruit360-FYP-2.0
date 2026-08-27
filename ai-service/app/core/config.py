@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     ELEVENLABS_VOICE_ID: str = "EXAVITQu4vr4xnSDxMaL"  # Bella
     
     SIMLI_API_KEY: Optional[str] = None
+    SIMLI_FACE_ID: str = "cace3ef7-a4c4-425d-a8cf-a5358eb0c427"
 
     # ── Security ─────────────────────────────────────────────────────────────────
     AI_SERVICE_SHARED_SECRET: str = "recruit360_shared_backend_secret_2026"

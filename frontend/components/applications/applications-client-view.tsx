@@ -371,39 +371,43 @@ export function ApplicationsClientView({
                       {app.jobTitle}
                       <span className="block text-[10px] text-[#68717E]">{app.jobDepartment}</span>
                     </TableCell>
-                    <TableCell>{getStageBadge(app.status)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px] text-[#A7AFBC] border-[#242932]">
-                        Pending Analysis
+                      {isAuthorizedToManage ? (
+                        <div className="w-32" onClick={(e) => e.stopPropagation()}>
+                          <Select
+                            value={app.status}
+                            disabled={updatingAppId === app.id}
+                            onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
+                            options={[
+                              { value: "applied", label: "Applied" },
+                              { value: "screening", label: "Screening" },
+                              { value: "assessment", label: "Assessment" },
+                              { value: "interview", label: "Interview" },
+                              { value: "evaluation", label: "Evaluation" },
+                              { value: "shortlisted", label: "Shortlisted" },
+                              { value: "rejected", label: "Rejected" },
+                            ]}
+                          />
+                        </div>
+                      ) : (
+                        getStageBadge(app.status)
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={app.status === "shortlisted" ? "success" : app.status === "rejected" || app.status === "knocked_out" ? "danger" : "ai"} className="text-[10px] uppercase font-mono">
+                        {app.status === "shortlisted" ? "Shortlisted" : app.status === "rejected" ? "Rejected" : "Active AI Pipeline"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-[#A7AFBC] font-mono">{formatDate(app.applied_at)}</TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
-                        {isAuthorizedToManage && (
-                          <div className="w-32">
-                            <Select
-                              value={app.status}
-                              disabled={updatingAppId === app.id}
-                              onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
-                              options={[
-                                { value: "applied", label: "Applied" },
-                                { value: "screening", label: "Screening" },
-                                { value: "interview", label: "Interview" },
-                                { value: "evaluation", label: "Evaluation" },
-                                { value: "shortlisted", label: "Shortlisted" },
-                                { value: "rejected", label: "Rejected" },
-                              ]}
-                            />
-                          </div>
-                        )}
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
                           onClick={() => router.push(`/candidates/${app.candidate_id}`)}
-                          className="h-7 w-7 text-[#A7AFBC] hover:text-[#39D9FF]"
+                          className="text-xs text-[#39D9FF] hover:text-[#63E3FF] h-7 px-2"
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          Scorecard →
                         </Button>
                       </div>
                     </TableCell>

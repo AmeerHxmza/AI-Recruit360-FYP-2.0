@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       .eq("id", applicationId)
       .single();
 
-    if (!application || application.status !== "interview") {
+    if (!application || !["interview", "evaluation", "assessment", "shortlisted"].includes(application.status)) {
       return NextResponse.json({ error: "Unauthorized or invalid application state" }, { status: 403 });
     }
 

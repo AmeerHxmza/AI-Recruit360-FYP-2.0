@@ -8,9 +8,11 @@ import {
   createInterview,
   updateInterviewStatus,
   getInterviewQuestions,
+  getInterviewResponses,
   InterviewItemWithDetails,
   Interview,
   InterviewQuestion,
+  InterviewResponse,
 } from "@/lib/services/interview-service";
 import { InterviewStatus, InterviewType } from "@/types/database.types";
 import { AppError } from "@/lib/utils/errors";
@@ -36,12 +38,15 @@ export async function getInterviewsAction(): Promise<ActionResult<InterviewItemW
 
 export async function getInterviewByIdAction(
   interviewId: string
-): Promise<ActionResult<{ interview: InterviewItemWithDetails; questions: InterviewQuestion[] }>> {
+): Promise<ActionResult<{ interview: InterviewItemWithDetails; questions: InterviewQuestion[]; responses: InterviewResponse[] }>> {
   try {
     const org = await getCurrentOrganization();
     const interview = await getInterviewByIdWithDetails(org.id, interviewId);
-    const questions = await getInterviewQuestions(interviewId);
-    return { success: true, data: { interview, questions } };
+    const [questions, responses] = await Promise.all([
+      getInterviewQuestions(interviewId),
+      getInterviewResponses(interviewId),
+    ]);
+    return { success: true, data: { interview, questions, responses } };
   } catch (err: unknown) {
     if (err instanceof AppError) {
       return { success: false, error: err.message };

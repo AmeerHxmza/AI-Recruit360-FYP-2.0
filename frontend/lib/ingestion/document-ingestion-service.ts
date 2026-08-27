@@ -213,7 +213,7 @@ export async function ingestCandidateDocument(
     try {
       await logAiActivity({
         organization_id: organizationId,
-        event_type: "document_ingest_failed",
+        event_type: "cv_extracted",
         entity_type: "candidate_document",
         entity_id: documentRecord.id,
         status: "error",

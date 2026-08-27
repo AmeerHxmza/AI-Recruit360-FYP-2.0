@@ -185,14 +185,22 @@ export function InterviewsClientView({
                 {interviews.map((item) => (
                   <TableRow
                     key={item.id}
-                    onClick={() => router.push(`/candidates/${item.application_id}`)}
+                    onClick={() => router.push(`/interviews/${item.id}`)}
                     className="cursor-pointer border-b border-[#1C2027] transition-micro hover:bg-[#171B21]/80"
                   >
                     <TableCell className="py-4">
                       <div className="flex items-center gap-3">
                         <Avatar fallback={getInitials(item.candidateName)} size="sm" status="online" />
                         <div className="flex flex-col">
-                          <span className="font-semibold text-[#F5F7FA] text-xs">
+                          <span
+                            onClick={(e) => {
+                              if (item.candidateId) {
+                                e.stopPropagation();
+                                router.push(`/candidates/${item.candidateId}`);
+                              }
+                            }}
+                            className="font-semibold text-[#F5F7FA] text-xs hover:text-[#39D9FF] hover:underline"
+                          >
                             {item.candidateName}
                           </span>
                           <span className="text-[11px] text-[#A7AFBC]">
@@ -208,15 +216,40 @@ export function InterviewsClientView({
                       </span>
                     </TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell className="text-xs font-mono text-[#35D07F]">
-                      {item.overall_score !== null && item.overall_score !== undefined
-                        ? `${item.overall_score}% Overall Score`
-                        : `${item.questions_answered || 0} / ${item.total_questions || 5} Questions`}
+                    <TableCell className="text-xs font-mono">
+                      {item.overall_score !== null && item.overall_score !== undefined ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#35D07F] text-sm">{item.overall_score}%</span>
+                          <span className="text-[10px] text-[#A7AFBC]">({item.questions_answered || 5}/{item.total_questions || 5} Qs)</span>
+                        </div>
+                      ) : (
+                        <span className="text-[#39D9FF]">
+                          {item.questions_answered || 0} / {item.total_questions || 5} Questions
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#A7AFBC] hover:text-[#39D9FF]">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        {item.candidateId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push(`/candidates/${item.candidateId}`)}
+                            className="text-xs text-[#A7AFBC] hover:text-[#39D9FF] h-7 px-2"
+                          >
+                            Profile
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => router.push(`/interviews/${item.id}`)}
+                          className="h-7 w-7 text-[#A7AFBC] hover:text-[#39D9FF]"
+                          title="View Interview Session"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

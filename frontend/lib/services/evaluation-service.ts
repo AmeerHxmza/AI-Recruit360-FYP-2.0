@@ -8,6 +8,7 @@ import { measurePerformance } from "@/lib/performance/logger";
 export type FinalEvaluation = Database["public"]["Tables"]["final_evaluations"]["Row"];
 
 export interface FinalEvaluationItemWithDetails extends FinalEvaluation {
+  candidateId: string;
   candidateName: string;
   candidateEmail: string;
   jobTitle: string;
@@ -64,7 +65,9 @@ export async function getEvaluationsForOrgWithDetails(
         created_at,
         updated_at,
         applications (
+          candidate_id,
           candidates (
+            id,
             full_name,
             email
           ),
@@ -104,7 +107,9 @@ export async function getEvaluationsForOrgWithDetails(
       created_at: string;
       updated_at: string;
       applications: {
+        candidate_id?: string;
         candidates: {
+          id?: string;
           full_name: string;
           email: string;
         } | null;
@@ -133,6 +138,7 @@ export async function getEvaluationsForOrgWithDetails(
       model: item.model,
       created_at: item.created_at,
       updated_at: item.updated_at,
+      candidateId: item.applications?.candidates?.id || item.applications?.candidate_id || "",
       candidateName: item.applications?.candidates?.full_name || "Candidate",
       candidateEmail: item.applications?.candidates?.email || "candidate@example.com",
       jobTitle: item.applications?.jobs?.title || "Job Position",

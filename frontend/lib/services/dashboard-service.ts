@@ -23,6 +23,7 @@ export interface DashboardData {
   };
   recentApplications: {
     id: string;
+    candidateId: string;
     candidateName: string;
     candidateEmail: string;
     jobTitle: string;
@@ -87,12 +88,12 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
         const aiInterviews = interviews.filter(i => i.status !== "abandoned").length;
 
         const funnel = {
-          applied: apps.filter(a => a.status === "applied").length,
-          screening: apps.filter(a => a.status === "screening").length,
-          assessment: apps.filter(a => a.status === "assessment").length,
-          interview: apps.filter(a => a.status === "interview").length,
-          evaluation: apps.filter(a => a.status === "evaluation" || a.status === "hired").length,
-          shortlisted: apps.filter(a => a.status === "shortlisted").length,
+          applied: totalApplications,
+          screening: apps.filter(a => screenMap.has(a.id) || ["screening", "knocked_out", "assessment", "assessment_failed", "interview", "evaluation", "shortlisted", "rejected", "hired"].includes(a.status)).length,
+          assessment: apps.filter(a => asstMap.has(a.id) || ["assessment", "assessment_failed", "interview", "evaluation", "shortlisted", "hired"].includes(a.status)).length,
+          interview: apps.filter(a => intMap.has(a.id) || ["interview", "evaluation", "shortlisted", "hired"].includes(a.status)).length,
+          evaluation: apps.filter(a => evalMap.has(a.id) || ["evaluation", "shortlisted", "hired"].includes(a.status)).length,
+          shortlisted: apps.filter(a => ["shortlisted", "hired"].includes(a.status)).length,
           rejected: apps.filter(a => a.status === "rejected").length,
           knocked_out: apps.filter(a => a.status === "knocked_out" || a.status === "assessment_failed").length,
           total: totalApplications,
@@ -107,6 +108,7 @@ export async function getDashboardDataForOrg(orgId: string): Promise<DashboardDa
 
           return {
             id: a.id,
+            candidateId: a.candidate_id || a.candidates?.id || "",
             candidateName: a.candidates?.full_name || "Applicant",
             candidateEmail: a.candidates?.email || "N/A",
             jobTitle: a.jobs?.title || "Position",

@@ -222,16 +222,26 @@ export default function CandidateInterviewRoom() {
             );
             simliClientRef.current = simliClient;
             
-            simliClient.on("error", () => {
+            simliClient.on("start", () => {
+              setIsSimliActive(true);
+            });
+
+            simliClient.on("error", (err) => {
+              console.warn("Simli avatar stream error:", err);
               setIsSimliActive(false);
               degradeAvatarAction(resolvedId).catch(() => {});
+            });
+
+            simliClient.on("startup_error", (err) => {
+              console.warn("Simli avatar startup error:", err);
+              setIsSimliActive(false);
             });
 
             await simliClient.start();
             setIsSimliActive(true);
           }
-        } catch {
-          // Graceful fallback to audio aura visualizer
+        } catch (simliErr) {
+          console.warn("Simli avatar initialization failed:", simliErr);
           setIsSimliActive(false);
         }
 
@@ -464,12 +474,15 @@ export default function CandidateInterviewRoom() {
             }`} />
 
             <div className="relative h-28 w-28 rounded-full overflow-hidden border-2 border-[#242932] bg-[#0D0F12] flex items-center justify-center shadow-inner">
-              {isSimliActive ? (
-                <>
-                  <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
-                  <audio ref={audioRef} autoPlay />
-                </>
-              ) : (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className={`h-full w-full object-cover transition-opacity duration-300 ${isSimliActive ? "opacity-100 block" : "opacity-0 hidden"}`}
+              />
+              <audio ref={audioRef} autoPlay className="hidden" />
+
+              {!isSimliActive && (
                 <div className="flex flex-col items-center justify-center gap-1.5">
                   <div className="flex items-center gap-1">
                     <span className={`w-1.5 rounded-full bg-[#39D9FF] transition-all duration-300 ${interviewState === "SPEAKING" ? "h-8 animate-pulse" : "h-3"}`} />

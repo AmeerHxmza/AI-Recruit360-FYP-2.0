@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Award,
 } from "lucide-react";
 
 import { OrganizationSwitcher } from "./organization-switcher";
@@ -46,7 +47,7 @@ export const recruitmentNavItems: NavItem[] = [
   { id: "candidates", label: "Candidates", href: "/candidates", icon: <Users className="h-4.5 w-4.5" /> },
   { id: "applications", label: "Applications", href: "/applications", icon: <FileText className="h-4.5 w-4.5" /> },
   { id: "interviews", label: "Interviews", href: "/interviews", icon: <Video className="h-4.5 w-4.5" /> },
-  { id: "evaluations", label: "Evaluations", href: "/evaluations", icon: <FileText className="h-4.5 w-4.5" /> },
+  { id: "evaluations", label: "Evaluations", href: "/evaluations", icon: <Award className="h-4.5 w-4.5" /> },
 ];
 
 export const insightsNavItems: NavItem[] = [

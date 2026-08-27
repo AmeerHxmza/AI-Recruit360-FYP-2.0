@@ -47,7 +47,7 @@ export async function analyzeJobDescription(input: AnalyzeJobInput): Promise<Job
       try {
         await logAiActivity({
           organization_id: input.organizationId,
-          event_type: "job_analysis",
+          event_type: "job_analyzed",
           entity_type: "job",
           entity_id: input.jobId || null,
           status: "success",
@@ -70,7 +70,7 @@ export async function analyzeJobDescription(input: AnalyzeJobInput): Promise<Job
       try {
         await logAiActivity({
           organization_id: input.organizationId,
-          event_type: "job_analysis",
+          event_type: "job_analyzed",
           entity_type: "job",
           entity_id: input.jobId || null,
           status: "error",

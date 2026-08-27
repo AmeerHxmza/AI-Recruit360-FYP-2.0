@@ -35,6 +35,16 @@ export default function InterviewWorkspacePage() {
   const [interviewData, setInterviewData] = React.useState<{
     interview: InterviewItemWithDetails;
     questions: InterviewQuestion[];
+    responses?: {
+      id: string;
+      question_id: string;
+      response_text: string | null;
+      transcript: string | null;
+      technical_score: number | null;
+      communication_score: number | null;
+      relevance_score: number | null;
+      ai_feedback: string | null;
+    }[];
   } | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -127,7 +137,10 @@ export default function InterviewWorkspacePage() {
     );
   }
 
-  const { interview, questions } = interviewData;
+  const { interview, questions, responses = [] } = interviewData;
+
+  // Map question id to response
+  const responsesByQuestionId = new Map(responses.map((r) => [r.question_id, r]));
 
   return (
     <ApplicationShell pageBreadcrumb={[organization?.name || "AI-Recruit360", "Interviews", interview.candidateName]}>
@@ -167,13 +180,15 @@ export default function InterviewWorkspacePage() {
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Complete Session
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/evaluations")}
-              >
-                View Evaluations
-              </Button>
+              {interview.candidateId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/candidates/${interview.candidateId}`)}
+                >
+                  Candidate Scorecard
+                </Button>
+              )}
             </div>
           ) : undefined
         }
@@ -188,33 +203,42 @@ export default function InterviewWorkspacePage() {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-[#39D9FF]" />
                 <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                  Interview Session Config
+                  Session Performance &amp; Evaluation
                 </h3>
               </div>
-              <span className="text-xs font-mono text-[#39D9FF]">
-                {(interview as unknown as { duration_minutes?: number }).duration_minutes || 45} Minutes Duration
+              <span className="text-xs font-mono text-[#35D07F] font-bold">
+                {interview.overall_score !== null ? `${interview.overall_score}% Score` : "Score Calculating"}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-[#A7AFBC]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-[#A7AFBC]">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-[#39D9FF]" />
-                <span>Scheduled: <strong>{formatDate(interview.created_at || (interview as unknown as { scheduled_at?: string }).scheduled_at || "")}</strong></span>
+                <span>Scheduled: <strong>{formatDate(interview.created_at || "")}</strong></span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[#35D07F]" />
-                <span>Target Position: <strong>{interview.jobTitle}</strong></span>
+                <span>Target: <strong>{interview.jobTitle}</strong></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-[#F5B942]" />
+                <span>Progress: <strong>{interview.questions_answered || questions.length || 5} of {interview.total_questions || 5} Questions</strong></span>
               </div>
             </div>
           </Card>
 
-          {/* Generated Questions Section */}
+          {/* Generated Questions & Transcripts Section */}
           <Card className="p-6 border-[#242932] bg-[#12151A] space-y-4">
-            <div className="flex items-center gap-2 border-b border-[#242932] pb-3">
-              <MessageSquare className="h-4 w-4 text-[#39D9FF]" />
-              <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                Session Questions &amp; Evaluation Rubric ({questions.length})
-              </h3>
+            <div className="flex items-center justify-between border-b border-[#242932] pb-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-[#39D9FF]" />
+                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+                  Interview Questions &amp; Spoken Answers ({questions.length})
+                </h3>
+              </div>
+              <span className="text-[11px] font-mono text-[#A7AFBC]">
+                {responses.length} responses evaluated
+              </span>
             </div>
 
             {questions.length === 0 ? (
@@ -224,15 +248,41 @@ export default function InterviewWorkspacePage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {questions.map((q, idx) => (
-                  <div key={q.id} className="p-4 rounded-xl bg-[#0D0F12] border border-[#1C2027] space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-[#39D9FF]">Question #{idx + 1} ({q.skill_category || (q as unknown as { category?: string }).category || "General"})</span>
+              <div className="space-y-4">
+                {questions.map((q, idx) => {
+                  const resp = responsesByQuestionId.get(q.id);
+                  return (
+                    <div key={q.id} className="p-4 rounded-xl bg-[#0D0F12] border border-[#1C2027] space-y-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-[#39D9FF]">Question #{idx + 1} ({q.skill_category || "Technical Competency"})</span>
+                        {resp?.technical_score !== null && resp?.technical_score !== undefined && (
+                          <span className="font-mono text-[#35D07F] font-semibold">
+                            Tech: {resp.technical_score}% | Comm: {resp.communication_score}%
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#F5F7FA] leading-relaxed font-medium">{q.question_text}</p>
+                      
+                      {resp ? (
+                        <div className="pt-2 border-t border-[#1C2027] space-y-2">
+                          <div className="text-[11px] text-[#A7AFBC] bg-[#12151A] p-3 rounded-lg border border-[#242932]">
+                            <span className="font-semibold text-[#F5F7FA] block mb-1">Candidate Transcript:</span>
+                            <span className="italic leading-relaxed">&ldquo;{resp.transcript || resp.response_text}&rdquo;</span>
+                          </div>
+                          {resp.ai_feedback && (
+                            <p className="text-[11px] text-[#39D9FF]/90 font-mono">
+                              AI Feedback: {resp.ai_feedback}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-[#68717E] italic pt-1">
+                          Awaiting candidate response.
+                        </p>
+                      )}
                     </div>
-                    <p className="text-xs text-[#F5F7FA] leading-relaxed">{q.question_text}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Card>
@@ -251,6 +301,16 @@ export default function InterviewWorkspacePage() {
                 <span className="text-[11px] text-[#A7AFBC]">{interview.candidateEmail}</span>
               </div>
             </div>
+            {interview.candidateId && (
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full text-xs mt-2"
+                onClick={() => router.push(`/candidates/${interview.candidateId}`)}
+              >
+                Open Full Candidate Scorecard →
+              </Button>
+            )}
           </Card>
 
           <Card elevated className="p-5 border-[#39D9FF]/30 bg-[#171B21] space-y-3">
