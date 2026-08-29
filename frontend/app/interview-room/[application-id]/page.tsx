@@ -30,9 +30,9 @@ import {
   transcribeAudioAction,
   finalizeEvaluationAction,
   getSimliTokenAction,
-  degradeAvatarAction
+  degradeAvatarAction,
 } from "@/app/actions/interview";
-import { SimliClient, LogLevel } from "simli-client";
+import type { SimliClient } from "simli-client";
 
 type InterviewState = "CONNECTING" | "LISTENING" | "THINKING" | "SPEAKING" | "COMPLETED" | "ERROR";
 
@@ -249,12 +249,13 @@ export default function CandidateInterviewRoom() {
       try {
         const tokenRes = await getSimliTokenAction();
         if (tokenRes.success && tokenRes.data?.session_token && videoRef.current && audioRef.current) {
-          const simliClient = new SimliClient(
+          const { SimliClient: DynamicSimliClient, LogLevel } = await import("simli-client");
+          const simliClient = new DynamicSimliClient(
             tokenRes.data.session_token,
             videoRef.current,
             audioRef.current,
             null,
-            LogLevel.INFO,
+            LogLevel ? LogLevel.INFO : 1,
             "livekit"
           );
           simliClientRef.current = simliClient;
