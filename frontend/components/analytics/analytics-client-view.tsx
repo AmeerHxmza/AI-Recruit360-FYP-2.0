@@ -35,11 +35,11 @@ export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientVie
   const funnelStages = React.useMemo(() => {
     if (totalApplications === 0) return [];
     return [
-      { step: 1, stage: "Applied & Ingested", count: data.funnel.applied, color: "#39D9FF", desc: "Total candidate applications submitted" },
-      { step: 2, stage: "CV Screened", count: data.funnel.screening, color: "#63E3FF", desc: "Automated CV extraction & skills matching" },
+      { step: 1, stage: "Applied & Ingested", count: data.funnel.applied, color: "#A7AFBC", desc: "Total candidate applications submitted" },
+      { step: 2, stage: "CV Screened", count: data.funnel.screening, color: "#39D9FF", desc: "Automated CV extraction & skills matching" },
       { step: 3, stage: "Technical Assessment", count: data.funnel.assessment, color: "#F5B942", desc: "Dynamic role-specific MCQ test completed" },
-      { step: 4, stage: "Voice AI Interview", count: data.funnel.interview, color: "#35D07F", desc: "Adaptive voice technical interview conducted" },
-      { step: 5, stage: "AI Final Evaluation", count: data.funnel.evaluation, color: "#8957FF", desc: "Comprehensive scorecards generated" },
+      { step: 4, stage: "Voice AI Interview", count: data.funnel.interview, color: "#63E3FF", desc: "Adaptive voice technical interview conducted" },
+      { step: 5, stage: "AI Final Evaluation", count: data.funnel.evaluation, color: "#35D07F", desc: "Comprehensive scorecards generated" },
       { step: 6, stage: "Shortlisted for Hire", count: data.funnel.shortlisted, color: "#00E5A3", desc: "Recruiter approved for final hire" },
     ];
   }, [data, totalApplications]);

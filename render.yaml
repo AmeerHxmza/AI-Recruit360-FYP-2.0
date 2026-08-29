@@ -1,8 +1,9 @@
 services:
-  # ── Web Service: FastAPI + Uvicorn ────────────────────────────────────────
+  # ── Web Service: FastAPI Engine ───────────────────────────────────────────
   - type: web
     name: ai-recruit360-backend
     env: python
+    rootDir: ai-service
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -27,7 +28,7 @@ services:
         value: "60/minute"
       - key: RATE_LIMIT_EVALUATION
         value: "10/minute"
-      # Secrets — set in Render Dashboard → Environment
+      # Secrets — Set these in Render Dashboard
       - key: GEMINI_API_KEY
         sync: false
       - key: OPENAI_API_KEY
@@ -43,10 +44,11 @@ services:
       - key: ALLOWED_ORIGINS
         sync: false
 
-  # ── Background Worker: ARQ + Redis Queue ──────────────────────────────────
+  # ── Background Worker: ARQ Redis Worker ───────────────────────────────────
   - type: worker
     name: ai-recruit360-worker
     env: python
+    rootDir: ai-service
     region: oregon
     plan: starter
     buildCommand: pip install -r requirements.txt

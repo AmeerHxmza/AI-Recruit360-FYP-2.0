@@ -433,7 +433,7 @@ export default function CandidateInterviewRoom() {
         <audio ref={audioRef} autoPlay className="hidden" />
 
         <div className="max-w-xl w-full p-8 sm:p-10 rounded-3xl border border-[#242932] bg-[#12151A] space-y-6 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#39D9FF] via-[#35D07F] to-[#8957FF]" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#39D9FF] via-[#35D07F] to-[#63E3FF]" />
           
           <div className="flex items-center justify-between border-b border-[#242932] pb-4">
             <BrandLogo variant="full" size="md" href="#" />
@@ -471,7 +471,7 @@ export default function CandidateInterviewRoom() {
             </div>
 
             <div className="p-4 rounded-2xl bg-[#0D0F12] border border-[#242932] flex items-start gap-3.5">
-              <div className="p-2 rounded-xl bg-[#8957FF]/10 border border-[#8957FF]/20 text-[#8957FF] shrink-0">
+              <div className="p-2 rounded-xl bg-[#39D9FF]/10 border border-[#39D9FF]/20 text-[#39D9FF] shrink-0">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
@@ -568,8 +568,8 @@ export default function CandidateInterviewRoom() {
               )}
               {interviewState === "THINKING" && (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#8957FF]" />
-                  <span className="text-[#8957FF] font-semibold">AI Evaluating Answer...</span>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#39D9FF]" />
+                  <span className="text-[#39D9FF] font-semibold">AI Evaluating Answer...</span>
                 </>
               )}
               {interviewState === "ERROR" && (

@@ -161,3 +161,53 @@
   border-color: rgba(57, 217, 255, 0.4);
   box-shadow: 0 0 12px -2px rgba(57, 217, 255, 0.25);
 }
+
+/* Enterprise Data-Density & Surface Tokens */
+.enterprise-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.enterprise-card:hover {
+  border-color: rgba(57, 217, 255, 0.25);
+}
+
+.enterprise-card-elevated {
+  background-color: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.glass-panel {
+  background: rgba(18, 21, 26, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hairline-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+/* Monospace Metrics */
+.metric-mono {
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
+/* Status Badges */
+.status-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

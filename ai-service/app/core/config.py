@@ -1,5 +1,6 @@
+from typing import Optional, List, Union
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional, List
 
 
 class Settings(BaseSettings):
@@ -27,11 +28,25 @@ class Settings(BaseSettings):
 
     # ── Security ─────────────────────────────────────────────────────────────────
     AI_SERVICE_SHARED_SECRET: str = "recruit360_shared_backend_secret_2026"
-    # Comma-separated list loaded from env; wildcard "*" is FORBIDDEN in production
-    ALLOWED_ORIGINS: List[str] = [
+    # Comma-separated list or JSON array loaded from env
+    ALLOWED_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+
+    @field_validator("ALLOWED_ORIGINS", mode="after")
+    @classmethod
+    def parse_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
     # ── Redis (Distributed Cache + ARQ Job Queue) ───────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"

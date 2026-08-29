@@ -70,38 +70,34 @@ export function CandidateIntelligencePanel({ intelligence, onStatusChange }: Can
   return (
     <div className="space-y-8">
       {/* 1. Header Summary */}
-      <Card className="p-6 border-[#242932] bg-[#12151A] shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-6 opacity-10">
-          <Sparkles className="w-32 h-32 text-[#39D9FF]" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row gap-6 justify-between md:items-center">
+      <Card className="p-6 border-[#242932] bg-[#12151A] shadow-md relative overflow-hidden">
+        <div className="flex flex-col md:flex-row gap-6 justify-between md:items-center">
           <div className="space-y-1">
-            <h2 className="text-sm font-bold text-[#A7AFBC] uppercase tracking-wider">Overall AI Score</h2>
-            <div className="flex items-end gap-2">
-              <span className="text-5xl font-bold font-display text-[#39D9FF]">
+            <span className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider font-mono">Overall Composite Score</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl sm:text-5xl font-extrabold font-display text-[#39D9FF]">
                 {finalEvaluation?.overallScore || "—"}
               </span>
-              <span className="text-xl font-bold text-[#68717E] mb-1">/ 100</span>
+              <span className="text-sm font-mono font-medium text-[#68717E]">/ 100</span>
             </div>
           </div>
           
-          <div className="flex gap-4 md:gap-8">
+          <div className="grid grid-cols-3 gap-4 sm:gap-6 border-t md:border-t-0 md:border-l border-[#242932] pt-4 md:pt-0 md:pl-6">
             <div className="space-y-1">
-              <span className="text-[10px] text-[#A7AFBC] uppercase tracking-wider font-semibold">CV Match (40%)</span>
-              <div className="text-xl font-bold text-[#F5F7FA] font-display">
+              <span className="text-[10px] text-[#A7AFBC] uppercase tracking-wider font-mono">CV Match (40%)</span>
+              <div className="text-lg sm:text-xl font-bold text-[#F5F7FA] font-mono">
                 {cvScreening ? `${cvScreening.matchScore}%` : "—"}
               </div>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] text-[#A7AFBC] uppercase tracking-wider font-semibold">Assessment (25%)</span>
-              <div className="text-xl font-bold text-[#F5F7FA] font-display">
+              <span className="text-[10px] text-[#A7AFBC] uppercase tracking-wider font-mono">Assessment (25%)</span>
+              <div className="text-lg sm:text-xl font-bold text-[#F5F7FA] font-mono">
                 {assessment ? `${assessment.score}%` : "—"}
               </div>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] text-[#A7AFBC] uppercase tracking-wider font-semibold">Interview (35%)</span>
-              <div className="text-xl font-bold text-[#F5F7FA] font-display">
+              <span className="text-[10px] text-[#A7AFBC] uppercase tracking-wider font-mono">Interview (35%)</span>
+              <div className="text-lg sm:text-xl font-bold text-[#F5F7FA] font-mono">
                 {interview?.overallScore != null ? `${interview.overallScore}%` : "—"}
               </div>
             </div>
@@ -379,7 +375,7 @@ export function CandidateIntelligencePanel({ intelligence, onStatusChange }: Can
 
               {finalEvaluation && (
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-[#12151A] bg-[#8957FF] text-[#F5F7FA] shrink-0 z-10"><Check className="w-3 h-3" /></div>
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-[#12151A] bg-[#39D9FF] text-[#08090B] shrink-0 z-10"><Check className="w-3 h-3 font-bold" /></div>
                   <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] flex flex-col md:text-right pl-4 md:pl-0 md:pr-4">
                     <span className="text-[10px] text-[#A7AFBC] uppercase font-bold">Evaluation Generated</span>
                     <span className="text-[10px] text-[#68717E]">{formatTimelineDate(finalEvaluation.createdAt)}</span>

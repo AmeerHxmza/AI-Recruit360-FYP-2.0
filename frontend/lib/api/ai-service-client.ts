@@ -7,7 +7,10 @@ if (typeof window !== "undefined") {
   console.error("CRITICAL SECURITY ERROR: aiServiceClient cannot be imported or executed in the browser.");
 }
 
-const AI_SERVICE_BASE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000/api/v1";
+const AI_SERVICE_BASE_URL =
+  process.env.AI_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_AI_SERVICE_URL ||
+  "https://ai-recruit360-fyp.onrender.com/api/v1";
 const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "recruit360_shared_backend_secret_2026";
 const DEFAULT_TIMEOUT_MS = 10000; // 10s strict timeout for AI processing
 

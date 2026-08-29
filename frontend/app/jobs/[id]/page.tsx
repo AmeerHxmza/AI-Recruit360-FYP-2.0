@@ -138,11 +138,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             {[
-              { label: "Applied", count: pipelineStats.applied, color: "#39D9FF" },
-              { label: "Screening", count: pipelineStats.screening, color: "#63E3FF" },
+              { label: "Applied", count: pipelineStats.applied, color: "#A7AFBC" },
+              { label: "Screening", count: pipelineStats.screening, color: "#39D9FF" },
               { label: "Assessment", count: pipelineStats.assessment, color: "#F5B942" },
-              { label: "Interview", count: pipelineStats.interview, color: "#35D07F" },
-              { label: "Evaluated", count: pipelineStats.evaluation, color: "#8957FF" },
+              { label: "Interview", count: pipelineStats.interview, color: "#63E3FF" },
+              { label: "Evaluated", count: pipelineStats.evaluation, color: "#35D07F" },
               { label: "Shortlisted", count: pipelineStats.shortlisted, color: "#00E5A3" },
               { label: "Knocked Out", count: pipelineStats.knockedOut, color: "#FF5C67" },
             ].map((stage, idx) => (

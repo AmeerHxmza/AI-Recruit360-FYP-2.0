@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 
-const PYTHON_BACKEND_BASE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000/api/v1";
+const PYTHON_BACKEND_BASE_URL =
+  process.env.AI_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_AI_SERVICE_URL ||
+  "https://ai-recruit360-fyp.onrender.com/api/v1";
 const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "recruit360_shared_backend_secret_2026";
 
 export async function POST(request: NextRequest) {

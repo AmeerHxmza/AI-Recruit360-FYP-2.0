@@ -24,6 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app"),
   title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
   description:
     "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",

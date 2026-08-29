@@ -123,10 +123,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  "relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
                   isActive
-                    ? "bg-[#39D9FF]/10 text-[#39D9FF] font-semibold border-l-2 border-[#39D9FF]"
-                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA]"
+                    ? "bg-[#171B21] text-[#39D9FF] font-semibold border border-[#39D9FF]/30 shadow-xs"
+                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA] border border-transparent"
                 )}
               >
                 <span
@@ -156,10 +156,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  "relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
                   isActive
-                    ? "bg-[#39D9FF]/10 text-[#39D9FF] font-semibold border-l-2 border-[#39D9FF]"
-                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA]"
+                    ? "bg-[#171B21] text-[#39D9FF] font-semibold border border-[#39D9FF]/30 shadow-xs"
+                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA] border border-transparent"
                 )}
               >
                 <span
@@ -189,10 +189,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  "relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
                   isActive
-                    ? "bg-[#39D9FF]/10 text-[#39D9FF] font-semibold border-l-2 border-[#39D9FF]"
-                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA]"
+                    ? "bg-[#171B21] text-[#39D9FF] font-semibold border border-[#39D9FF]/30 shadow-xs"
+                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA] border border-transparent"
                 )}
               >
                 <span
