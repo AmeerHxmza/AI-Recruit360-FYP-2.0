@@ -32,21 +32,40 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://ai-recruit360.vercel.app",
+        "https://ai-recruit360-fyp.onrender.com",
     ]
+
+    # ── Keep-Alive / Anti-Sleep Configuration ────────────────────────────────────
+    RENDER_EXTERNAL_URL: str = "https://ai-recruit360-fyp.onrender.com"
+    KEEP_ALIVE_INTERVAL_MINUTES: int = 12
+    ENABLE_KEEP_ALIVE: bool = True
 
     @field_validator("ALLOWED_ORIGINS", mode="after")
     @classmethod
     def parse_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        default_origins = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://ai-recruit360.vercel.app",
+            "https://ai-recruit360-fyp.onrender.com",
+        ]
         if isinstance(v, str):
             v = v.strip()
+            if v == "*":
+                return ["*"]
             if v.startswith("[") and v.endswith("]"):
                 import json
                 try:
-                    return json.loads(v)
+                    parsed = json.loads(v)
+                    return list(set(parsed + default_origins))
                 except Exception:
                     pass
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+            custom = [origin.strip() for origin in v.split(",") if origin.strip()]
+            return list(set(custom + default_origins))
+        if isinstance(v, list):
+            return list(set(v + default_origins))
+        return default_origins
 
     # ── Redis (Distributed Cache + ARQ Job Queue) ───────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"

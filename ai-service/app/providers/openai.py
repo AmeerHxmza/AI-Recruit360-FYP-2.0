@@ -103,22 +103,21 @@ class OpenAIProvider:
             temperature=temperature
         )
 
-        clean_json = re.sub(r"^```json\s*", "", raw_text, flags=re.IGNORECASE)
-        clean_json = re.sub(r"^```\s*", "", clean_json, flags=re.IGNORECASE)
-        clean_json = re.sub(r"\s*```$", "", clean_json, flags=re.IGNORECASE).strip()
+        clean_text = re.sub(r"^```json\s*", "", raw_text.strip(), flags=re.IGNORECASE)
+        clean_text = re.sub(r"^```\s*", "", clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r"\s*```$", "", clean_text, flags=re.IGNORECASE).strip()
 
         try:
-            parsed_data = json.loads(clean_json)
+            parsed_data = json.loads(clean_text)
             return schema.model_validate(parsed_data)
-        except Exception as e:
-            logger.error(f"OpenAI structured parsing failed: {str(e)}")
-            json_match = re.search(r"\{.*\}", clean_json, re.DOTALL)
+        except Exception:
+            json_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", clean_text)
             if json_match:
                 try:
                     return schema.model_validate(json.loads(json_match.group(0)))
-                except Exception:
-                    pass
-            raise AIValidationError(f"OpenAI output validation error: {str(e)}")
+                except Exception as match_err:
+                    logger.error(f"OpenAI JSON match validation failed: {match_err}")
+            raise AIValidationError("OpenAI output validation failed.")
 
     @retry(
         stop=stop_after_attempt(3),

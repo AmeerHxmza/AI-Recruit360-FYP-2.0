@@ -71,16 +71,26 @@ class GeminiProvider:
 
         raw_text = await self.generate_text(prompt=augmented_prompt, system_prompt=system_prompt)
 
-        clean_json = re.sub(r"^```json\s*", "", raw_text, flags=re.IGNORECASE)
-        clean_json = re.sub(r"^```\s*", "", clean_json, flags=re.IGNORECASE)
-        clean_json = re.sub(r"\s*```$", "", clean_json, flags=re.IGNORECASE).strip()
+        # 1. Clean markdown code fences
+        clean_text = re.sub(r"^```json\s*", "", raw_text.strip(), flags=re.IGNORECASE)
+        clean_text = re.sub(r"^```\s*", "", clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r"\s*```$", "", clean_text, flags=re.IGNORECASE).strip()
 
+        # 2. Try direct parse
         try:
-            parsed_data = json.loads(clean_json)
+            parsed_data = json.loads(clean_text)
             return schema.model_validate(parsed_data)
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {clean_json}")
-            raise AIValidationError(f"Gemini API output was not valid JSON: {str(e)}")
-        except Exception as e:
-            logger.error(f"Schema validation failed: {str(e)}")
-            raise AIValidationError(f"Gemini output failed model validation: {str(e)}")
+        except Exception:
+            pass
+
+        # 3. Fallback: extract JSON substring via regex
+        json_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", clean_text)
+        if json_match:
+            try:
+                parsed_data = json.loads(json_match.group(0))
+                return schema.model_validate(parsed_data)
+            except Exception as match_err:
+                logger.error(f"Failed to validate extracted JSON match: {match_err}")
+
+        logger.error(f"Gemini output parsing completely failed on: {raw_text[:500]}")
+        raise AIValidationError("Failed to parse valid structured JSON from Gemini output.")

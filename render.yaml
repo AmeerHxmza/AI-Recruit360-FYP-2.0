@@ -42,7 +42,11 @@ services:
       - key: REDIS_URL
         sync: false
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: "https://ai-recruit360.vercel.app,http://localhost:3000"
+      - key: RENDER_EXTERNAL_URL
+        value: "https://ai-recruit360-fyp.onrender.com"
+      - key: ENABLE_KEEP_ALIVE
+        value: "true"
 
   # ── Background Worker: ARQ Redis Worker ───────────────────────────────────
   - type: worker

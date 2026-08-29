@@ -61,12 +61,14 @@ def _setup_telemetry(app: FastAPI) -> None:
         logger.warning("opentelemetry packages not installed — skipping telemetry setup.")
 
 
+from app.core.keep_alive import start_keep_alive_worker, stop_keep_alive_worker
+
 # ── Application Lifespan ──────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
-    Startup: initialise Redis connection pool.
-    Shutdown: gracefully close Redis pool.
+    Startup: initialise Redis connection pool & start keep-alive worker.
+    Shutdown: gracefully close Redis pool & cancel keep-alive worker.
     """
     logger.info(
         f"AI-Recruit360 starting up | env={settings.ENVIRONMENT} | "
@@ -79,9 +81,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as exc:
         logger.warning(f"Redis unavailable at startup (cache/rate-limiting degraded): {exc}")
 
+    # Start Render anti-sleep keep-alive worker
+    start_keep_alive_worker()
+
     yield  # ← application runs here
 
     # Graceful shutdown
+    stop_keep_alive_worker()
     await close_redis()
     logger.info("AI-Recruit360 shut down cleanly.")
 
@@ -127,13 +133,14 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         }
     )
 
-# ── CORS Middleware (NO wildcard — explicit origins only) ─────────────────────
+# ── CORS Middleware (explicit origins + regex for Vercel preview URLs) ───────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.onrender\.com|http://localhost:\d+|http://127\.0\.0\.1:\d+",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "x-ai-service-secret"],
+    allow_methods=["*"],
+    allow_headers=["*"],
     max_age=600,  # Cache preflight for 10 minutes
 )
 

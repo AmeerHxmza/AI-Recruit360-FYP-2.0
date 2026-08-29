@@ -27,11 +27,11 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
   // Core Job Data State
   const [job] = React.useState<Job>(initialJob);
   
-  // Application Flow Step: 1 = Form, 2 = Polling, 3 = Knockout, 4 = Assessment Ready
-  const [flowStep, setFlowStep] = React.useState<1 | 2 | 3 | 4 | 5>(1);
+  // Application Flow Step: 1 = Form, 2 = Polling, 3 = Knockout, 4 = Assessment Ready, 5 = Timeout, 6 = Extraction Error
+  const [flowStep, setFlowStep] = React.useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [applicationId, setApplicationId] = React.useState<string | null>(null);
   const [appStatus, setAppStatus] = React.useState<ApplicationStatus | null>(null);
-  const [, setPollingAttempts] = React.useState(0);
+  const [pollingAttempts, setPollingAttempts] = React.useState(0);
 
   // Candidate Form Inputs
   const [fullName, setFullName] = React.useState("");
@@ -50,7 +50,7 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
     
     const interval = setInterval(async () => {
       setPollingAttempts((prev) => {
-        if (prev >= 15) {
+        if (prev >= 45) { // 45 * 3s = 135s polling window for cold start + LLMs
           clearInterval(interval);
           setFlowStep(5);
           return prev;
@@ -63,9 +63,14 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
         setAppStatus(res.data);
         
         if (res.data === "knocked_out") {
+          clearInterval(interval);
           setFlowStep(3);
         } else if (res.data === "assessment") {
+          clearInterval(interval);
           setFlowStep(4);
+        } else if ((res.data as string) === "extraction_failed") {
+          clearInterval(interval);
+          setFlowStep(6);
         }
       }
     }, 3000);
@@ -364,8 +369,17 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
               <h1 className="text-3xl font-bold font-display text-[#F5F7FA]">
                 Reviewing your application
               </h1>
+              <p className="text-sm font-medium text-[#39D9FF] animate-pulse">
+                {pollingAttempts < 4
+                  ? "Connecting to AI screening engine..."
+                  : pollingAttempts < 12
+                  ? "Extracting & analyzing resume text..."
+                  : pollingAttempts < 25
+                  ? "Evaluating technical skills & qualifications..."
+                  : "Finalizing recommendation & next steps..."}
+              </p>
               <p className="text-xs text-[#A7AFBC] leading-relaxed max-w-md mx-auto">
-                Please wait while we process your CV and verify the requirements for this role.
+                Please keep this window open while our multi-agent AI processes your CV.
               </p>
             </div>
 
@@ -528,6 +542,40 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
               <Link
                 href="/"
                 className="inline-block px-6 py-3 rounded-lg bg-[#12151A] border border-[#242932] text-sm text-[#F5F7FA] hover:bg-[#171B21] transition-all"
+              >
+                Return to Homepage
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: CV Extraction Error Recovery */}
+        {flowStep === 6 && (
+          <div className="max-w-xl mx-auto text-center space-y-6 py-16">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#FF5C67]/10 border border-[#FF5C67]/30 flex items-center justify-center text-[#FF5C67]">
+              <AlertCircle className="h-8 w-8" />
+            </div>
+
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold font-display text-[#F5F7FA]">
+                Unable to Parse CV
+              </h1>
+              <p className="text-sm text-[#A7AFBC] leading-relaxed">
+                We could not extract readable text from your uploaded document. Please ensure your CV is a standard PDF or DOCX text document (scanned image-only PDFs are not supported).
+              </p>
+            </div>
+
+            <div className="pt-6 flex justify-center gap-4">
+              <Button
+                variant="ai"
+                onClick={() => setFlowStep(1)}
+                className="px-6 py-3 bg-[#39D9FF] text-[#08090B] hover:bg-[#63E3FF] border-none font-semibold text-sm"
+              >
+                Upload Different File
+              </Button>
+              <Link
+                href="/"
+                className="inline-flex items-center px-6 py-3 rounded-lg bg-[#12151A] border border-[#242932] text-sm text-[#F5F7FA] hover:bg-[#171B21] transition-all"
               >
                 Return to Homepage
               </Link>
