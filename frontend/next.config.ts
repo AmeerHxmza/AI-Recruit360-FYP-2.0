@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // ── Output ────────────────────────────────────────────────────────────────
-  // 'standalone' — Produces a self-contained Docker image (includes only
-  // needed files). Required for containerised / Kubernetes deployments.
-  output: "standalone",
+  // Transpile client-side WebRTC and avatar dependencies for SSR compatibility
+  transpilePackages: ["simli-client", "livekit-client"],
+  serverExternalPackages: ["pdf-parse", "mammoth"],
 
   // ── Image Optimization ───────────────────────────────────────────────────
   images: {

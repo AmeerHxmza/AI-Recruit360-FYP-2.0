@@ -32,7 +32,13 @@ import {
   getSimliTokenAction,
   degradeAvatarAction,
 } from "@/app/actions/interview";
-import type { SimliClient } from "simli-client";
+
+interface SimliClientInstance {
+  start: () => Promise<void>;
+  stop: () => Promise<void>;
+  sendAudioData: (data: Uint8Array) => void;
+  on: (event: string, cb: (...args: unknown[]) => void) => void;
+}
 
 type InterviewState = "CONNECTING" | "LISTENING" | "THINKING" | "SPEAKING" | "COMPLETED" | "ERROR";
 
@@ -67,7 +73,7 @@ export default function CandidateInterviewRoom() {
   const audioContextRef = React.useRef<HTMLAudioElement | null>(null);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
-  const simliClientRef = React.useRef<SimliClient | null>(null);
+  const simliClientRef = React.useRef<SimliClientInstance | null>(null);
   const isSimliActiveRef = React.useRef<boolean>(false);
   const [isSimliActive, setIsSimliActive] = React.useState<boolean>(false);
 
@@ -249,38 +255,42 @@ export default function CandidateInterviewRoom() {
       try {
         const tokenRes = await getSimliTokenAction();
         if (tokenRes.success && tokenRes.data?.session_token && videoRef.current && audioRef.current) {
-          const { SimliClient: DynamicSimliClient, LogLevel } = await import("simli-client");
-          const simliClient = new DynamicSimliClient(
-            tokenRes.data.session_token,
-            videoRef.current,
-            audioRef.current,
-            null,
-            LogLevel ? LogLevel.INFO : 1,
-            "livekit"
-          );
-          simliClientRef.current = simliClient;
-          
-          simliClient.on("start", () => {
+          const simliModule = await (Function('return import("simli-client")')() as Promise<any>).catch(() => null);
+          if (simliModule?.SimliClient) {
+            const simliClient = new simliModule.SimliClient(
+              tokenRes.data.session_token,
+              videoRef.current,
+              audioRef.current,
+              null,
+              simliModule.LogLevel ? simliModule.LogLevel.INFO : 1,
+              "livekit"
+            );
+            simliClientRef.current = simliClient;
+            
+            simliClient.on("start", () => {
+              updateSimliActive(true);
+            });
+
+            simliClient.on("video_info", () => {
+              updateSimliActive(true);
+            });
+
+            simliClient.on("error", (err: unknown) => {
+              console.warn("[Simli] WebRTC error:", err);
+              updateSimliActive(false);
+              degradeAvatarAction(resolvedId).catch(() => {});
+            });
+
+            simliClient.on("startup_error", (err: unknown) => {
+              console.warn("[Simli] Startup error:", err);
+              updateSimliActive(false);
+            });
+
+            await simliClient.start();
             updateSimliActive(true);
-          });
-
-          simliClient.on("video_info", () => {
-            updateSimliActive(true);
-          });
-
-          simliClient.on("error", (err) => {
-            console.warn("[Simli] WebRTC error:", err);
+          } else {
             updateSimliActive(false);
-            degradeAvatarAction(resolvedId).catch(() => {});
-          });
-
-          simliClient.on("startup_error", (err) => {
-            console.warn("[Simli] Startup error:", err);
-            updateSimliActive(false);
-          });
-
-          await simliClient.start();
-          updateSimliActive(true);
+          }
         } else {
           updateSimliActive(false);
         }
