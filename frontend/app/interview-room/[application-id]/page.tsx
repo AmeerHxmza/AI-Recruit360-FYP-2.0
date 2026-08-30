@@ -12,7 +12,6 @@ import {
   CheckCircle2, 
   Volume2, 
   Send, 
-  Edit3, 
   Sparkles,
   ArrowRight,
   Video,
@@ -38,6 +37,18 @@ interface SimliClientInstance {
   stop: () => Promise<void>;
   sendAudioData: (data: Uint8Array) => void;
   on: (event: string, cb: (...args: unknown[]) => void) => void;
+}
+
+interface SimliModuleExport {
+  SimliClient?: new (
+    sessionToken: string,
+    videoElement: HTMLVideoElement,
+    audioElement: HTMLAudioElement,
+    iceServers: unknown,
+    logLevel?: unknown,
+    transportMode?: string
+  ) => SimliClientInstance;
+  LogLevel?: Record<string, number>;
 }
 
 type InterviewState = "CONNECTING" | "LISTENING" | "THINKING" | "SPEAKING" | "COMPLETED" | "ERROR";
@@ -84,14 +95,10 @@ export default function CandidateInterviewRoom() {
 
   // Recording Timer
   React.useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      setRecordingSeconds(0);
-    }
+    if (!isRecording) return;
+    const interval = setInterval(() => {
+      setRecordingSeconds((prev) => prev + 1);
+    }, 1000);
     return () => clearInterval(interval);
   }, [isRecording]);
 
@@ -253,14 +260,36 @@ export default function CandidateInterviewRoom() {
 
       // Initialize Simli LiveKit WebRTC
       try {
+        console.log("[Simli] Requesting WebRTC session token...");
         const tokenRes = await getSimliTokenAction();
-        if (tokenRes.success && tokenRes.data?.session_token && videoRef.current && audioRef.current) {
-          const simliModule = await (Function('return import("simli-client")')() as Promise<any>).catch(() => null);
+        console.log("[Simli] Token result:", tokenRes);
+
+        // Ensure DOM video and audio elements are mounted and available
+        let vEl = videoRef.current;
+        let aEl = audioRef.current;
+        if (!vEl || !aEl) {
+          for (let i = 0; i < 10; i++) {
+            await new Promise((r) => setTimeout(r, 100));
+            vEl = videoRef.current;
+            aEl = audioRef.current;
+            if (vEl && aEl) break;
+          }
+        }
+
+        if (tokenRes.success && tokenRes.data?.session_token && vEl && aEl) {
+          console.log("[Simli] Loading simli-client library...");
+          const simliModule = await (Function('return import("simli-client")')() as Promise<SimliModuleExport | null>).catch((e) => {
+            console.warn("[Simli] Dynamic import of simli-client failed:", e);
+            return null;
+          });
+
           if (simliModule?.SimliClient) {
-            const simliClient = new simliModule.SimliClient(
+            console.log("[Simli] Instantiating SimliClient with video/audio elements...");
+            const SimliClientConstructor = simliModule.SimliClient;
+            const simliClient = new SimliClientConstructor(
               tokenRes.data.session_token,
-              videoRef.current,
-              audioRef.current,
+              vEl,
+              aEl,
               null,
               simliModule.LogLevel ? simliModule.LogLevel.INFO : 1,
               "livekit"
@@ -268,34 +297,41 @@ export default function CandidateInterviewRoom() {
             simliClientRef.current = simliClient;
             
             simliClient.on("start", () => {
+              console.log("[Simli] WebRTC start event received. Avatar stream active!");
               updateSimliActive(true);
             });
 
             simliClient.on("video_info", () => {
+              console.log("[Simli] Video info received from stream.");
               updateSimliActive(true);
             });
 
             simliClient.on("error", (err: unknown) => {
-              console.warn("[Simli] WebRTC error:", err);
+              console.warn("[Simli] WebRTC session error:", err);
               updateSimliActive(false);
               degradeAvatarAction(resolvedId).catch(() => {});
             });
 
             simliClient.on("startup_error", (err: unknown) => {
-              console.warn("[Simli] Startup error:", err);
+              console.warn("[Simli] WebRTC startup error:", err);
               updateSimliActive(false);
             });
 
             await simliClient.start();
+            console.log("[Simli] WebRTC client start() resolved successfully.");
             updateSimliActive(true);
           } else {
+            console.warn("[Simli] simli-client SDK not available in runtime.");
             updateSimliActive(false);
           }
         } else {
+          if (!tokenRes.success) {
+            console.warn("[Simli] Session token could not be retrieved from backend:", tokenRes.error);
+          }
           updateSimliActive(false);
         }
       } catch (simliErr) {
-        console.warn("[Simli] Avatar initialization fallback:", simliErr);
+        console.warn("[Simli] Avatar initialization fallback to audio-reactive:", simliErr);
         updateSimliActive(false);
       }
 
@@ -348,6 +384,7 @@ export default function CandidateInterviewRoom() {
       };
 
       mediaRecorder.start();
+      setRecordingSeconds(0);
       setIsRecording(true);
       setErrorMsg(null);
     } catch (err) {
@@ -439,9 +476,6 @@ export default function CandidateInterviewRoom() {
   if (!hasEnteredRoom) {
     return (
       <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex items-center justify-center p-6 font-sans selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]">
-        {/* Hidden persistent DOM video/audio nodes */}
-        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
-        <audio ref={audioRef} autoPlay className="hidden" />
 
         <div className="max-w-xl w-full p-8 sm:p-10 rounded-3xl border border-[#242932] bg-[#12151A] space-y-6 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#39D9FF] via-[#35D07F] to-[#63E3FF]" />
@@ -645,56 +679,58 @@ export default function CandidateInterviewRoom() {
                   "opacity-30"
                 }`} />
 
-                {/* Live Simli Video Stream */}
+                {/* Live Simli Video Stream (Always in layout so browser compositor triggers WebRTC frame callbacks) */}
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className={`h-full w-full object-cover object-center transition-opacity duration-500 ${isSimliActive ? "opacity-100 block" : "opacity-0 hidden"}`}
+                  className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 z-10 ${
+                    isSimliActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                  }`}
                 />
-                <audio ref={audioRef} autoPlay className="hidden" />
+                <audio ref={audioRef} autoPlay className="sr-only" />
 
-                {/* Animated Holographic AI Avatar Graphic Fallback */}
-                {!isSimliActive && (
-                  <div className="relative flex flex-col items-center justify-center p-6 space-y-4">
-                    <div className="relative">
-                      <div className={`absolute -inset-4 rounded-full blur-xl transition-all duration-700 ${
-                        interviewState === "SPEAKING" ? "bg-[#39D9FF]/40 scale-125 animate-pulse" :
-                        isRecording ? "bg-[#FF5C67]/40 scale-125 animate-pulse" :
-                        "bg-[#39D9FF]/20 scale-100"
-                      }`} />
+                {/* Animated Holographic AI Avatar Graphic Fallback (Visible during loading or audio-reactive mode) */}
+                <div className={`relative flex flex-col items-center justify-center p-6 space-y-4 transition-opacity duration-700 z-0 ${
+                  isSimliActive ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"
+                }`}>
+                  <div className="relative">
+                    <div className={`absolute -inset-4 rounded-full blur-xl transition-all duration-700 ${
+                      interviewState === "SPEAKING" ? "bg-[#39D9FF]/40 scale-125 animate-pulse" :
+                      isRecording ? "bg-[#FF5C67]/40 scale-125 animate-pulse" :
+                      "bg-[#39D9FF]/20 scale-100"
+                    }`} />
 
-                      <div className="relative h-32 w-32 sm:h-36 sm:w-36 rounded-full border-2 border-[#39D9FF]/60 bg-gradient-to-b from-[#171B21] to-[#0D0F12] p-1 flex items-center justify-center shadow-2xl">
-                        <div className="w-full h-full rounded-full bg-[#12151A] flex items-center justify-center relative overflow-hidden border border-[#242932]">
-                          <svg className="w-20 h-20 text-[#39D9FF] opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <circle cx="12" cy="8" r="4" />
-                            <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                          </svg>
+                    <div className="relative h-32 w-32 sm:h-36 sm:w-36 rounded-full border-2 border-[#39D9FF]/60 bg-gradient-to-b from-[#171B21] to-[#0D0F12] p-1 flex items-center justify-center shadow-2xl">
+                      <div className="w-full h-full rounded-full bg-[#12151A] flex items-center justify-center relative overflow-hidden border border-[#242932]">
+                        <svg className="w-20 h-20 text-[#39D9FF] opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <circle cx="12" cy="8" r="4" />
+                          <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
 
-                          {/* Lip-Sync Animated Equalizer Waves when speaking */}
-                          {interviewState === "SPEAKING" && (
-                            <div className="absolute bottom-2 flex items-center gap-1 px-3 py-1 rounded-full bg-[#08090B]/90 backdrop-blur-sm border border-[#39D9FF]/40 shadow-lg">
-                              <span className="w-1 h-3 bg-[#39D9FF] rounded-full animate-pulse" />
-                              <span className="w-1 h-6 bg-[#35D07F] rounded-full animate-bounce" />
-                              <span className="w-1 h-4 bg-[#F5B942] rounded-full animate-pulse" />
-                              <span className="w-1 h-6 bg-[#39D9FF] rounded-full animate-bounce" />
-                              <span className="w-1 h-3 bg-[#35D07F] rounded-full animate-pulse" />
-                            </div>
-                          )}
-                        </div>
+                        {/* Lip-Sync Animated Equalizer Waves when speaking */}
+                        {interviewState === "SPEAKING" && (
+                          <div className="absolute bottom-2 flex items-center gap-1 px-3 py-1 rounded-full bg-[#08090B]/90 backdrop-blur-sm border border-[#39D9FF]/40 shadow-lg">
+                            <span className="w-1 h-3 bg-[#39D9FF] rounded-full animate-pulse" />
+                            <span className="w-1 h-6 bg-[#35D07F] rounded-full animate-bounce" />
+                            <span className="w-1 h-4 bg-[#F5B942] rounded-full animate-pulse" />
+                            <span className="w-1 h-6 bg-[#39D9FF] rounded-full animate-bounce" />
+                            <span className="w-1 h-3 bg-[#35D07F] rounded-full animate-pulse" />
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    <div className="text-center space-y-1">
-                      <span className="text-xs font-mono font-bold text-[#F5F7FA] block">
-                        {interviewState === "SPEAKING" ? "🔊 AI Interviewer Speaking Question..." : "🎙️ AI Interviewer Listening..."}
-                      </span>
-                      <span className="text-[11px] text-[#A7AFBC] font-mono">Live Audio Equalizer Channel</span>
-                    </div>
                   </div>
-                )}
+
+                  <div className="text-center space-y-1">
+                    <span className="text-xs font-mono font-bold text-[#F5F7FA] block">
+                      {interviewState === "SPEAKING" ? "🔊 AI Interviewer Speaking Question..." : "🎙️ AI Interviewer Listening..."}
+                    </span>
+                    <span className="text-[11px] text-[#A7AFBC] font-mono">Live Audio Equalizer Channel</span>
+                  </div>
+                </div>
 
                 {/* Floating Waveform Pill overlay when speaking on top of video */}
                 {isSimliActive && interviewState === "SPEAKING" && (

@@ -130,12 +130,16 @@ async def get_simli_token(request: Request):
                 },
                 timeout=15.0
             )
-            response.raise_for_status()
+            if response.status_code != 200:
+                logger.error(f"[Simli] Token request failed [{response.status_code}]: {response.text}")
+                raise HTTPException(status_code=response.status_code, detail=f"Simli API error: {response.text}")
             data = response.json()
             return {"session_token": data.get("session_token", "")}
             
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Simli Token error: {e}")
+        logger.error(f"[Simli] Unexpected token error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/degrade-avatar")
