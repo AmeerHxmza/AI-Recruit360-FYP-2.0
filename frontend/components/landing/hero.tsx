@@ -23,13 +23,13 @@ export function HeroSection() {
         {/* Top & bottom gradient overlays to merge seamlessly with section edges */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#08090B] via-transparent to-[#08090B]" />
         {/* Ambient cyan glow highlight on right */}
-        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-[500px] h-[500px] bg-[#39D9FF]/[0.08] blur-[150px] rounded-full" />
+        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-[600px] h-[600px] bg-[#39D9FF]/[0.1] blur-[150px] rounded-full animate-pulse" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
         <div className="max-w-2xl text-left space-y-6">
           {/* Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#12151A]/80 backdrop-blur-sm border border-[#242932] text-[#39D9FF] text-xs font-mono tracking-widest uppercase shadow-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-[#39D9FF]/30 text-[#39D9FF] text-xs font-mono tracking-widest uppercase shadow-[0_0_15px_rgba(57,217,255,0.15)] animate-stagger-1">
             <Sparkles className="h-3.5 w-3.5 text-[#39D9FF]" />
             <span>AI-POWERED RECRUITMENT</span>
           </div>
@@ -46,17 +46,17 @@ export function HeroSection() {
           </p>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto pt-4 animate-stagger-3">
             <Link
               href="/signup"
-              className="px-8 py-4 text-sm font-semibold text-[#08090B] bg-[#39D9FF] hover:bg-[#63E3FF] rounded-xl transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-[#39D9FF]/20 active:scale-98"
+              className="px-8 py-4 text-sm font-bold text-[#08090B] bg-[#39D9FF] hover:bg-[#63E3FF] rounded-xl transition-all duration-300 flex items-center justify-center gap-2.5 shadow-[0_0_20px_rgba(57,217,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2)] hover:shadow-[0_0_30px_rgba(57,217,255,0.5)] hover:-translate-y-1 active:translate-y-0"
             >
               Start Hiring Smarter
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#how-it-works"
-              className="px-8 py-4 text-sm font-medium text-[#F5F7FA] bg-[#12151A]/80 backdrop-blur-sm hover:bg-[#171B21] border border-[#242932] hover:border-[#39D9FF]/40 rounded-xl transition-all flex items-center justify-center gap-2"
+              className="px-8 py-4 text-sm font-bold text-[#F5F7FA] glass rounded-xl transition-all duration-300 flex items-center justify-center gap-2 hover:border-[#39D9FF]/40 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#39D9FF]/10 active:translate-y-0"
             >
               See How It Works
             </a>

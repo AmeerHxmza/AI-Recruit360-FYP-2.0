@@ -28,6 +28,55 @@ interface CandidateIntelligencePanelProps {
   onStatusChange?: () => void;
 }
 
+// Helper component to safely parse and render JSON evidence arrays
+function JsonEvidenceRenderer({ evidence, isItalic = false }: { evidence: string; isItalic?: boolean }) {
+  if (!evidence) return null;
+  
+  try {
+    const parsed = JSON.parse(evidence);
+    
+    // If it's an array of evidence items
+    if (Array.isArray(parsed)) {
+      return (
+        <ul className="space-y-1.5 mt-2">
+          {parsed.map((item, idx) => {
+            // Handle EvidenceMatch objects (cv screening)
+            if (typeof item === 'object' && item !== null) {
+              const text = item.evidence_quote || item.requirement || JSON.stringify(item);
+              return (
+                <li key={idx} className={`text-xs text-[#A7AFBC] flex gap-2 items-start ${isItalic ? 'italic' : ''}`}>
+                  <Check className="w-3 h-3 text-[#39D9FF] shrink-0 mt-0.5" /> 
+                  <span className="leading-relaxed">{text}</span>
+                </li>
+              );
+            }
+            // Handle plain string arrays (final evaluation)
+            return (
+              <li key={idx} className={`text-xs text-[#A7AFBC] flex gap-2 items-start ${isItalic ? 'italic' : ''}`}>
+                <Check className="w-3 h-3 text-[#39D9FF] shrink-0 mt-0.5" /> 
+                <span className="leading-relaxed">{String(item)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      );
+    }
+    
+    // If it's a JSON object but not an array, stringify it nicely
+    if (typeof parsed === 'object' && parsed !== null) {
+      return <p className={`text-xs text-[#A7AFBC] leading-relaxed ${isItalic ? 'italic' : ''}`}>{JSON.stringify(parsed, null, 2)}</p>;
+    }
+  } catch (e) {
+    // Not valid JSON, just render as text
+  }
+
+  return (
+    <p className={`text-xs text-[#A7AFBC] leading-relaxed ${isItalic ? 'italic' : ''}`}>
+      {isItalic ? `"${evidence}"` : evidence}
+    </p>
+  );
+}
+
 export function CandidateIntelligencePanel({ intelligence, onStatusChange }: CandidateIntelligencePanelProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = React.useState(false);
@@ -152,7 +201,7 @@ export function CandidateIntelligencePanel({ intelligence, onStatusChange }: Can
                   <Badge variant={cvScreening.matchScore >= 70 ? "success" : "danger"} className="mb-2 uppercase text-[9px] font-bold">
                     {cvScreening.recommendation.replace('_', ' ')}
                   </Badge>
-                  <p className="text-xs text-[#A7AFBC] leading-relaxed">{cvScreening.evidence}</p>
+                  <JsonEvidenceRenderer evidence={cvScreening.evidence} />
                 </div>
               </div>
             ) : (
@@ -320,7 +369,7 @@ export function CandidateIntelligencePanel({ intelligence, onStatusChange }: Can
 
                 <div className="space-y-2 pt-3 border-t border-[#39D9FF]/20">
                   <h4 className="text-[10px] font-bold text-[#A7AFBC] uppercase tracking-wider">AI Reasoning</h4>
-                  <p className="text-xs text-[#A7AFBC] leading-relaxed italic">&quot;{finalEvaluation.evidence}&quot;</p>
+                  <JsonEvidenceRenderer evidence={finalEvaluation.evidence} isItalic={true} />
                 </div>
               </div>
             ) : (

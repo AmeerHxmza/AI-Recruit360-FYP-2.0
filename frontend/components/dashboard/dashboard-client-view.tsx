@@ -73,7 +73,10 @@ export function DashboardClientView({ initialData, userName }: DashboardClientVi
   };
 
   return (
-    <div className="animate-in fade-in duration-500 space-y-6">
+    <div className="animate-in fade-in duration-500 space-y-6 relative z-0">
+      {/* Ambient background glow for elite UI feel */}
+      <div className="bg-ambient-glow" />
+
       {/* Dashboard Header */}
       <DashboardHeader
         userName={userName}
@@ -81,7 +84,7 @@ export function DashboardClientView({ initialData, userName }: DashboardClientVi
       />
 
       {/* Primary Metrics Editorial Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-stagger-1">
         <MetricCard
           label="Active Jobs"
           value={data.metrics.activeJobs}
@@ -110,11 +113,11 @@ export function DashboardClientView({ initialData, userName }: DashboardClientVi
       </div>
 
       {/* Main Command Center Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
         {/* Left Column: AI Intelligence & Recent Applications */}
         <div className="lg:col-span-8 space-y-6">
           {/* Candidate Screening Funnel Card */}
-          <Card elevated className="p-6 border-[#242932] bg-[#12151A] space-y-5">
+          <Card glass interactive className="p-6 space-y-5 animate-stagger-2">
             <div className="flex items-center justify-between border-b border-[#242932] pb-3">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-[#39D9FF]" />
@@ -201,7 +204,7 @@ export function DashboardClientView({ initialData, userName }: DashboardClientVi
           </Card>
 
           {/* Recent Candidate Applications Table */}
-          <div className="space-y-3">
+          <div className="space-y-3 animate-stagger-3">
             <div className="flex items-center justify-between pb-1">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-[#39D9FF]" />
@@ -285,7 +288,7 @@ export function DashboardClientView({ initialData, userName }: DashboardClientVi
         </div>
 
         {/* Right Column: AI Insights & Activity */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-6 animate-stagger-4">
           <InsightsPanel recentApplications={data.recentApplications} />
         </div>
       </div>

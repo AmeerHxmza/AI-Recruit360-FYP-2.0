@@ -40,7 +40,7 @@ interface ApplicationJoinQueryResult {
   } | null;
 }
 
-export async function getApplicationsForOrg(orgId: string, jobId?: string): Promise<Application[]> {
+export async function getApplicationsForOrg(orgId: string, jobId?: string, page?: number, pageSize?: number): Promise<Application[]> {
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
 
@@ -52,6 +52,14 @@ export async function getApplicationsForOrg(orgId: string, jobId?: string): Prom
 
   if (jobId) {
     query = query.eq("job_id", jobId);
+  }
+  
+  if (page && pageSize) {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+  } else {
+    query = query.limit(100);
   }
 
   const { data, error } = await query;
@@ -65,7 +73,7 @@ export async function getApplicationsForOrg(orgId: string, jobId?: string): Prom
 
 export async function getApplicationsForOrgWithDetails(
   orgId: string,
-  filters?: { stage?: string; search?: string }
+  filters?: { stage?: string; search?: string; page?: number; pageSize?: number }
 ): Promise<ApplicationItemWithDetails[]> {
   await getCurrentOrganization(orgId);
   const supabase = await createClient();
@@ -96,6 +104,14 @@ export async function getApplicationsForOrgWithDetails(
 
     if (filters?.stage && filters.stage !== "All") {
       query = query.eq("status", filters.stage.toLowerCase() as ApplicationStatus);
+    }
+    
+    if (filters?.page && filters?.pageSize) {
+      const from = (filters.page - 1) * filters.pageSize;
+      const to = from + filters.pageSize - 1;
+      query = query.range(from, to);
+    } else {
+      query = query.limit(100);
     }
 
     const { data, error } = await query;

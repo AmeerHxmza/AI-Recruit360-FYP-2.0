@@ -162,16 +162,35 @@
   box-shadow: 0 0 12px -2px rgba(57, 217, 255, 0.25);
 }
 
+/* Elite Glassmorphism */
+.glass {
+  background: rgba(18, 21, 26, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel {
+  background: rgba(13, 15, 18, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
 /* Enterprise Data-Density & Surface Tokens */
 .enterprise-card {
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .enterprise-card:hover {
-  border-color: rgba(57, 217, 255, 0.25);
+  border-color: rgba(57, 217, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(57, 217, 255, 0.1);
 }
 
 .enterprise-card-elevated {
@@ -180,16 +199,29 @@
   border-radius: var(--radius-lg);
 }
 
-.glass-panel {
-  background: rgba(18, 21, 26, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .hairline-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+/* Ambient Gradients */
+.bg-ambient-mesh {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(57, 217, 255, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(53, 208, 127, 0.05) 0px, transparent 50%);
+}
+
+.bg-ambient-glow {
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80vw;
+  height: 50vh;
+  background: radial-gradient(ellipse at top, rgba(57, 217, 255, 0.15) 0%, transparent 70%);
+  filter: blur(60px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* Monospace Metrics */
@@ -205,9 +237,26 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
+
+/* Staggered Animations */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-1 { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+.animate-stagger-2 { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+.animate-stagger-3 { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+.animate-stagger-4 { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both; }

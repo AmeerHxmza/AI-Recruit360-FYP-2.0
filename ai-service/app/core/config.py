@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     SIMLI_FACE_ID: str = "cace3ef7-a4c4-425d-a8cf-a5358eb0c427"
 
     # ── Security ─────────────────────────────────────────────────────────────────
-    AI_SERVICE_SHARED_SECRET: str = "recruit360_shared_backend_secret_2026"
+    AI_SERVICE_SHARED_SECRET: str = ""
     # Comma-separated list or JSON array loaded from env
     ALLOWED_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",

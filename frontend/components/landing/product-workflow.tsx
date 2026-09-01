@@ -166,7 +166,7 @@ export function ProductWorkflow() {
         </div>
 
         {/* Active Visual Panel */}
-        <div className="rounded-2xl border border-[#242932] bg-[#12151A] p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-2xl border border-[#242932]/50 glass-panel p-6 sm:p-8 shadow-2xl transition-all duration-500 ease-in-out">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Panel Left Text */}
             <div className="lg:col-span-6 space-y-4">

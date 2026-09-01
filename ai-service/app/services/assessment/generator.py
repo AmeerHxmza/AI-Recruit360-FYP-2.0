@@ -15,7 +15,7 @@ Generate exactly 10 high-quality, non-trivia multiple-choice questions (MCQs) ta
 Rules:
 1. Generate exactly 10 questions numbered 1 to 10.
 2. Each question must have exactly 4 options (option_a, option_b, option_c, option_d).
-3. Specify correct_option strictly as 'A', 'B', 'C', or 'D'.
+3. CRITICAL: You MUST strictly randomize the correct_option evenly across 'A', 'B', 'C', and 'D'. DO NOT default to 'A'.
 4. Provide a clear explanation for why the answer is correct.
 5. Provide skill_category and difficulty ('easy', 'medium', 'hard').
 6. CRITICAL: Analyze the candidate's profile summary for specific projects. Generate meaningful technical questions that evaluate the candidate's understanding of the technologies used in those specific projects, mapping them to the job requirements."""
@@ -61,7 +61,7 @@ async def _generate_mcqs_background_task(
             "option_b": item.option_b,
             "option_c": item.option_c,
             "option_d": item.option_d,
-            "correct_option": item.correct_option.upper(),
+            "correct_option": item.correct_option.strip().upper()[:1] if item.correct_option.strip().upper()[:1] in ("A", "B", "C", "D") else "A",
             "explanation": item.explanation,
             "skill_category": item.skill_category,
             "difficulty": item.difficulty
@@ -209,19 +209,54 @@ async def generate_personalized_mcqs(application_id: str, background_tasks = Non
         }
 
 def generate_fallback_mcqs(job_title: str, skills: List[str]) -> GeneratedAssessmentPayload:
+    """Generate deterministic fallback MCQs when LLM fails. Correct answers are randomized across positions."""
+    import random
     primary_skill = skills[0] if skills else "Software Engineering"
+    correct_options = ["A", "B", "C", "D"]
     questions = []
+
+    templates = [
+        ("What is a core best practice when working with {skill} in production for {job}?",
+         "Ensure modular code separation and comprehensive automated testing",
+         "Avoid error handling to improve execution speed",
+         "Hardcode environment variables directly inside component code",
+         "Disable database indexing to conserve storage"),
+        ("Which approach is recommended for scaling {skill} systems in a {job} context?",
+         "Implement horizontal scaling with load balancing and caching",
+         "Store all data in a single monolithic table",
+         "Disable logging in production to improve performance",
+         "Use synchronous blocking calls for all network operations"),
+        ("What is the primary benefit of automated testing in {skill} development?",
+         "Early detection of regressions and reliable deployments",
+         "Eliminates the need for code documentation",
+         "Guarantees zero runtime bugs in production",
+         "Reduces the need for version control"),
+    ]
+
     for idx in range(1, 11):
+        template = templates[idx % len(templates)]
+        correct_pos = correct_options[(idx - 1) % 4]
+        
+        # Build options list with correct answer rotated to the right position
+        options = list(template[1:])
+        correct_answer = options[0]
+        random.shuffle(options)
+        # Ensure correct answer is at the designated position
+        correct_idx = correct_options.index(correct_pos)
+        options.remove(correct_answer)
+        options.insert(correct_idx, correct_answer)
+        
+        skill_for_q = skills[idx % len(skills)] if skills else primary_skill
         questions.append(GeneratedMCQItem(
             question_number=idx,
-            question=f"Question #{idx}: What is a core best practice when working with {primary_skill} in production environments for {job_title}?",
-            option_a="Ensure modular code separation and comprehensive automated testing",
-            option_b="Avoid error handling to improve execution speed",
-            option_c="Hardcode environment variables directly inside component code",
-            option_d="Disable database indexing to conserve storage",
-            correct_option="A",
-            explanation="Modular separation and automated testing ensure reliability and maintainability.",
-            skill_category=primary_skill,
-            difficulty="medium"
+            question=template[0].format(skill=skill_for_q, job=job_title),
+            option_a=options[0],
+            option_b=options[1],
+            option_c=options[2],
+            option_d=options[3],
+            correct_option=correct_pos,
+            explanation=f"{correct_answer} — this ensures reliability and maintainability.",
+            skill_category=skill_for_q,
+            difficulty=["easy", "medium", "hard"][idx % 3]
         ))
     return GeneratedAssessmentPayload(questions=questions)

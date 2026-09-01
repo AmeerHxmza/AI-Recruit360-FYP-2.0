@@ -1,5 +1,6 @@
+import asyncio
 import logging
-from app.db.supabase import get_supabase_client
+from app.db.supabase import get_supabase_client, run_sync
 from app.schemas.evaluation import FinalCandidateEvaluationPayload
 from app.services.ai_activity import log_ai_activity
 
@@ -8,28 +9,38 @@ logger = logging.getLogger("ai_service.services.evaluation.evaluator")
 async def generate_final_candidate_evaluation(application_id: str) -> FinalCandidateEvaluationPayload:
     supabase = get_supabase_client()
 
+    # ── Concurrent data fetch (ALL queries in parallel via asyncio.gather) ─────
+    int_check, scr_res, ass_res, int_res, app_rec = await asyncio.gather(
+        run_sync(lambda: supabase.table("interviews").select("status").eq("application_id", application_id).execute()),
+        run_sync(lambda: supabase.table("cv_screenings").select("match_score, matched_skills, missing_skills, reasoning_summary").eq("application_id", application_id).execute()),
+        run_sync(lambda: supabase.table("assessments").select("score").eq("application_id", application_id).execute()),
+        run_sync(lambda: supabase.table("interviews").select("id").eq("application_id", application_id).execute()),
+        run_sync(lambda: supabase.table("applications").select("organization_id").eq("id", application_id).execute()),
+    )
+
     # 1. Check interview status
-    int_check = supabase.table("interviews").select("status").eq("application_id", application_id).execute()
     if not int_check.data or int_check.data[0].get("status") != "completed":
         raise ValueError(f"Interview for application {application_id} is not completed. Unauthorized evaluation.")
 
     # 2. Fetch CV Screening Score
-    scr_res = supabase.table("cv_screenings").select("match_score, matched_skills, missing_skills, reasoning_summary").eq("application_id", application_id).execute()
     cv_score = scr_res.data[0]["match_score"] if scr_res.data else 75.0
     matched_skills = scr_res.data[0].get("matched_skills", []) if scr_res.data else []
     missing_skills = scr_res.data[0].get("missing_skills", []) if scr_res.data else []
     reasoning = scr_res.data[0].get("reasoning_summary", "Candidate meets baseline requirements.") if scr_res.data else ""
 
-    # 2. Fetch Assessment Score
-    ass_res = supabase.table("assessments").select("score").eq("application_id", application_id).execute()
+    # 3. Fetch Assessment Score
     ass_score = ass_res.data[0]["score"] if ass_res.data and ass_res.data[0].get("score") is not None else 80.0
 
-    # 3. Fetch Interview Score
-    int_res = supabase.table("interviews").select("id").eq("application_id", application_id).execute()
+    # 4. Fetch Interview Score (from individual responses)
     int_score = 80.0
     if int_res.data and len(int_res.data) > 0:
         interview_id = int_res.data[0]["id"]
-        resp_res = supabase.table("interview_responses").select("technical_score, communication_score, relevance_score").eq("interview_id", interview_id).execute()
+        resp_res = await run_sync(
+            lambda: supabase.table("interview_responses")
+            .select("technical_score, communication_score, relevance_score")
+            .eq("interview_id", interview_id)
+            .execute()
+        )
         if resp_res.data and len(resp_res.data) > 0:
             scores = []
             for r in resp_res.data:
@@ -42,8 +53,6 @@ async def generate_final_candidate_evaluation(application_id: str) -> FinalCandi
             if scores:
                 int_score = sum(scores) / len(scores)
 
-    # Retrieve organization_id from application record
-    app_rec = supabase.table("applications").select("organization_id").eq("id", application_id).execute()
     org_id = app_rec.data[0]["organization_id"] if app_rec.data and len(app_rec.data) > 0 else None
 
     # Deterministic Weighted Scoring Formula:
@@ -95,7 +104,7 @@ async def generate_final_candidate_evaluation(application_id: str) -> FinalCandi
         ai_summary=summary
     )
 
-    # Persist in final_evaluations table
+    # ── Persist in final_evaluations table (non-blocking) ────────────────────────
     eval_payload = {
         "application_id": application_id,
         "overall_score": overall_score,
@@ -111,14 +120,22 @@ async def generate_final_candidate_evaluation(application_id: str) -> FinalCandi
     if org_id:
         eval_payload["organization_id"] = org_id
 
-    ex = supabase.table("final_evaluations").select("id").eq("application_id", application_id).execute()
+    ex = await run_sync(
+        lambda: supabase.table("final_evaluations").select("id").eq("application_id", application_id).execute()
+    )
     if ex.data and len(ex.data) > 0:
-        supabase.table("final_evaluations").update(eval_payload).eq("application_id", application_id).execute()
+        await run_sync(
+            lambda: supabase.table("final_evaluations").update(eval_payload).eq("application_id", application_id).execute()
+        )
     else:
-        supabase.table("final_evaluations").insert(eval_payload).execute()
+        await run_sync(
+            lambda: supabase.table("final_evaluations").insert(eval_payload).execute()
+        )
 
     # Update application status to evaluation
-    supabase.table("applications").update({"status": "evaluation"}).eq("id", application_id).execute()
+    await run_sync(
+        lambda: supabase.table("applications").update({"status": "evaluation"}).eq("id", application_id).execute()
+    )
 
     if org_id:
         await log_ai_activity(

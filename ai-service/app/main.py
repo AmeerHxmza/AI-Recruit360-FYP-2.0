@@ -14,15 +14,18 @@ Improvements in this version:
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 from app.core.config import settings
 from app.core.logging_config import configure_logging
 from app.core.rate_limit import limiter
 from app.core.redis import get_redis, close_redis
+from app.core.auth import verify_service_secret
 from app.api.routes import health, screening, assessments, interviews, evaluations
 
 # ── Configure structured logging first ────────────────────────────────────────
@@ -133,6 +136,20 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         }
     )
 
+# ── Security Headers Middleware ───────────────────────────────────────────────
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        if settings.ENVIRONMENT == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 # ── CORS Middleware (explicit origins + regex for Vercel preview URLs) ───────
 app.add_middleware(
     CORSMiddleware,
@@ -145,11 +162,14 @@ app.add_middleware(
 )
 
 # ── API Routers ───────────────────────────────────────────────────────────────
+# Health endpoints are public (no auth) — used by Render health checks
 app.include_router(health.router, prefix="/api/v1")
-app.include_router(screening.router, prefix="/api/v1")
-app.include_router(assessments.router, prefix="/api/v1")
-app.include_router(interviews.router, prefix="/api/v1")
-app.include_router(evaluations.router, prefix="/api/v1")
+
+# All AI service endpoints require shared secret authentication
+app.include_router(screening.router, prefix="/api/v1", dependencies=[Depends(verify_service_secret)])
+app.include_router(assessments.router, prefix="/api/v1", dependencies=[Depends(verify_service_secret)])
+app.include_router(interviews.router, prefix="/api/v1", dependencies=[Depends(verify_service_secret)])
+app.include_router(evaluations.router, prefix="/api/v1", dependencies=[Depends(verify_service_secret)])
 
 # ── OpenTelemetry ─────────────────────────────────────────────────────────────
 _setup_telemetry(app)

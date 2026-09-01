@@ -17,6 +17,8 @@ export interface JobFilters {
   employment_type?: EmploymentType | "all";
   workplace_type?: WorkplaceType | "all";
   search?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface CreateJobInput {
@@ -65,8 +67,19 @@ export async function getJobsForOrg(orgId: string, filters?: JobFilters): Promis
     }
 
     if (filters?.search && filters.search.trim().length > 0) {
-      const term = filters.search.trim();
-      query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
+      // Sanitize search term: strip PostgREST/SQL special characters to prevent filter injection
+      const term = filters.search.trim().replace(/[%_\\()]/g, '');
+      if (term.length > 0) {
+        query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
+      }
+    }
+    
+    if (filters?.page && filters?.pageSize) {
+      const from = (filters.page - 1) * filters.pageSize;
+      const to = from + filters.pageSize - 1;
+      query = query.range(from, to);
+    } else {
+      query = query.limit(100);
     }
 
     const { data: jobs, error } = await query;

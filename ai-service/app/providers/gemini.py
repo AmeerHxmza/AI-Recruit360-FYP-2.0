@@ -4,11 +4,29 @@ import logging
 import httpx
 from typing import TypeVar, Type
 from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
 from app.core.config import settings
 from app.core.exceptions import AIProviderError, AIValidationError
 
 T = TypeVar("T", bound=BaseModel)
 logger = logging.getLogger("ai_service.providers.gemini")
+
+# ── Persistent connection-pooled HTTP/2 client (one per worker process) ───────
+_http_client: httpx.AsyncClient | None = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    """Return a module-level persistent httpx client with connection pooling."""
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(60.0, connect=10.0),
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            http2=True,
+        )
+    return _http_client
+
 
 class GeminiProvider:
     name = "Google Gemini"
@@ -20,46 +38,59 @@ class GeminiProvider:
         if not self.api_key:
             logger.warning("GEMINI_API_KEY is missing.")
 
-    async def generate_text(self, prompt: str, system_prompt: str | None = None) -> str:
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
+        reraise=True,
+    )
+    async def generate_text(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        temperature: float = 0.2,
+    ) -> str:
         if not self.api_key:
             raise AIProviderError("GEMINI_API_KEY is not configured in Python ai-service environment.")
 
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
+        # SECURITY: API key in header, NOT URL query parameter
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent"
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key,
+        }
 
-        contents = []
+        # Build request body with native system_instruction support
+        body: dict = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": temperature},
+        }
         if system_prompt:
-            contents.append({
-                "role": "user",
-                "parts": [{"text": f"SYSTEM INSTRUCTIONS:\n{system_prompt}"}]
-            })
-        contents.append({
-            "role": "user",
-            "parts": [{"text": prompt}]
-        })
+            body["system_instruction"] = {"parts": [{"text": system_prompt}]}
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            try:
-                response = await client.post(
-                    endpoint,
-                    json={"contents": contents},
-                    headers={"Content-Type": "application/json"}
-                )
+        client = _get_http_client()
+        try:
+            response = await client.post(endpoint, json=body, headers=headers)
 
-                if response.status_code != 200:
-                    raise AIProviderError(f"Gemini API returned HTTP {response.status_code}: {response.text}")
+            if response.status_code != 200:
+                raise AIProviderError(f"Gemini API returned HTTP {response.status_code}: {response.text[:500]}")
 
-                data = response.json()
-                text_output = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text")
+            data = response.json()
+            text_output = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text")
 
-                if not text_output:
-                    raise AIProviderError("Gemini API returned an empty text response.")
+            if not text_output:
+                raise AIProviderError("Gemini API returned an empty text response.")
 
-                return text_output
-            except httpx.RequestError as e:
-                raise AIProviderError(f"HTTP request to Gemini API failed: {str(e)}")
+            return text_output
+        except httpx.RequestError as e:
+            raise AIProviderError(f"HTTP request to Gemini API failed: {str(e)}")
 
     async def generate_structured(
-        self, prompt: str, schema: Type[T], system_prompt: str | None = None
+        self,
+        prompt: str,
+        schema: Type[T],
+        system_prompt: str | None = None,
+        temperature: float = 0.2,
     ) -> T:
         schema_json = json.dumps(schema.model_json_schema(), indent=2)
         augmented_prompt = (
@@ -69,7 +100,11 @@ class GeminiProvider:
             f"Return ONLY raw JSON. Do not add conversational text around it."
         )
 
-        raw_text = await self.generate_text(prompt=augmented_prompt, system_prompt=system_prompt)
+        raw_text = await self.generate_text(
+            prompt=augmented_prompt,
+            system_prompt=system_prompt,
+            temperature=temperature,
+        )
 
         # 1. Clean markdown code fences
         clean_text = re.sub(r"^```json\s*", "", raw_text.strip(), flags=re.IGNORECASE)

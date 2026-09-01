@@ -68,7 +68,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="min-h-full bg-[#08090B] text-[#F5F7FA] font-sans flex flex-col selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]"
+        className="min-h-full bg-[#08090B] text-[#A7AFBC] font-sans flex flex-col selection:bg-[#39D9FF]/20 selection:text-[#39D9FF] [&_h1]:text-[#F5F7FA] [&_h1]:tracking-tight [&_h2]:text-[#F5F7FA] [&_h2]:tracking-tight [&_h3]:text-[#F5F7FA] [&_h4]:text-[#F5F7FA]"
         suppressHydrationWarning
       >
         <QueryProvider>

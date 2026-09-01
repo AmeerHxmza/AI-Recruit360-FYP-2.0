@@ -14,6 +14,11 @@ async def evaluate_interview_response(
     question_id: str,
     response_text: str
 ) -> InterviewResponseEvaluation:
+    # INPUT SANITIZATION: Truncate overly long responses to prevent prompt injection
+    response_text = response_text[:5000].strip() if response_text else ""
+    if not response_text:
+        raise ValueError("Response text cannot be empty.")
+
     supabase = get_supabase_client()
 
     # SECURITY: Check interview status and existing answers
@@ -43,15 +48,16 @@ async def evaluate_interview_response(
             system_prompt=SYSTEM_PROMPT
         )
     except Exception as e:
-        logger.warning(f"Response evaluation AI failed, using default evaluation: {str(e)}")
+        logger.warning(f"Response evaluation AI failed, using conservative fallback: {str(e)}")
+        # SAFE fallback: conservative scores — AI failure should NOT give a free pass
         eval_result = InterviewResponseEvaluation(
-            technical_score=80.0,
-            communication_score=85.0,
-            relevance_score=85.0,
-            overall_score=83.3,
-            feedback="Clear response addressing core technical question points.",
-            strengths=["Direct answer", "Relevant examples"],
-            areas_for_improvement=["Could expand on edge cases"]
+            technical_score=50.0,
+            communication_score=50.0,
+            relevance_score=50.0,
+            overall_score=50.0,
+            feedback="Automated evaluation was unavailable. This response requires manual review.",
+            strengths=["Response was provided"],
+            areas_for_improvement=["Manual evaluation recommended"]
         )
 
     # Insert or update interview_responses table

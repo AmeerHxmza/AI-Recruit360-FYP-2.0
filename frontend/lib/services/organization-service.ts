@@ -36,7 +36,7 @@ export async function getOrganizationById(id: string): Promise<Organization> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organizations")
-    .select("*")
+    .select("id, name, slug, created_by, created_at, updated_at")
     .eq("id", id)
     .single();
 

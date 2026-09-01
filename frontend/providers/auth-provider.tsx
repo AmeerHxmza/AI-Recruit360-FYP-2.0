@@ -71,37 +71,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        // 1. Fetch user profile
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, job_title, created_at, updated_at")
-          .eq("id", currentUser.id)
-          .single();
+        // OPTIMIZATION: Fetch profile + org memberships (with joined org data) in PARALLEL
+        const [{ data: prof }, { data: memberRows }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url, job_title, created_at, updated_at")
+            .eq("id", currentUser.id)
+            .single(),
+          supabase
+            .from("organization_members")
+            .select("id, organization_id, user_id, role, created_at, organizations(id, name, slug, created_by, created_at, updated_at)")
+            .eq("user_id", currentUser.id),
+        ]);
 
         if (prof) setProfile(prof as ProfileRow);
 
-        // 2. Fetch organization memberships
-        const { data: memberRows } = await supabase
-          .from("organization_members")
-          .select("id, organization_id, user_id, role, created_at")
-          .eq("user_id", currentUser.id);
-
         if (memberRows && memberRows.length > 0) {
-          const orgIds = memberRows.map((m) => m.organization_id);
-          const { data: orgs } = await supabase
-            .from("organizations")
-            .select("id, name, slug, created_by, created_at, updated_at")
-            .in("id", orgIds);
+          // Extract organizations from the joined data (no 3rd query needed)
+          const orgs = memberRows
+            .map((m: Record<string, unknown>) => m.organizations as OrganizationRow | null)
+            .filter(Boolean) as OrganizationRow[];
 
-          if (orgs && orgs.length > 0) {
-            setOrganizations(orgs as OrganizationRow[]);
+          if (orgs.length > 0) {
+            setOrganizations(orgs);
 
-            // Determine active organization matching cookie preference if possible
+            // Determine active organization
             const activeMember = memberRows[0];
             const activeOrg = orgs.find((o) => o.id === activeMember.organization_id) || orgs[0];
             setMembership(activeMember as OrganizationMemberRow);
             setRole(activeMember.role as OrganizationRole);
-            setOrganization(activeOrg as OrganizationRow);
+            setOrganization(activeOrg);
           } else {
             setOrganizations([]);
             setOrganization(null);

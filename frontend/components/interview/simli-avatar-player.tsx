@@ -45,18 +45,20 @@ export function SimliAvatarPlayer({
           {/* Glowing Animated Avatar Aura */}
           <div className="relative group">
             <div className={`absolute -inset-2 rounded-full bg-gradient-to-r from-[#39D9FF] via-[#63E3FF] to-[#00E5A3] opacity-50 blur-lg transition-all ${isSpeaking ? "animate-pulse scale-105" : "opacity-30"}`} />
-            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-b from-[#1E232D] to-[#0D0F12] border-2 border-[#39D9FF]/60 p-1 flex items-center justify-center shadow-2xl">
+            <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-b from-[#1E232D] to-[#0D0F12] border-2 border-[#39D9FF]/60 p-1 flex items-center justify-center shadow-2xl">
               <div className="w-full h-full rounded-full bg-[#12151A] overflow-hidden flex items-center justify-center relative border border-[#242932]">
-                {/* Styled AI Avatar Vector Graphic */}
-                <svg className="w-20 h-20 text-[#39D9FF] opacity-95" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+                
+                {/* Generated High-Quality AI 3D Avatar */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src="/images/ai_recruiter_avatar.jpg" 
+                  alt="AI Recruiter Avatar" 
+                  className={`w-full h-full object-cover transition-all duration-700 ${isSpeaking ? 'scale-105' : 'scale-100 grayscale-[20%]'}`}
+                />
 
                 {/* Lip-Sync Animated Equalizer Waves when speaking */}
                 {isSpeaking && (
-                  <div className="absolute bottom-2 flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-[#08090B]/90 backdrop-blur-sm border border-[#39D9FF]/40 shadow-lg">
+                  <div className="absolute bottom-3 flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-[#08090B]/90 backdrop-blur-sm border border-[#39D9FF]/40 shadow-lg">
                     <span className="w-1 h-3 bg-[#39D9FF] rounded-full animate-pulse" />
                     <span className="w-1 h-5 bg-[#35D07F] rounded-full animate-bounce" />
                     <span className="w-1 h-2.5 bg-[#F5B942] rounded-full animate-pulse" />

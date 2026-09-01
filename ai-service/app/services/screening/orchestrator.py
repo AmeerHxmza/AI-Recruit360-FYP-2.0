@@ -147,22 +147,22 @@ async def run_screening_pipeline(application_id: str) -> Optional[ScreeningDecis
         )
     except Exception as pipeline_err:
         logger.error(f"Screening processing pipeline error for {application_id}: {pipeline_err}")
-        # Rule-based fallback decision so candidate pipeline never stalls
+        # SAFE fallback: queue for manual review — never auto-qualify on AI failure
         from app.schemas.screening import ScreeningDecisionResult
         decision = ScreeningDecisionResult(
-            match_score=75.0,
-            recommendation="match",
-            qualified=True,
-            skills_score=75.0,
-            experience_score=75.0,
-            education_score=75.0,
-            relevance_score=75.0,
-            matched_skills=["General Role Qualifications"],
-            missing_skills=[],
-            matched_experience=["Relevant background verified"],
-            missing_requirements=[],
+            match_score=0.0,
+            recommendation="borderline",
+            qualified=False,
+            skills_score=0.0,
+            experience_score=0.0,
+            education_score=0.0,
+            relevance_score=0.0,
+            matched_skills=[],
+            missing_skills=["Automated screening unavailable"],
+            matched_experience=[],
+            missing_requirements=["Manual review required"],
             evidence=[],
-            reasoning_summary=f"Candidate resume processed under automated review mode."
+            reasoning_summary=f"Automated AI screening failed due to a processing error. This candidate requires manual review by a recruiter."
         )
 
     # ── Database Persistence (non-blocking via run_sync) ────────────────────────

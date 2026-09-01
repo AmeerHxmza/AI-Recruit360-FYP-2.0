@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -78,13 +78,25 @@ export async function proxy(request: NextRequest) {
 
   // 2. Authenticated user checks organization membership status
   if (user && (isProtectedRoute || isAuthRoute || isOnboardingRoute)) {
-    const { data: members } = await supabase
-      .from("organization_members")
-      .select("organization_id")
-      .eq("user_id", user.id)
-      .limit(1);
+    let hasOrg = request.cookies.get("has_org")?.value === "true";
+    const orgCookieChecked = request.cookies.has("has_org");
 
-    const hasOrg = Boolean(members && members.length > 0);
+    if (!orgCookieChecked) {
+      const { data: members } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      hasOrg = Boolean(members && members.length > 0);
+      
+      response.cookies.set("has_org", hasOrg ? "true" : "false", {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production"
+      });
+    }
 
     // Authenticated user on auth routes (/login, /signup)
     if (isAuthRoute) {
