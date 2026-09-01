@@ -349,7 +349,7 @@ export async function getInterviewResponses(interviewId: string): Promise<Interv
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("interview_responses")
-    .select("id, interview_id, question_id, response_text, transcript, technical_score, communication_score, relevance_score, ai_feedback, created_at")
+    .select("id, interview_id, question_id, response_text, audio_storage_path, transcript, technical_score, communication_score, relevance_score, ai_feedback, created_at")
     .eq("interview_id", interviewId)
     .order("created_at", { ascending: true });
 

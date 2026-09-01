@@ -357,7 +357,7 @@ export default function CandidateInterviewRoom() {
 
           <div className="flex items-center justify-between pt-2">
             {isRecording ? (
-              <Button onClick={handleStopRecording} variant="destructive" className="gap-2">
+              <Button onClick={handleStopRecording} variant="danger" className="gap-2">
                 <Square className="h-4 w-4 fill-current" /> Stop Recording
               </Button>
             ) : (

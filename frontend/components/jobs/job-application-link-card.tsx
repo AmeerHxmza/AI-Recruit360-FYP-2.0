@@ -83,7 +83,7 @@ export function JobApplicationLinkCard({ slugOrId }: JobApplicationLinkCardProps
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => window.open(relativePath, "_blank")}
+          onClick={() => window.open(fullUrl, "_blank")}
           className="text-xs gap-1 h-8.5 px-3 border border-[#242932] text-[#A7AFBC] hover:text-[#F5F7FA]"
           title="Open application page in a new tab"
         >
