@@ -128,13 +128,18 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
         const appId = res.data.application_id;
         setApplicationId(appId);
         setAppStatus("applied");
-
-        // Trigger AI Screening async (do not wait for it to finish for the UI)
-        runCvScreeningAction(appId).catch((err) => {
-          console.error("Failed to trigger async screening workflow", err);
-        });
-
         setFlowStep(2);
+
+        // Trigger AI Screening (the backend returns immediately while it runs in BackgroundTasks)
+        const screenRes = await runCvScreeningAction(appId);
+        
+        if (!screenRes.success) {
+          console.error("AI Engine rejected screening trigger:", screenRes.error);
+          // If the screening failed to start (e.g. rate limit), mark as error
+          setAppStatus(null);
+          setFlowStep(6);
+          setFormError(screenRes.error || "Failed to trigger AI screening engine.");
+        }
       } else {
         setFormError(res.error || "Failed to submit job application.");
       }
