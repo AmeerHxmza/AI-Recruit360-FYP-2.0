@@ -50,7 +50,7 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
 
   const handleCopyLink = async (e: React.MouseEvent, slugOrId: string, id: string) => {
     e.stopPropagation();
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app";
     const url = `${baseUrl}/apply/${slugOrId}`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {

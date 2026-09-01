@@ -100,7 +100,7 @@ export default function CreateJobPage() {
 
   const handleCopyLink = () => {
     if (!createdJobSlug) return;
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app";
     const url = `${baseUrl}/apply/${createdJobSlug}`;
     navigator.clipboard.writeText(url);
     alert("Application link copied to clipboard!");

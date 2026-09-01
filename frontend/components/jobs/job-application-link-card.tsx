@@ -12,7 +12,7 @@ interface JobApplicationLinkCardProps {
 
 export function JobApplicationLinkCard({ slugOrId }: JobApplicationLinkCardProps) {
   const [copied, setCopied] = React.useState(false);
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app";
   const fullUrl = `${baseUrl}/apply/${slugOrId}`;
 
   const handleCopy = async () => {
