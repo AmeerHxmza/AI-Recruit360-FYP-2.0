@@ -12,14 +12,8 @@ interface JobApplicationLinkCardProps {
 
 export function JobApplicationLinkCard({ slugOrId }: JobApplicationLinkCardProps) {
   const [copied, setCopied] = React.useState(false);
-  const origin = React.useSyncExternalStore(
-    () => () => {},
-    () => (typeof window !== "undefined" ? window.location.origin : ""),
-    () => ""
-  );
-
-  const relativePath = `/apply/${slugOrId}`;
-  const fullUrl = origin ? `${origin}${relativePath}` : relativePath;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  const fullUrl = `${baseUrl}/apply/${slugOrId}`;
 
   const handleCopy = async () => {
     try {

@@ -100,7 +100,8 @@ export default function CreateJobPage() {
 
   const handleCopyLink = () => {
     if (!createdJobSlug) return;
-    const url = `${window.location.origin}/apply/${createdJobSlug}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const url = `${baseUrl}/apply/${createdJobSlug}`;
     navigator.clipboard.writeText(url);
     alert("Application link copied to clipboard!");
   };

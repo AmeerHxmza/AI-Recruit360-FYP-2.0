@@ -50,7 +50,8 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
 
   const handleCopyLink = async (e: React.MouseEvent, slugOrId: string, id: string) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/apply/${slugOrId}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const url = `${baseUrl}/apply/${slugOrId}`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url);
