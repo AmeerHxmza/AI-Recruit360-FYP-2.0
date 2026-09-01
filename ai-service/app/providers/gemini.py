@@ -129,3 +129,52 @@ class GeminiProvider:
 
         logger.error(f"Gemini output parsing completely failed on: {raw_text[:500]}")
         raise AIValidationError("Failed to parse valid structured JSON from Gemini output.")
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
+        reraise=True,
+    )
+    async def generate_embeddings_batch(self, texts: list[str]) -> list[list[float]]:
+        if not self.api_key:
+            raise AIProviderError("GEMINI_API_KEY is not configured in Python ai-service environment.")
+            
+        if not texts:
+            return []
+
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents"
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key,
+        }
+
+        # Gemini expects {"requests": [{"model": "models/text-embedding-004", "content": {"parts": [{"text": t}]}}]}
+        requests = [
+            {
+                "model": "models/text-embedding-004",
+                "content": {"parts": [{"text": text}]}
+            } for text in texts
+        ]
+        
+        body = {"requests": requests}
+
+        client = _get_http_client()
+        try:
+            response = await client.post(endpoint, json=body, headers=headers)
+            
+            if response.status_code != 200:
+                raise AIProviderError(f"Gemini API returned HTTP {response.status_code}: {response.text[:500]}")
+                
+            data = response.json()
+            embeddings = []
+            
+            for item in data.get("embeddings", []):
+                embeddings.append(item.get("values", []))
+                
+            if len(embeddings) != len(texts):
+                raise AIProviderError(f"Gemini returned {len(embeddings)} embeddings for {len(texts)} texts.")
+                
+            return embeddings
+        except httpx.RequestError as e:
+            raise AIProviderError(f"HTTP request to Gemini API failed: {str(e)}")
