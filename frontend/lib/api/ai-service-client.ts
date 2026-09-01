@@ -25,7 +25,7 @@ async function aiServiceFetch<T>(
 
   const url = `${AI_SERVICE_BASE_URL}${endpoint}`;
   const headers = new Headers(options.headers || {});
-  headers.set("x-ai-service-secret", SHARED_SECRET);
+  headers.set("Authorization", `Bearer ${SHARED_SECRET}`);
   
   if (options.body instanceof FormData) {
     // Let browser set the multipart/form-data boundary automatically
