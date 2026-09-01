@@ -50,7 +50,7 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
     
     const interval = setInterval(async () => {
       setPollingAttempts((prev) => {
-        if (prev >= 45) { // 45 * 3s = 135s polling window for cold start + LLMs
+        if (prev >= 90) { // 90 * 3s = 270s polling window for cold start + LLMs
           clearInterval(interval);
           setFlowStep(5);
           return prev;
@@ -370,11 +370,11 @@ export default function PublicCandidateApplyClient({ initialJob }: { initialJob:
                 Reviewing your application
               </h1>
               <p className="text-sm font-medium text-[#39D9FF] animate-pulse">
-                {pollingAttempts < 4
+                {pollingAttempts < 8
                   ? "Connecting to AI screening engine..."
-                  : pollingAttempts < 12
+                  : pollingAttempts < 24
                   ? "Extracting & analyzing resume text..."
-                  : pollingAttempts < 25
+                  : pollingAttempts < 50
                   ? "Evaluating technical skills & qualifications..."
                   : "Finalizing recommendation & next steps..."}
               </p>

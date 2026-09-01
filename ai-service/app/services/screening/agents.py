@@ -2,22 +2,19 @@ import re
 import logging
 from typing import List, Dict, Any
 from app.providers.factory import get_ai_provider
-from app.schemas.screening import JobAnalysisResult, CVExtractedData, EvidenceMatch, ScreeningDecisionResult
+from app.providers.openai import cosine_similarity
+from app.schemas.screening import JobAnalysisResult, CVMetaData, EvidenceMatch, ScreeningDecisionResult
 from app.core.config import settings
 
 logger = logging.getLogger("ai_service.services.screening.agents")
 
-# Agent 1: Skills Matching Agent (Word Boundary & Full Text Match)
-def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, Any]:
-    cv_skills_lower = [s.lower().strip() for s in cv.skills]
-
-    # Build comprehensive text blob from CV for fallback matching
-    cv_full_text = " ".join([
-        cv.summary or "",
-        " ".join(cv.skills),
-        " ".join([f"{exp.title} {exp.company} {' '.join(exp.highlights)}" for exp in cv.experience]),
-        " ".join(cv.projects) if cv.projects else ""
-    ]).lower()
+# Agent 1: RAG Skills Matching Agent (Vector + Fallback Text Match)
+def evaluate_skills(
+    job: JobAnalysisResult, 
+    job_embeddings: Dict[str, List[float]], 
+    cv_chunks: List[str], 
+    chunk_embeddings: List[List[float]]
+) -> Dict[str, Any]:
     
     crit_reqs = [s.name for s in job.critical_skills]
     imp_reqs = [s.name for s in job.important_skills]
@@ -29,35 +26,52 @@ def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, An
 
     matched = []
     missing = []
+    evidence_list = []
 
     for req in all_job_skills:
+        req_emb = job_embeddings.get(req)
+        best_sim = 0.0
+        best_chunk = ""
+        
         req_lower = req.lower().strip()
         is_matched = False
-
-        # 1. Check extracted skills list
-        for cv_s in cv_skills_lower:
-            if not cv_s:
-                continue
-            if req_lower == cv_s:
-                is_matched = True
-                break
-            elif len(cv_s) >= 3 and (re.search(rf'\b{re.escape(cv_s)}\b', req_lower) or re.search(rf'\b{re.escape(req_lower)}\b', cv_s)):
-                is_matched = True
-                break
-
-        # 2. Fallback: Search in full CV text blob (including projects & summary)
-        if not is_matched and len(req_lower) >= 2:
-            if re.search(rf'\b{re.escape(req_lower)}\b', cv_full_text):
+        
+        # 1. High-speed Semantic Vector Search
+        if req_emb and chunk_embeddings:
+            for i, chunk_emb in enumerate(chunk_embeddings):
+                sim = cosine_similarity(req_emb, chunk_emb)
+                if sim > best_sim:
+                    best_sim = sim
+                    best_chunk = cv_chunks[i]
+            
+            if best_sim > 0.77:  # High confidence semantic match threshold
                 is_matched = True
 
+        # 2. Pure text Regex fallback
+        if not is_matched:
+            for chunk in cv_chunks:
+                if re.search(rf'\b{re.escape(req_lower)}\b', chunk.lower()):
+                    is_matched = True
+                    best_chunk = chunk
+                    break
+        
         if is_matched:
             matched.append(req)
+            if best_chunk:
+                clean_chunk = best_chunk.replace('\n', ' ')
+                # Snippet truncation for clean UI display
+                snippet = clean_chunk if len(clean_chunk) < 150 else f"{clean_chunk[:147]}..."
+                
+                evidence_list.append(EvidenceMatch(
+                    requirement=req,
+                    evidence_quote=f"Matched from CV context: \"{snippet}\"",
+                    is_matched=True
+                ))
         else:
             missing.append(req)
 
     total = len(all_job_skills)
     score = (len(matched) / total * 100.0) if total > 0 else 0.0
-
     matched_critical = [req for req in crit_reqs if req in matched]
 
     return {
@@ -66,37 +80,27 @@ def evaluate_skills(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, An
         "missing": missing,
         "total_critical": len(crit_reqs),
         "matched_critical_count": len(matched_critical),
+        "evidence": evidence_list
     }
 
-# Agent 2: Experience & Project Evaluation Agent (Intern & Project Aware)
-def evaluate_experience(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, Any]:
-    total_exp_years = sum(exp.duration_years for exp in cv.experience) if cv.experience else 0.0
-    project_count = len(cv.projects) if cv.projects else 0
-
+# Agent 2: Fast Experience Evaluation
+def evaluate_experience(job: JobAnalysisResult, cv: CVMetaData) -> Dict[str, Any]:
+    total_exp_years = cv.total_years_experience
     min_years = job.minimum_experience_years
     job_title_lower = (job.normalized_title or "").lower()
     is_entry_or_intern = min_years <= 0 or any(kw in job_title_lower for kw in ["intern", "junior", "trainee", "associate", "entry"])
 
     if is_entry_or_intern:
-        # For intern/entry roles, projects and practical work count as full experience score
-        if cv.experience or project_count > 0:
-            exp_score = 100.0
-        else:
-            exp_score = 75.0
+        exp_score = 100.0 if total_exp_years > 0 else 75.0
     else:
         if min_years <= 0:
-            exp_score = 100.0 if (cv.experience or project_count > 0) else 60.0
+            exp_score = 100.0 if total_exp_years > 0 else 60.0
         else:
-            effective_years = total_exp_years + (project_count * 0.5)
-            if effective_years <= 0:
+            if total_exp_years <= 0:
                 exp_score = 30.0
             else:
-                ratio = effective_years / min_years
+                ratio = total_exp_years / min_years
                 exp_score = min(100.0, max(50.0, ratio * 100.0))
-
-    matched_roles = [f"{exp.title} ({exp.duration_years} yrs)" for exp in cv.experience]
-    if cv.projects:
-        matched_roles.extend([f"Project: {p}" for p in cv.projects[:3]])
 
     missing_reqs = []
     if not is_entry_or_intern and total_exp_years < min_years:
@@ -105,45 +109,19 @@ def evaluate_experience(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str
     return {
         "score": round(exp_score, 1),
         "total_years": total_exp_years,
-        "matched_experience": matched_roles,
+        "matched_experience": [f"{total_exp_years} years of professional experience"] if total_exp_years > 0 else [],
         "missing_requirements": missing_reqs,
     }
 
-# Agent 3: Education Evaluation Agent
-def evaluate_education(job: JobAnalysisResult, cv: CVExtractedData) -> Dict[str, Any]:
-    if not cv.education:
-        return {"score": 50.0}
-
-    cv_edu_text = " ".join(cv.education).lower()
-    has_degree = any(term in cv_edu_text for term in ["bs", "bachelor", "master", "ms", "phd", "degree", "computer", "engineering", "cs", "software", "university"])
-
-    score = 100.0 if has_degree else 70.0
+# Agent 3: Fast Education Evaluation
+def evaluate_education(job: JobAnalysisResult, cv: CVMetaData) -> Dict[str, Any]:
+    score = 100.0 if cv.has_degree else 70.0
     return {"score": score}
-
-# Agent 4: Evidence Extraction Agent
-def extract_evidence(job: JobAnalysisResult, cv: CVExtractedData, matched_skills: List[str]) -> List[EvidenceMatch]:
-    evidence_list: List[EvidenceMatch] = []
-    
-    for skill in matched_skills[:5]:
-        found_quote = f"Candidate demonstrates proficiency in {skill}."
-        if cv.experience:
-            for exp in cv.experience:
-                if any(skill.lower() in h.lower() for h in exp.highlights):
-                    found_quote = f"Demonstrated {skill} as {exp.title}."
-                    break
-
-        evidence_list.append(EvidenceMatch(
-            requirement=skill,
-            evidence_quote=found_quote,
-            is_matched=True
-        ))
-
-    return evidence_list
 
 # Agent 5: Final Decision & Score Synthesis Agent
 def synthesize_screening_decision(
     job: JobAnalysisResult,
-    cv: CVExtractedData,
+    cv: CVMetaData,
     skills_eval: Dict[str, Any],
     exp_eval: Dict[str, Any],
     edu_eval: Dict[str, Any],
@@ -157,17 +135,13 @@ def synthesize_screening_decision(
     exp_score = exp_eval["score"]
     edu_score = edu_eval["score"]
     
-    # Calculate evidence score based on the quality of evidence extracted
-    # If the quote starts with "Candidate demonstrates proficiency in", it's a default/weak evidence.
-    # If it starts with "Demonstrated", it's strong evidence from experience highlights.
     if not evidence:
         evidence_score = 0.0
     else:
-        strong_evidence = sum(1 for e in evidence if e.evidence_quote.startswith("Demonstrated"))
-        evidence_score = (strong_evidence / len(evidence)) * 50.0 + 50.0 # Base 50% for having matched skills, +50% for strong evidence
+        # Since all evidence now comes from high-confidence vector matches or regex hits
+        evidence_score = 80.0 
 
     if is_entry_or_intern:
-        # For Intern/Entry positions, experience/evidence might be lower, adjust weights slightly
         overall_match_score = round(
             skills_score * 0.40 +
             exp_score * 0.30 +
@@ -176,7 +150,6 @@ def synthesize_screening_decision(
             1
         )
     else:
-        # Standard agreed scoring model
         overall_match_score = round(
             skills_score * 0.40 +
             exp_score * 0.30 +
@@ -233,7 +206,7 @@ def synthesize_screening_decision(
         )
     else:
         summary = (
-            f"Candidate {cv.candidate_name} KNOCKED OUT for {job.normalized_title}. "
+            f"Candidate KNOCKED OUT for {job.normalized_title}. "
             f"Overall Score: {overall_match_score}%. Reasons: {' | '.join(knockout_reasons)}"
         )
 

@@ -16,23 +16,11 @@ class JobAnalysisResult(BaseModel):
     responsibilities: List[str]
     technical_domains: List[str]
 
-class CVExtractedExperience(BaseModel):
-    title: str
-    company: Optional[str] = None
-    duration_years: float = 0.0
-    highlights: List[str] = []
-
-class CVExtractedData(BaseModel):
+class CVMetaData(BaseModel):
     candidate_name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    location: Optional[str] = None
-    summary: Optional[str] = None
-    skills: List[str]
-    experience: List[CVExtractedExperience]
-    education: List[str]
-    projects: List[str] = []
-    certifications: List[str] = []
+    total_years_experience: float = Field(description="Total accumulated years of professional experience across all roles.")
+    has_degree: bool = Field(description="True if the candidate has a Bachelor's degree or higher.")
+    raw_text: str = Field(default="", exclude=True) # Used to hold raw text for fallback search
 
 class EvidenceMatch(BaseModel):
     requirement: str

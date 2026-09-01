@@ -127,7 +127,6 @@ class OpenAIProvider:
     )
     async def generate_embedding(self, text: str) -> List[float]:
         if not self.client:
-            # Return 1536-dim normalized zero vector for offline/unconfigured embedding fallback
             return [0.0] * 1536
 
         try:
@@ -140,3 +139,35 @@ class OpenAIProvider:
         except Exception as e:
             logger.error(f"OpenAI embedding generation failed: {str(e)}")
             raise e
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=5),
+        retry=retry_if_exception_type(Exception),
+        reraise=True
+    )
+    async def generate_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
+        if not self.client or not texts:
+            return [[0.0] * 1536 for _ in texts]
+
+        try:
+            # Safe truncation for each text chunk
+            safe_texts = [text[:4000] for text in texts]
+            async with self._semaphore:
+                response = await self.client.embeddings.create(
+                    model=self.embedding_model,
+                    input=safe_texts
+                )
+            # Ensure correct order
+            return [data.embedding for data in sorted(response.data, key=lambda x: x.index)]
+        except Exception as e:
+            logger.error(f"OpenAI batch embedding generation failed: {str(e)}")
+            raise e
+
+def cosine_similarity(v1: List[float], v2: List[float]) -> float:
+    dot = sum(x * y for x, y in zip(v1, v2))
+    norm1 = sum(x * x for x in v1) ** 0.5
+    norm2 = sum(x * x for x in v2) ** 0.5
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+    return dot / (norm1 * norm2)
