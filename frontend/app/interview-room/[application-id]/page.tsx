@@ -250,28 +250,31 @@ export default function CandidateInterviewRoom() {
 
   if (!hasEnteredRoom) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
-        <div className="max-w-lg w-full p-8 rounded-2xl border bg-card space-y-6 shadow-sm">
-          <div className="flex items-center justify-between border-b pb-4">
+      <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex items-center justify-center p-6">
+        <div className="max-w-lg w-full p-8 rounded-2xl border border-[#1E293B] bg-[#131B2A] space-y-6 shadow-2xl">
+          <div className="flex items-center justify-between border-b border-[#1E293B] pb-4">
             <BrandLogo variant="full" size="md" href="#" />
+            <span className="text-[11px] font-mono font-medium px-2.5 py-1 rounded-full bg-[#2563EB]/10 text-[#38BDF8] border border-[#2563EB]/20">
+              AI Candidate Session
+            </span>
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Technical Interview</h1>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Experience an intelligent, interactive technical interview. Your questions adapt in real time to your responses.
+            <h1 className="text-2xl font-bold tracking-tight text-[#F8FAFC]">Adaptive Technical Interview</h1>
+            <p className="text-[#94A3B8] text-sm leading-relaxed">
+              Welcome to your automated AI interview session. Questions adapt in real time to evaluate your technical experience and problem-solving skills.
             </p>
           </div>
           <div className="space-y-3 text-sm">
-            <div className="p-4 rounded-xl bg-muted border flex items-start gap-3">
-              <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+            <div className="p-4 rounded-xl bg-[#0F1523] border border-[#1E293B] flex items-start gap-3">
+              <ShieldCheck className="h-5 w-5 text-[#38BDF8] shrink-0 mt-0.5" />
               <div>
-                <strong className="block font-semibold">Voice & Text Options</strong>
-                <span className="text-muted-foreground">Speak naturally into your microphone or seamlessly type your answers.</span>
+                <strong className="block font-semibold text-[#F8FAFC]">Voice & Text Modalities</strong>
+                <span className="text-[#94A3B8] text-xs">Speak naturally with your microphone or type your responses. Responses are analyzed securely and objectively.</span>
               </div>
             </div>
           </div>
-          <Button size="lg" className="w-full gap-2 font-semibold h-12" onClick={handleEnterRoom}>
-            <span>Start Interview</span>
+          <Button size="lg" className="w-full gap-2 font-semibold h-12 bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-lg shadow-[#2563EB]/20" onClick={handleEnterRoom}>
+            <span>Enter Interview Room</span>
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
@@ -281,19 +284,19 @@ export default function CandidateInterviewRoom() {
 
   if (interviewState === "COMPLETED") {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
-        <div className="max-w-md w-full p-8 rounded-2xl border bg-card text-center space-y-6 shadow-sm">
-          <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 text-primary flex items-center justify-center">
+      <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex items-center justify-center p-6">
+        <div className="max-w-md w-full p-8 rounded-2xl border border-[#1E293B] bg-[#131B2A] text-center space-y-6 shadow-2xl">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20 flex items-center justify-center shadow-lg shadow-[#10B981]/10">
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Interview Completed</h1>
-            <p className="text-muted-foreground text-sm">
-              Thank you. Your responses have been securely submitted for evaluation.
+            <h1 className="text-2xl font-bold tracking-tight text-[#F8FAFC]">Interview Completed</h1>
+            <p className="text-[#94A3B8] text-sm">
+              Thank you. Your responses have been securely submitted and are being synthesized into the hiring evaluation matrix.
             </p>
           </div>
-          <Button className="w-full gap-2 h-11" onClick={() => router.push("/")}>
-            <span>Return Home</span>
+          <Button className="w-full gap-2 h-11 bg-[#182236] hover:bg-[#1E293B] text-[#F8FAFC] border border-[#1E293B]" onClick={() => router.push("/")}>
+            <span>Return to Portal</span>
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
@@ -302,19 +305,19 @@ export default function CandidateInterviewRoom() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      <header className="border-b bg-card py-4 sticky top-0 z-50">
+    <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex flex-col font-sans">
+      <header className="border-b border-[#1E293B] bg-[#0F1523] py-4 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <BrandLogo variant="full" size="sm" href="#" />
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border text-xs font-medium">
-              {interviewState === "CONNECTING" && <><Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" /> Connecting...</>}
-              {interviewState === "SPEAKING" && <><Volume2 className="h-3.5 w-3.5 text-primary" /> AI Speaking</>}
-              {interviewState === "LISTENING" && <><Mic className="h-3.5 w-3.5 text-green-500" /> {isRecording ? "Recording..." : "Ready"}</>}
-              {interviewState === "THINKING" && <><Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> Evaluating...</>}
-              {interviewState === "ERROR" && <><AlertCircle className="h-3.5 w-3.5 text-red-500" /> Error</>}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#131B2A] border border-[#1E293B] text-xs font-medium">
+              {interviewState === "CONNECTING" && <><Loader2 className="h-3.5 w-3.5 animate-spin text-[#94A3B8]" /> <span className="text-[#94A3B8]">Connecting...</span></>}
+              {interviewState === "SPEAKING" && <><Volume2 className="h-3.5 w-3.5 text-[#38BDF8]" /> <span className="text-[#38BDF8]">AI Speaking</span></>}
+              {interviewState === "LISTENING" && <><Mic className="h-3.5 w-3.5 text-[#10B981]" /> <span className="text-[#10B981]">{isRecording ? "Recording Audio..." : "Microphone Ready"}</span></>}
+              {interviewState === "THINKING" && <><Loader2 className="h-3.5 w-3.5 animate-spin text-[#38BDF8]" /> <span className="text-[#38BDF8]">Evaluating Response...</span></>}
+              {interviewState === "ERROR" && <><AlertCircle className="h-3.5 w-3.5 text-[#EF4444]" /> <span className="text-[#EF4444]">Attention Required</span></>}
             </div>
-            <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-semibold">
+            <div className="px-3 py-1.5 rounded-full bg-[#2563EB]/10 text-[#38BDF8] border border-[#2563EB]/20 text-xs font-semibold tabular-nums font-mono">
               Question {currentQuestionNumber} / {totalQuestions}
             </div>
           </div>
@@ -323,48 +326,48 @@ export default function CandidateInterviewRoom() {
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
         {errorMsg && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-start gap-3">
+          <div className="p-4 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] text-sm flex items-start gap-3">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <div>{errorMsg}</div>
           </div>
         )}
 
         {/* AI Question Section */}
-        <div className="p-6 rounded-2xl border bg-card shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
-            <div className="flex items-center gap-2 text-primary font-semibold text-sm">
-              <Bot className="h-4 w-4" /> AI Interviewer
+        <div className="p-6 sm:p-8 rounded-2xl border border-[#1E293B] bg-[#131B2A] shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+            <div className="flex items-center gap-2 text-[#38BDF8] font-semibold text-xs tracking-wider uppercase">
+              <Bot className="h-4 w-4" /> AI Interview Intelligence
             </div>
           </div>
-          <h2 className="text-lg font-medium leading-relaxed">
-            {questionText || (interviewState === "CONNECTING" ? "Initializing..." : "Generating question...")}
+          <h2 className="text-xl font-medium leading-relaxed text-[#F8FAFC]">
+            {questionText || (interviewState === "CONNECTING" ? "Initializing AI Session..." : "Formulating next adaptive question...")}
           </h2>
         </div>
 
         {/* Candidate Response Section */}
-        <div className="p-6 rounded-2xl border bg-card shadow-sm space-y-5">
-          <div className="flex items-center gap-2 text-foreground font-semibold text-sm border-b pb-3">
-            <Mic className="h-4 w-4 text-muted-foreground" /> Your Response
+        <div className="p-6 sm:p-8 rounded-2xl border border-[#1E293B] bg-[#131B2A] shadow-xl space-y-5">
+          <div className="flex items-center gap-2 text-[#F8FAFC] font-semibold text-sm border-b border-[#1E293B] pb-3">
+            <Mic className="h-4 w-4 text-[#94A3B8]" /> Candidate Response
           </div>
           
           <textarea
             value={manualText}
             onChange={(e) => setManualText(e.target.value)}
             disabled={isRecording || interviewState === "THINKING" || interviewState === "CONNECTING"}
-            placeholder="Type your answer here or use the microphone to speak..."
-            className="w-full min-h-[120px] p-4 rounded-xl bg-muted border text-sm resize-y focus:outline-none focus:border-primary disabled:opacity-50"
+            placeholder="Type your response here or click 'Start Voice Recording' to speak..."
+            className="w-full min-h-[140px] p-4 rounded-xl bg-[#0F1523] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-[#64748B] resize-y focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] disabled:opacity-50"
           />
 
           <div className="flex items-center justify-between pt-2">
             {isRecording ? (
-              <Button onClick={handleStopRecording} variant="danger" className="gap-2">
-                <Square className="h-4 w-4 fill-current" /> Stop Recording
+              <Button onClick={handleStopRecording} variant="danger" className="gap-2 bg-[#EF4444] hover:bg-[#DC2626] text-white">
+                <Square className="h-4 w-4 fill-current" /> Finish Recording
               </Button>
             ) : (
               <Button 
                 onClick={handleStartRecording} 
                 variant="outline" 
-                className="gap-2 border-primary/20 hover:bg-primary/5 text-primary"
+                className="gap-2 border-[#1E293B] bg-[#0F1523] hover:bg-[#182236] text-[#38BDF8]"
                 disabled={interviewState === "THINKING" || interviewState === "CONNECTING"}
               >
                 <Mic className="h-4 w-4" /> Start Voice Recording
@@ -374,7 +377,7 @@ export default function CandidateInterviewRoom() {
             <Button 
               onClick={() => submitAnswer(manualText)}
               disabled={!manualText.trim() || isRecording || interviewState === "THINKING"}
-              className="gap-2"
+              className="gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white disabled:opacity-50 shadow-md shadow-[#2563EB]/20"
             >
               Submit Answer <Send className="h-4 w-4" />
             </Button>

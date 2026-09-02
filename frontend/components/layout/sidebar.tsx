@@ -84,13 +84,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       className={cn(
-        "relative flex flex-col border-r border-[#242932] bg-[#0D0F12] transition-component h-full select-none z-[1100]",
+        "relative flex flex-col border-r border-[#1E293B] bg-[#0F1523] transition-component h-full select-none z-[1100]",
         isCollapsed ? "w-16" : "w-64",
         className
       )}
     >
       {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-[#242932]">
+      <div className="flex h-16 items-center justify-between px-4 border-b border-[#1E293B]">
         <Link href="/dashboard" onClick={onMobileClose} className="flex items-center gap-3 overflow-hidden">
           <BrandLogo variant={isCollapsed ? "mark" : "full"} size="md" href="" />
         </Link>
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {onToggleCollapse && !isCollapsed && (
           <button
             onClick={onToggleCollapse}
-            className="rounded-md p-1.5 text-[#A7AFBC] hover:bg-[#171B21] hover:text-[#F5F7FA] transition-micro focus:outline-none focus:ring-1 focus:ring-[#39D9FF]"
+            className="rounded-md p-1.5 text-[#94A3B8] hover:bg-[#182236] hover:text-[#F8FAFC] transition-micro focus:outline-none focus:ring-1 focus:ring-[#38BDF8]"
             aria-label="Collapse sidebar"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -113,26 +113,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Recruitment Nav Items */}
         <div className="space-y-1 pb-2">
-          {!isCollapsed && <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#68717E]">Recruitment</div>}
+          {!isCollapsed && <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Recruitment</div>}
           {recruitmentNavItems.map((item) => {
             const isActive = isItemActive(item.href);
             return (
               <Link
                 key={item.id}
                 href={item.href}
+                prefetch={true}
                 onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#38BDF8]",
                   isActive
-                    ? "bg-[#171B21] text-[#39D9FF] font-semibold border border-[#39D9FF]/30 shadow-xs"
-                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA] border border-transparent"
+                    ? "bg-[#182236] text-[#F8FAFC] font-semibold border border-[#2563EB]/40 shadow-xs"
+                    : "text-[#94A3B8] hover:bg-[#131B2A] hover:text-[#F8FAFC] border border-transparent"
                 )}
               >
                 <span
                   className={cn(
                     "shrink-0 transition-micro",
-                    isActive ? "text-[#39D9FF]" : "text-[#68717E] group-hover:text-[#F5F7FA]"
+                    isActive ? "text-[#38BDF8]" : "text-[#64748B] group-hover:text-[#F8FAFC]"
                   )}
                 >
                   {item.icon}
@@ -145,27 +146,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Insights Nav Items */}
-        <div className="space-y-1 pb-2 border-t border-[#242932] pt-2">
-          {!isCollapsed && <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#68717E]">Insights</div>}
+        <div className="space-y-1 pb-2 border-t border-[#1E293B] pt-2">
+          {!isCollapsed && <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Insights</div>}
           {insightsNavItems.map((item) => {
             const isActive = isItemActive(item.href);
             return (
               <Link
                 key={item.id}
                 href={item.href}
+                prefetch={true}
                 onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#38BDF8]",
                   isActive
-                    ? "bg-[#171B21] text-[#39D9FF] font-semibold border border-[#39D9FF]/30 shadow-xs"
-                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA] border border-transparent"
+                    ? "bg-[#182236] text-[#F8FAFC] font-semibold border border-[#2563EB]/40 shadow-xs"
+                    : "text-[#94A3B8] hover:bg-[#131B2A] hover:text-[#F8FAFC] border border-transparent"
                 )}
               >
                 <span
                   className={cn(
                     "shrink-0 transition-micro",
-                    isActive ? "text-[#39D9FF]" : "text-[#68717E] group-hover:text-[#F5F7FA]"
+                    isActive ? "text-[#38BDF8]" : "text-[#64748B] group-hover:text-[#F8FAFC]"
                   )}
                 >
                   {item.icon}
@@ -178,27 +180,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* System Nav Items */}
-        <div className="space-y-1 pb-2 border-t border-[#242932] pt-2">
-          {!isCollapsed && <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#68717E]">System</div>}
+        <div className="space-y-1 pb-2 border-t border-[#1E293B] pt-2">
+          {!isCollapsed && <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#64748B]">System</div>}
           {systemNavItems.map((item) => {
             const isActive = isItemActive(item.href);
             return (
               <Link
                 key={item.id}
                 href={item.href}
+                prefetch={true}
                 onClick={onMobileClose}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#39D9FF]",
+                  "relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-micro group focus:outline-none focus:ring-1 focus:ring-[#38BDF8]",
                   isActive
-                    ? "bg-[#171B21] text-[#39D9FF] font-semibold border border-[#39D9FF]/30 shadow-xs"
-                    : "text-[#A7AFBC] hover:bg-[#12151A] hover:text-[#F5F7FA] border border-transparent"
+                    ? "bg-[#182236] text-[#F8FAFC] font-semibold border border-[#2563EB]/40 shadow-xs"
+                    : "text-[#94A3B8] hover:bg-[#131B2A] hover:text-[#F8FAFC] border border-transparent"
                 )}
               >
                 <span
                   className={cn(
                     "shrink-0 transition-micro",
-                    isActive ? "text-[#39D9FF]" : "text-[#68717E] group-hover:text-[#F5F7FA]"
+                    isActive ? "text-[#38BDF8]" : "text-[#64748B] group-hover:text-[#F8FAFC]"
                   )}
                 >
                   {item.icon}
@@ -213,10 +216,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Bottom Collapsed Toggle (if collapsed) */}
       {onToggleCollapse && isCollapsed && (
-        <div className="p-3 border-t border-[#242932] flex justify-center">
+        <div className="p-3 border-t border-[#1E293B] flex justify-center">
           <button
             onClick={onToggleCollapse}
-            className="rounded-md p-2 text-[#A7AFBC] hover:bg-[#171B21] hover:text-[#F5F7FA] transition-micro"
+            className="rounded-md p-2 text-[#94A3B8] hover:bg-[#182236] hover:text-[#F8FAFC] transition-micro"
             aria-label="Expand sidebar"
           >
             <ChevronRight className="h-4 w-4" />
@@ -226,15 +229,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* User Profile Section */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-[#242932] bg-[#08090B] space-y-2">
-          <div className="flex items-center justify-between rounded-lg border border-[#242932] bg-[#12151A] p-2.5">
+        <div className="p-3 border-t border-[#1E293B] bg-[#0B0F17] space-y-2">
+          <div className="flex items-center justify-between rounded-lg border border-[#1E293B] bg-[#131B2A] p-2.5">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <Avatar fallback={getInitials(userMetadata.fullName)} status="online" size="sm" />
               <div className="flex flex-col overflow-hidden text-left">
-                <span className="text-xs font-semibold text-[#F5F7FA] truncate">
+                <span className="text-xs font-semibold text-[#F8FAFC] truncate">
                   {userMetadata.fullName}
                 </span>
-                <span className="text-[10px] text-[#A7AFBC] truncate font-mono">
+                <span className="text-[10px] text-[#94A3B8] truncate font-mono">
                   {userMetadata.organization} ({userMetadata.role || "member"})
                 </span>
               </div>
@@ -243,7 +246,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => signOut()}
               title="Sign Out"
-              className="p-1.5 rounded-md text-[#A7AFBC] hover:text-[#FF5C67] hover:bg-[#171B21] transition-colors focus:outline-none"
+              className="p-1.5 rounded-md text-[#94A3B8] hover:text-[#EF4444] hover:bg-[#182236] transition-colors focus:outline-none"
               aria-label="Sign Out"
             >
               <LogOut className="h-4 w-4" />

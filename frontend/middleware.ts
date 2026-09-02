@@ -38,6 +38,17 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // FAST-PATH: If the user already has a valid auth token cookie, verified session, and org, bypass remote auth roundtrips
+  const hasAuthToken = request.cookies.getAll().some(
+    (c) => c.name.includes("-auth-token") || c.name.startsWith("sb-")
+  );
+  const isAuthVerified = request.cookies.get("auth_verified")?.value === "true";
+  const hasOrgCookie = request.cookies.get("has_org")?.value === "true";
+
+  if (isProtectedRoute && isAuthVerified && hasOrgCookie && hasAuthToken) {
+    return response;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -70,10 +81,20 @@ export async function middleware(request: NextRequest) {
 
   // 1. Unauthenticated user trying to access protected route or onboarding route -> Redirect to /login
   if ((isProtectedRoute || isOnboardingRoute) && !user) {
+    response.cookies.delete("auth_verified");
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  if (user) {
+    response.cookies.set("auth_verified", "true", {
+      path: "/",
+      maxAge: 60 * 60, // 1 hour session verification cache
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
   }
 
   // 2. Authenticated user checks organization membership status

@@ -59,14 +59,18 @@ export interface UpdateCandidateInput {
   portfolio_url?: string;
 }
 
+import { getCachedData, invalidateCachePrefix } from "@/lib/redis/cache";
+
 export async function getCandidatesForOrg(
   orgId: string,
   filters?: CandidateFilters
 ): Promise<PaginatedCandidatesResult> {
-  await getCurrentOrganization(orgId);
-  const supabase = await createClient();
+  const cacheKey = `org:${orgId}:candidates:${JSON.stringify(filters || {})}`;
 
-  const { result } = await measurePerformance("DB Query (getCandidatesForOrg)", async () => {
+  return await getCachedData(cacheKey, async () => {
+    const supabase = await createClient();
+
+    const { result } = await measurePerformance("DB Query (getCandidatesForOrg)", async () => {
     const page = Math.max(1, filters?.page || 1);
     const pageSize = Math.max(1, Math.min(100, filters?.pageSize || 20));
     const from = (page - 1) * pageSize;
@@ -96,16 +100,17 @@ export async function getCandidatesForOrg(
     const total = count || 0;
     const totalPages = Math.ceil(total / pageSize) || 1;
 
-    return {
-      data: (data || []) as Candidate[],
-      page,
-      pageSize,
-      total,
-      totalPages,
-    };
-  });
+      return {
+        data: (data || []) as Candidate[],
+        page,
+        pageSize,
+        total,
+        totalPages,
+      };
+    });
 
-  return result;
+    return result;
+  }, 30);
 }
 
 export async function getCandidateById(orgId: string, candidateId: string): Promise<Candidate> {

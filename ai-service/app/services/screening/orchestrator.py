@@ -4,15 +4,8 @@ from typing import Dict, Any, Optional
 from app.db.supabase import get_supabase_client, run_sync
 from app.repositories.application_repo import get_application_context, get_candidate_cv_data, get_candidate_cv_bytes
 from app.services.cv.extractor import extract_text_from_bytes
-from app.services.screening.job_analyzer import analyze_job_requirements
-from app.services.screening.cv_analyzer import fast_extract_metadata, chunk_cv_text
-from app.services.screening.agents import (
-    evaluate_skills,
-    evaluate_experience,
-    evaluate_education,
-    synthesize_screening_decision,
-)
 from app.providers.factory import get_ai_provider
+from app.core.config import settings
 from app.schemas.screening import ScreeningDecisionResult
 from app.services.ai_activity import log_ai_activity
 
@@ -125,45 +118,31 @@ async def run_screening_pipeline(application_id: str) -> Optional[ScreeningDecis
     organization_id = app_data.get("organization_id")
     job_id = app_data.get("job_id")
 
-    # ── High-Speed RAG Pipeline: Metadata & Vector Embeddings (CONCURRENT) ────
+    # ── Fast Single-Pass Structured AI Screening ──────────────────────────────
     try:
-        import asyncio
         provider = get_ai_provider()
-
-        # Step A: Fast Metadata & Job Requirements
-        job_analysis, cv_data = await asyncio.gather(
-            analyze_job_requirements(job_title, job_description, job_requirements),
-            fast_extract_metadata(cv_text, candidate_name),
+        prompt = (
+            f"CANDIDATE NAME: {candidate_name}\n"
+            f"TARGET POSITION: {job_title}\n\n"
+            f"JOB REQUIREMENTS & DESCRIPTION:\n{job_description}\n"
+            f"ADDITIONAL REQUIREMENTS: {job_requirements or 'None specified'}\n\n"
+            f"CANDIDATE CV / RESUME TEXT:\n{cv_text[:6000]}\n\n"
+            f"Conduct an objective technical evaluation of this candidate against the job criteria. "
+            f"Score skills, experience, education, and overall match from 0.0 to 100.0. "
+            f"Set qualified=True if match_score >= {settings.CV_PASS_THRESHOLD} and recommendation is 'match' or 'strong_match'."
         )
-
-        # Step B: Chunking
-        cv_chunks = chunk_cv_text(cv_data.raw_text, chunk_size=400, overlap=50)
-
-        # Step C: Parallel Embeddings Generation
-        all_skills = [s.name for s in job_analysis.critical_skills] + \
-                     [s.name for s in job_analysis.important_skills] + \
-                     [s.name for s in job_analysis.nice_to_have_skills]
-        
-        job_skill_embeddings_list, cv_chunk_embeddings = await asyncio.gather(
-            provider.generate_embeddings_batch(all_skills) if all_skills else asyncio.sleep(0, result=[]),
-            provider.generate_embeddings_batch(cv_chunks) if cv_chunks else asyncio.sleep(0, result=[]),
+        system_prompt = (
+            "You are an expert Enterprise Recruitment Intelligence AI. "
+            "Perform an objective, thorough evaluation of the candidate's CV against the job requirements. "
+            "Provide evidence quotes from the CV for key requirements."
         )
-
-        job_embeddings = dict(zip(all_skills, job_skill_embeddings_list)) if all_skills else {}
-
-        # ── Agent 3–5: CPU-bound Semantic Scoring Agents ─────────
-        skills_eval = evaluate_skills(job_analysis, job_embeddings, cv_chunks, cv_chunk_embeddings)
-        exp_eval = evaluate_experience(job_analysis, cv_data)
-        edu_eval = evaluate_education(job_analysis, cv_data)
-
-        # ── Agent 7: Final Decision Synthesis ───────────────────────────────────────
-        decision = synthesize_screening_decision(
-            job_analysis, cv_data, skills_eval, exp_eval, edu_eval, skills_eval["evidence"]
+        decision = await provider.generate_structured(
+            prompt=prompt,
+            schema=ScreeningDecisionResult,
+            system_prompt=system_prompt
         )
     except Exception as pipeline_err:
         logger.error(f"Screening processing pipeline error for {application_id}: {pipeline_err}")
-        # SAFE fallback: queue for manual review — never auto-qualify on AI failure
-        from app.schemas.screening import ScreeningDecisionResult
         decision = ScreeningDecisionResult(
             match_score=0.0,
             recommendation="borderline",
@@ -177,7 +156,7 @@ async def run_screening_pipeline(application_id: str) -> Optional[ScreeningDecis
             matched_experience=[],
             missing_requirements=["Manual review required"],
             evidence=[],
-            reasoning_summary=f"Automated AI screening failed due to a processing error. This candidate requires manual review by a recruiter."
+            reasoning_summary=f"Automated AI screening encountered an error: {pipeline_err}"
         )
 
     # ── Database Persistence (non-blocking via run_sync) ────────────────────────

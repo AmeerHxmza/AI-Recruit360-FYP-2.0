@@ -166,11 +166,11 @@ export default function CandidateAssessmentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex items-center justify-center p-6 font-sans">
-        <div className="max-w-xl w-full mx-auto p-12 text-center rounded-2xl bg-[#0B0D0F] border border-[#1A1F26]">
-          <Loader2 className="h-8 w-8 text-[#39D9FF] animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-medium text-white mb-2">Preparing Your Assessment</h2>
-          <p className="text-sm text-[#A7AFBC]">Our AI is currently analyzing your candidate profile and generating personalized questions for this role. This may take up to 10-15 seconds.</p>
+      <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex items-center justify-center p-6 font-sans">
+        <div className="max-w-xl w-full mx-auto p-12 text-center rounded-2xl bg-[#131B2A] border border-[#1E293B] shadow-2xl">
+          <Loader2 className="h-8 w-8 text-[#38BDF8] animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-bold tracking-tight text-white mb-2">Preparing Your Assessment</h2>
+          <p className="text-sm text-[#94A3B8]">Our AI is currently analyzing your candidate profile and generating personalized questions for this role. This may take up to 10-15 seconds.</p>
         </div>
       </div>
     );
@@ -178,11 +178,11 @@ export default function CandidateAssessmentPage() {
 
   if (error || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex items-center justify-center p-6 font-sans">
-        <div className="max-w-md w-full p-8 rounded-2xl border border-[#242932] bg-[#12151A] text-center space-y-4">
-          <XCircle className="h-10 w-10 text-[#FF5C67] mx-auto" />
-          <h2 className="text-lg font-bold font-display text-[#F5F7FA]">Assessment Unavailable</h2>
-          <p className="text-xs text-[#A7AFBC] leading-relaxed">
+      <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex items-center justify-center p-6 font-sans">
+        <div className="max-w-md w-full p-8 rounded-2xl border border-[#1E293B] bg-[#131B2A] text-center space-y-4 shadow-xl">
+          <XCircle className="h-10 w-10 text-[#EF4444] mx-auto" />
+          <h2 className="text-lg font-bold tracking-tight text-[#F8FAFC]">Assessment Unavailable</h2>
+          <p className="text-xs text-[#94A3B8] leading-relaxed">
             {error || "No questions were found for this application."}
           </p>
         </div>
@@ -193,29 +193,28 @@ export default function CandidateAssessmentPage() {
   if (assessmentComplete) {
     const passed = finalResult?.passed;
     return (
-      <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex items-center justify-center p-6 font-sans">
-        <div className="max-w-md w-full p-8 rounded-2xl border border-[#242932] bg-[#12151A] text-center space-y-6 shadow-2xl">
-          <div className={`w-16 h-16 mx-auto rounded-full border flex items-center justify-center ${passed ? 'bg-[#35D07F]/10 border-[#35D07F]/30 text-[#35D07F]' : 'bg-[#FF5C67]/10 border-[#FF5C67]/30 text-[#FF5C67]'}`}>
+      <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex items-center justify-center p-6 font-sans">
+        <div className="max-w-md w-full p-8 rounded-2xl border border-[#1E293B] bg-[#131B2A] text-center space-y-6 shadow-2xl">
+          <div className={`w-16 h-16 mx-auto rounded-2xl border flex items-center justify-center ${passed ? 'bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]' : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'}`}>
             {passed ? <CheckCircle2 className="h-8 w-8" /> : <XCircle className="h-8 w-8" />}
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold font-display text-[#F5F7FA]">Assessment Complete</h1>
-            <p className="text-[#A7AFBC] text-sm">
-              You scored <strong className="text-[#F5F7FA]">{finalResult?.correct_answers} / {finalResult?.total_questions}</strong> ({finalResult?.percentage}%)
+            <h1 className="text-2xl font-bold tracking-tight text-[#F8FAFC]">Assessment Complete</h1>
+            <p className="text-[#94A3B8] text-sm">
+              You scored <strong className="text-[#F8FAFC]">{finalResult?.correct_answers} / {finalResult?.total_questions}</strong> ({finalResult?.percentage}%)
             </p>
           </div>
 
-          <div className={`p-4 rounded-xl border ${passed ? 'border-[#35D07F]/30 bg-[#35D07F]/5' : 'border-[#FF5C67]/30 bg-[#FF5C67]/5'}`}>
-            <p className="text-xs leading-relaxed mb-4">
+          <div className={`p-4 rounded-xl border ${passed ? 'border-[#10B981]/30 bg-[#10B981]/5' : 'border-[#EF4444]/30 bg-[#EF4444]/5'}`}>
+            <p className="text-xs leading-relaxed mb-4 text-[#94A3B8]">
               {passed 
                 ? "Your assessment has been completed successfully. You may now proceed to the AI interview." 
                 : "Thank you for completing the assessment. Unfortunately, your application will not proceed to the next stage."}
             </p>
             {passed && (
               <Button 
-                variant="ai"
-                className="w-full"
+                className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-lg shadow-[#2563EB]/20 font-semibold"
                 onClick={() => router.push(`/interview-room/${applicationId}`)}
               >
                 Proceed to AI Interview
@@ -230,14 +229,14 @@ export default function CandidateAssessmentPage() {
   const currentQ = questions[currentIdx];
 
   return (
-    <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex flex-col font-sans selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]">
+    <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex flex-col font-sans selection:bg-[#2563EB]/25 selection:text-[#38BDF8]">
       {/* Header */}
-      <header className="border-b border-[#242932] bg-[#0D0F12] py-4 sticky top-0 z-50">
+      <header className="border-b border-[#1E293B] bg-[#0F1523] py-4 sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <BrandLogo variant="full" size="md" href="#" />
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#12151A] border border-[#242932]">
-            <Clock className={`h-4 w-4 ${timeLeft <= 5 ? 'text-[#FF5C67] animate-pulse' : 'text-[#39D9FF]'}`} />
-            <span className={`text-sm font-mono font-bold ${timeLeft <= 5 ? 'text-[#FF5C67]' : 'text-[#F5F7FA]'}`}>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#131B2A] border border-[#1E293B]">
+            <Clock className={`h-4 w-4 ${timeLeft <= 5 ? 'text-[#EF4444] animate-pulse' : 'text-[#38BDF8]'}`} />
+            <span className={`text-sm font-mono font-bold ${timeLeft <= 5 ? 'text-[#EF4444]' : 'text-[#F8FAFC]'}`}>
               00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
             </span>
           </div>
@@ -252,24 +251,24 @@ export default function CandidateAssessmentPage() {
           {questions.map((_, idx) => (
             <div 
               key={idx} 
-              className={`h-2 w-2 rounded-full transition-all ${idx < currentIdx ? 'bg-[#39D9FF]' : idx === currentIdx ? 'bg-[#39D9FF] scale-125 ring-2 ring-[#39D9FF]/30' : 'bg-[#242932]'}`} 
+              className={`h-2 w-2 rounded-full transition-all ${idx < currentIdx ? 'bg-[#2563EB]' : idx === currentIdx ? 'bg-[#38BDF8] scale-125 ring-2 ring-[#38BDF8]/40' : 'bg-[#1E293B]'}`} 
             />
           ))}
         </div>
 
         {/* Question Card */}
-        <div className="w-full bg-[#12151A] border border-[#242932] rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div className="w-full bg-[#131B2A] border border-[#1E293B] rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
           {submitting && (
-            <div className="absolute inset-0 bg-[#12151A]/80 backdrop-blur-sm z-10 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 text-[#39D9FF] animate-spin" />
+            <div className="absolute inset-0 bg-[#131B2A]/80 backdrop-blur-sm z-10 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 text-[#38BDF8] animate-spin" />
             </div>
           )}
 
           <div className="mb-6 space-y-2">
-            <span className="text-xs font-mono font-bold text-[#A7AFBC] uppercase tracking-wider">
+            <span className="text-xs font-mono font-bold text-[#94A3B8] uppercase tracking-wider">
               Question {currentIdx + 1} of {questions.length}
             </span>
-            <h2 className="text-lg sm:text-xl font-bold font-display text-[#F5F7FA] leading-relaxed">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#F8FAFC] leading-relaxed">
               {currentQ.question}
             </h2>
           </div>
@@ -285,13 +284,13 @@ export default function CandidateAssessmentPage() {
                 key={opt.id}
                 onClick={() => handleAnswerSubmit(opt.id)}
                 disabled={submitting}
-                className="w-full text-left p-4 rounded-xl border border-[#242932] bg-[#0D0F12] hover:border-[#39D9FF] hover:bg-[#39D9FF]/5 transition-all group relative overflow-hidden"
+                className="w-full text-left p-4 rounded-xl border border-[#1E293B] bg-[#0F1523] hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-all group relative overflow-hidden"
               >
                 <div className="flex items-start gap-4 relative z-10">
-                  <span className="flex items-center justify-center w-6 h-6 rounded bg-[#171B21] border border-[#242932] text-xs font-mono font-bold text-[#A7AFBC] group-hover:text-[#39D9FF] group-hover:border-[#39D9FF]/50 shrink-0">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#182236] border border-[#1E293B] text-xs font-mono font-bold text-[#94A3B8] group-hover:text-[#38BDF8] group-hover:border-[#2563EB]/50 shrink-0">
                     {opt.id}
                   </span>
-                  <span className="text-sm text-[#F5F7FA] leading-relaxed mt-0.5">
+                  <span className="text-sm text-[#F8FAFC] leading-relaxed mt-0.5">
                     {opt.text}
                   </span>
                 </div>
@@ -300,11 +299,11 @@ export default function CandidateAssessmentPage() {
           </div>
 
           {submitError && (
-            <div className="mt-6 p-4 rounded-xl border border-[#FF5C67]/30 bg-[#FF5C67]/5 flex items-start gap-3">
-              <XCircle className="h-5 w-5 text-[#FF5C67] shrink-0 mt-0.5" />
+            <div className="mt-6 p-4 rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/5 flex items-start gap-3">
+              <XCircle className="h-5 w-5 text-[#EF4444] shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-bold text-[#F5F7FA]">Submission Error</p>
-                <p className="text-xs text-[#A7AFBC] leading-relaxed mt-1">
+                <p className="text-sm font-bold text-[#F8FAFC]">Submission Error</p>
+                <p className="text-xs text-[#94A3B8] leading-relaxed mt-1">
                   {submitError}
                 </p>
               </div>

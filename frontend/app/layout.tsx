@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/providers/auth-provider";
-import { DataCacheProvider } from "@/providers/data-cache-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import "./globals.css";
 
@@ -68,13 +67,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="min-h-full bg-[#08090B] text-[#A7AFBC] font-sans flex flex-col selection:bg-[#39D9FF]/20 selection:text-[#39D9FF] [&_h1]:text-[#F5F7FA] [&_h1]:tracking-tight [&_h2]:text-[#F5F7FA] [&_h2]:tracking-tight [&_h3]:text-[#F5F7FA] [&_h4]:text-[#F5F7FA]"
+        className="min-h-full bg-[#0B0F17] text-[#94A3B8] font-sans flex flex-col selection:bg-[#2563EB]/25 selection:text-[#38BDF8] [&_h1]:text-[#F8FAFC] [&_h1]:tracking-tight [&_h2]:text-[#F8FAFC] [&_h2]:tracking-tight [&_h3]:text-[#F8FAFC] [&_h4]:text-[#F8FAFC]"
         suppressHydrationWarning
       >
         <QueryProvider>
-          <AuthProvider>
-            <DataCacheProvider>{children}</DataCacheProvider>
-          </AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
         </QueryProvider>
       </body>
     </html>

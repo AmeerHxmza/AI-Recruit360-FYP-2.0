@@ -51,49 +51,49 @@
 
 :root,
 .dark {
-  /* AI-Recruit360 Dark First Design Tokens */
-  --background: #08090B;
-  --secondary-bg: #0D0F12;
-  --surface: #12151A;
-  --elevated: #171B21;
-  --border: #242932;
-  --border-subtle: #1C212A;
+  /* AI-Recruit360 Enterprise Corporate Design Tokens */
+  --background: #0B0F17;
+  --secondary-bg: #0F1523;
+  --surface: #131B2A;
+  --elevated: #182236;
+  --border: #1E293B;
+  --border-subtle: #152033;
 
-  --text-primary: #F5F7FA;
-  --text-secondary: #A7AFBC;
-  --text-muted: #68717E;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 
-  --foreground: #F5F7FA;
+  --foreground: #F8FAFC;
 
-  --accent-ai: #39D9FF;
-  --accent-bright: #63E3FF;
+  --accent-ai: #38BDF8;
+  --accent-bright: #60A5FA;
 
-  --success: #35D07F;
-  --warning: #F5B942;
-  --danger: #FF5C67;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
 
   /* Component standard abstractions */
-  --card: #12151A;
-  --card-foreground: #F5F7FA;
+  --card: #131B2A;
+  --card-foreground: #F8FAFC;
 
-  --popover: #171B21;
-  --popover-foreground: #F5F7FA;
+  --popover: #182236;
+  --popover-foreground: #F8FAFC;
 
-  --primary: #39D9FF;
-  --primary-foreground: #08090B;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
 
-  --secondary: #171B21;
-  --secondary-foreground: #F5F7FA;
+  --secondary: #182236;
+  --secondary-foreground: #F8FAFC;
 
-  --muted: #0D0F12;
-  --muted-foreground: #A7AFBC;
+  --muted: #0F1523;
+  --muted-foreground: #94A3B8;
 
-  --accent: #171B21;
-  --accent-foreground: #39D9FF;
+  --accent: #182236;
+  --accent-foreground: #38BDF8;
 
-  --destructive: #FF5C67;
-  --input: #171B21;
-  --ring: #39D9FF;
+  --destructive: #EF4444;
+  --input: #131B2A;
+  --ring: #2563EB;
 
   --radius: 0.5rem;
 }
@@ -128,12 +128,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #1C212A;
+    background: #1E293B;
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #242932;
+    background: #2D3D56;
   }
 
   /* Accessible focus states */
@@ -143,10 +143,29 @@
   }
 }
 
-/* Clean, Standard SaaS UI Utility Classes */
+/* Clean, Executive Corporate SaaS UI Utility Classes */
 .hairline-divider {
   height: 1px;
   background-color: var(--border);
+}
+
+.glass-panel {
+  background: rgba(19, 27, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+.executive-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.executive-card:hover {
+  border-color: #2D3D56;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
 }
 
 .status-pill {
@@ -155,7 +174,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;

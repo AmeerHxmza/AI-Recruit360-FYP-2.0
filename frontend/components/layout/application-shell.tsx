@@ -37,12 +37,12 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#08090B] flex flex-col items-center justify-center p-6 text-[#F5F7FA]">
+      <div className="min-h-screen bg-[#0B0F17] flex flex-col items-center justify-center p-6 text-[#F8FAFC]">
         <div className="flex flex-col items-center gap-4 animate-pulse">
-          <div className="h-12 w-12 rounded-xl bg-[#12151A] border border-[#39D9FF]/40 text-[#39D9FF] flex items-center justify-center shadow-lg shadow-[#39D9FF]/20">
-            <Sparkles className="h-6 w-6 text-[#39D9FF]" />
+          <div className="h-12 w-12 rounded-xl bg-[#131B2A] border border-[#2563EB]/40 text-[#38BDF8] flex items-center justify-center shadow-lg shadow-[#2563EB]/10">
+            <Sparkles className="h-6 w-6 text-[#38BDF8]" />
           </div>
-          <span className="text-xs font-mono text-[#A7AFBC] uppercase tracking-widest">
+          <span className="text-xs font-mono text-[#94A3B8] uppercase tracking-widest">
             Authenticating Workspace...
           </span>
         </div>
@@ -51,11 +51,11 @@ export const ApplicationShell: React.FC<ApplicationShellProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex flex-col md:flex-row antialiased">
+    <div className="min-h-screen bg-[#0B0F17] text-[#F8FAFC] flex flex-col md:flex-row antialiased">
       {/* Mobile Sidebar Overlay Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-[1250] bg-[#08090B]/80 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 z-[1250] bg-[#0B0F17]/80 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

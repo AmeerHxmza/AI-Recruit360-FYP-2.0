@@ -81,23 +81,28 @@ export const getUserOrganizations = cache(async (): Promise<OrganizationRow[]> =
   return orgs;
 });
 
+import { getCachedData } from "@/lib/redis/cache";
+
 export const getOrganizationContext = cache(async (
   requestedOrgId?: string
 ): Promise<OrganizationContext | null> => {
   try {
     const user = await getCurrentUser();
-    const supabase = await createClient();
+    const cacheKey = `org_ctx:${user.id}:${requestedOrgId || 'default'}`;
 
-    let targetOrgId = requestedOrgId;
+    return await getCachedData(cacheKey, async () => {
+      const supabase = await createClient();
 
-    if (!targetOrgId) {
-      try {
-        const cookieStore = await cookies();
-        targetOrgId = cookieStore.get("air360_org_id")?.value;
-      } catch {
-        // cookies() call might fail in non-request contexts
+      let targetOrgId = requestedOrgId;
+
+      if (!targetOrgId) {
+        try {
+          const cookieStore = await cookies();
+          targetOrgId = cookieStore.get("air360_org_id")?.value;
+        } catch {
+          // cookies() call might fail in non-request contexts
+        }
       }
-    }
 
     let { data: memberships } = await supabase
       .from("organization_members")
@@ -149,15 +154,16 @@ export const getOrganizationContext = cache(async (
       return null;
     }
 
-    const profile = await getCurrentProfile();
+      const profile = await getCurrentProfile();
 
-    return {
-      user,
-      profile,
-      organization: org,
-      membership: activeMembership as OrganizationMemberRow,
-      role: activeMembership.role as OrganizationRole,
-    };
+      return {
+        user,
+        profile,
+        organization: org,
+        membership: activeMembership as OrganizationMemberRow,
+        role: activeMembership.role as OrganizationRole,
+      };
+    }, 60);
   } catch {
     return null;
   }

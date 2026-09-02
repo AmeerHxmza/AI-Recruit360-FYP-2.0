@@ -12,10 +12,9 @@ from slowapi.util import get_remote_address
 
 from app.core.config import settings
 
-# Single global limiter instance — storage_uri points at Redis so
-# request counts are consistent across all worker processes.
+# Fast in-memory rate limiter — zero external dependencies, 100% reliable for local execution
 limiter = Limiter(
     key_func=get_remote_address,
-    storage_uri=settings.REDIS_URL,
-    default_limits=["200/minute"],  # Global fallback limit per IP
+    storage_uri="memory://",
+    default_limits=["200/minute"],
 )

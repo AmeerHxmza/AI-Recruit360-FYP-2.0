@@ -43,78 +43,82 @@ export interface UpdateJobInput {
   status?: JobStatus;
 }
 
+import { getCachedData, invalidateCachePrefix } from "@/lib/redis/cache";
+
 export async function getJobsForOrg(orgId: string, filters?: JobFilters): Promise<Job[]> {
-  await getCurrentOrganization(orgId);
-  const supabase = await createClient();
+  const cacheKey = `org:${orgId}:jobs:${JSON.stringify(filters || {})}`;
 
-  const { result } = await measurePerformance("DB Query (getJobsForOrg)", async () => {
-    let query = supabase
-      .from("jobs")
-      .select("id, organization_id, title, slug, department, location, employment_type, workplace_type, status, published_at, created_at, updated_at")
-      .eq("organization_id", orgId)
-      .order("created_at", { ascending: false });
+  return await getCachedData(cacheKey, async () => {
+    const supabase = await createClient();
 
-    if (filters?.status && filters.status !== "all") {
-      query = query.eq("status", filters.status);
-    }
+    const { result } = await measurePerformance("DB Query (getJobsForOrg)", async () => {
+      let query = supabase
+        .from("jobs")
+        .select("id, organization_id, title, slug, department, location, employment_type, workplace_type, status, published_at, created_at, updated_at")
+        .eq("organization_id", orgId)
+        .order("created_at", { ascending: false });
 
-    if (filters?.employment_type && filters.employment_type !== "all") {
-      query = query.eq("employment_type", filters.employment_type);
-    }
-
-    if (filters?.workplace_type && filters.workplace_type !== "all") {
-      query = query.eq("workplace_type", filters.workplace_type);
-    }
-
-    if (filters?.search && filters.search.trim().length > 0) {
-      // Sanitize search term: strip PostgREST/SQL special characters to prevent filter injection
-      const term = filters.search.trim().replace(/[%_\\()]/g, '');
-      if (term.length > 0) {
-        query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
+      if (filters?.status && filters.status !== "all") {
+        query = query.eq("status", filters.status);
       }
-    }
-    
-    if (filters?.page && filters?.pageSize) {
-      const from = (filters.page - 1) * filters.pageSize;
-      const to = from + filters.pageSize - 1;
-      query = query.range(from, to);
-    } else {
-      query = query.limit(100);
-    }
 
-    const { data: jobs, error } = await query;
+      if (filters?.employment_type && filters.employment_type !== "all") {
+        query = query.eq("employment_type", filters.employment_type);
+      }
 
-    if (error || !jobs) {
-      throw new DatabaseError("Failed to retrieve jobs for organization.");
-    }
-    
-    if (jobs.length === 0) return [];
+      if (filters?.workplace_type && filters.workplace_type !== "all") {
+        query = query.eq("workplace_type", filters.workplace_type);
+      }
 
-    // Fetch applications for these jobs to calculate counts
-    const { data: apps } = await supabase
-      .from("applications")
-      .select("job_id, status")
-      .eq("organization_id", orgId)
-      .in("job_id", jobs.map(j => j.id));
-
-    const qualifiedStatuses = ["assessment", "interview", "evaluation", "shortlisted", "hired"];
-    
-    const enrichedJobs = jobs.map((job) => {
-      const jobApps = (apps || []).filter(a => a.job_id === job.id);
-      const applicantsCount = jobApps.length;
-      const qualifiedCount = jobApps.filter(a => qualifiedStatuses.includes(a.status)).length;
+      if (filters?.search && filters.search.trim().length > 0) {
+        const term = filters.search.trim().replace(/[%_\\()]/g, '');
+        if (term.length > 0) {
+          query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
+        }
+      }
       
-      return {
-        ...job,
-        applicantsCount,
-        qualifiedCount
-      } as Job;
+      if (filters?.page && filters?.pageSize) {
+        const from = (filters.page - 1) * filters.pageSize;
+        const to = from + filters.pageSize - 1;
+        query = query.range(from, to);
+      } else {
+        query = query.limit(100);
+      }
+
+      const { data: jobs, error } = await query;
+
+      if (error || !jobs) {
+        throw new DatabaseError("Failed to retrieve jobs for organization.");
+      }
+
+      if (jobs.length === 0) return [];
+
+      // Fetch applications for these jobs to calculate counts
+      const { data: apps } = await supabase
+        .from("applications")
+        .select("job_id, status")
+        .eq("organization_id", orgId)
+        .in("job_id", jobs.map(j => j.id));
+
+      const qualifiedStatuses = ["assessment", "interview", "evaluation", "shortlisted", "hired"];
+      
+      const enrichedJobs = jobs.map((job) => {
+        const jobApps = (apps || []).filter(a => a.job_id === job.id);
+        const applicantsCount = jobApps.length;
+        const qualifiedCount = jobApps.filter(a => qualifiedStatuses.includes(a.status)).length;
+        
+        return {
+          ...job,
+          applicantsCount,
+          qualifiedCount
+        } as Job;
+      });
+
+      return enrichedJobs;
     });
 
-    return enrichedJobs;
-  });
-
-  return result;
+    return result;
+  }, 30);
 }
 
 export async function getJobById(orgId: string, jobId: string): Promise<Job> {

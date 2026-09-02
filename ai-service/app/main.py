@@ -24,7 +24,6 @@ from starlette.responses import Response
 from app.core.config import settings
 from app.core.logging_config import configure_logging
 from app.core.rate_limit import limiter
-from app.core.redis import get_redis, close_redis
 from app.core.auth import verify_service_secret
 from app.api.routes import health, screening, assessments, interviews, evaluations
 
@@ -35,63 +34,17 @@ import logging
 logger = logging.getLogger("ai_service.main")
 
 
-# ── OpenTelemetry (optional — only when OTLP_ENDPOINT is set) ────────────────
-def _setup_telemetry(app: FastAPI) -> None:
-    """Attach OpenTelemetry auto-instrumentation if OTLP_ENDPOINT is configured."""
-    if not settings.OTLP_ENDPOINT:
-        logger.info("OpenTelemetry disabled (OTLP_ENDPOINT not set).")
-        return
-    try:
-        from opentelemetry import trace
-        from opentelemetry.sdk.trace import TracerProvider
-        from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
-        provider = TracerProvider()
-        headers = {}
-        if settings.OTLP_HEADERS:
-            for item in settings.OTLP_HEADERS.split(","):
-                k, _, v = item.partition("=")
-                headers[k.strip()] = v.strip()
-
-        exporter = OTLPSpanExporter(endpoint=settings.OTLP_ENDPOINT, headers=headers)
-        provider.add_span_processor(BatchSpanProcessor(exporter))
-        trace.set_tracer_provider(provider)
-        FastAPIInstrumentor.instrument_app(app, tracer_provider=provider)
-        logger.info(f"OpenTelemetry tracing enabled → {settings.OTLP_ENDPOINT}")
-    except ImportError:
-        logger.warning("opentelemetry packages not installed — skipping telemetry setup.")
-
-
-from app.core.keep_alive import start_keep_alive_worker, stop_keep_alive_worker
-
 # ── Application Lifespan ──────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
-    Startup: initialise Redis connection pool & start keep-alive worker.
-    Shutdown: gracefully close Redis pool & cancel keep-alive worker.
+    Startup & Shutdown lifecycle for AI-Recruit360 engine.
     """
     logger.info(
         f"AI-Recruit360 starting up | env={settings.ENVIRONMENT} | "
         f"provider={settings.AI_PROVIDER}"
     )
-    # Pre-warm Redis connection pool
-    try:
-        await get_redis()
-        logger.info("Redis connection pool ready.")
-    except Exception as exc:
-        logger.warning(f"Redis unavailable at startup (cache/rate-limiting degraded): {exc}")
-
-    # Start Render anti-sleep keep-alive worker
-    start_keep_alive_worker()
-
-    yield  # ← application runs here
-
-    # Graceful shutdown
-    stop_keep_alive_worker()
-    await close_redis()
+    yield
     logger.info("AI-Recruit360 shut down cleanly.")
 
 
@@ -170,9 +123,6 @@ app.include_router(screening.router, prefix="/api/v1", dependencies=[Depends(ver
 app.include_router(assessments.router, prefix="/api/v1", dependencies=[Depends(verify_service_secret)])
 app.include_router(interviews.router, prefix="/api/v1", dependencies=[Depends(verify_service_secret)])
 app.include_router(evaluations.router, prefix="/api/v1", dependencies=[Depends(verify_service_secret)])
-
-# ── OpenTelemetry ─────────────────────────────────────────────────────────────
-_setup_telemetry(app)
 
 
 # ── Root Redirect ─────────────────────────────────────────────────────────────
