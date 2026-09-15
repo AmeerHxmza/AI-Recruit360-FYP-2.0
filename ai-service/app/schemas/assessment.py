@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 class GeneratedMCQItem(BaseModel):
     question_number: int = Field(ge=1, le=10)
@@ -8,10 +8,10 @@ class GeneratedMCQItem(BaseModel):
     option_b: str
     option_c: str
     option_d: str
-    correct_option: str = Field(description="A | B | C | D")
+    correct_option: Literal["A", "B", "C", "D"]
     explanation: str
     skill_category: str
-    difficulty: str = Field(description="easy | medium | hard")
+    difficulty: Literal["easy", "medium", "hard"]
 
 class GeneratedAssessmentPayload(BaseModel):
     questions: List[GeneratedMCQItem] = Field(min_length=10, max_length=10)

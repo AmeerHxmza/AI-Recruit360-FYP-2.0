@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { PageHeader } from "@/components/layout/page-header";
 import { Section } from "@/components/layout/section";
 import { MetricCard } from "@/components/dashboard/metric-card";
@@ -24,11 +23,13 @@ import {
   deleteCandidateAction,
   getCandidateCountsAction,
 } from "@/app/actions/candidates";
-import { Candidate, PaginatedCandidatesResult } from "@/lib/services/candidate-service";
+import {
+  Candidate,
+  PaginatedCandidatesResult,
+} from "@/lib/services/candidate-service";
 import { OrganizationRole } from "@/types/database.types";
 import {
   Users,
-  Sparkles,
   Search,
   ExternalLink,
   Loader2,
@@ -61,7 +62,9 @@ export function CandidatesClientView({
   const router = useRouter();
   const isAuthorizedToManage = canManageCandidates(role);
 
-  const [candidates, setCandidates] = React.useState<Candidate[]>(initialCandidatesResult.data);
+  const [candidates, setCandidates] = React.useState<Candidate[]>(
+    initialCandidatesResult.data,
+  );
   const [loading, setLoading] = React.useState<boolean>(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
@@ -69,16 +72,19 @@ export function CandidatesClientView({
   // Pagination state
   const [page, setPage] = React.useState<number>(initialCandidatesResult.page);
   const [pageSize] = React.useState<number>(initialCandidatesResult.pageSize);
-  const [totalPages, setTotalPages] = React.useState<number>(initialCandidatesResult.totalPages);
-  const [totalCandidates, setTotalCandidates] = React.useState<number>(initialCandidatesResult.total);
+  const [totalPages, setTotalPages] = React.useState<number>(
+    initialCandidatesResult.totalPages,
+  );
+  const [totalCandidates, setTotalCandidates] = React.useState<number>(
+    initialCandidatesResult.total,
+  );
 
   // Metrics state
   const [counts, setCounts] = React.useState(initialCounts);
 
-
-
   // Deletion Modal State
-  const [candidateToDelete, setCandidateToDelete] = React.useState<Candidate | null>(null);
+  const [candidateToDelete, setCandidateToDelete] =
+    React.useState<Candidate | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const loadCandidates = React.useCallback(async () => {
@@ -124,7 +130,6 @@ export function CandidatesClientView({
     }
   }, [searchQuery, page, pageSize, loadCandidates]);
 
-
   const handleDeleteConfirm = async () => {
     if (!candidateToDelete) return;
     setIsDeleting(true);
@@ -160,124 +165,127 @@ export function CandidatesClientView({
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageHeader
-        title="Candidate Directory"
-        description="Workspace candidate profiles, contact details, and document intelligence storage."
-        badge={
-          <Badge variant="ai">
-            <Sparkles className="h-3 w-3 mr-1" /> PostgreSQL Database
-          </Badge>
-        }
-        actions={undefined}
+        title="Candidates"
+        description="Searchable talent database with contact details and AI screening dossiers."
       />
 
       {/* Summary Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label="Total Candidates"
+          label="Total candidates"
           value={counts.total}
-          description="Registered profiles"
+          description="Registered talent profiles"
           icon={<Users className="h-4 w-4" />}
         />
         <MetricCard
-          label="Recent Submissions"
+          label="Recent submissions"
           value={counts.recentCount}
-          description="Added last 7 days"
+          description="Added in last 7 days"
           icon={<Clock className="h-4 w-4" />}
           highlight={true}
         />
         <MetricCard
-          label="LinkedIn Profiles"
+          label="LinkedIn profiles"
           value={counts.withLinkedin}
-          description="Verified URLs"
+          description="Verified profiles attached"
           icon={<Globe className="h-4 w-4" />}
         />
         <MetricCard
-          label="Location Records"
+          label="Location records"
           value={counts.withLocation}
-          description="Geographic tags"
+          description="Geographic locations indexed"
           icon={<MapPin className="h-4 w-4" />}
         />
       </div>
 
       {/* Error Banner */}
       {errorMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-[#FF5C67]/10 border border-[#FF5C67]/30 flex items-center justify-between text-xs text-[#FF5C67]">
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/25 flex items-center justify-between text-xs text-danger">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={loadCandidates} className="text-[#FF5C67]">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadCandidates}
+            className="text-danger hover:bg-danger/20"
+          >
             Retry
           </Button>
         </div>
       )}
 
       {/* Filter & Search Bar */}
-      <Section className="my-0 mb-6">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 rounded-xl border border-[#242932] bg-[#12151A]">
+      <Section className="my-0">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-surface">
           <div className="flex flex-1 items-center gap-3">
             <Input
               type="search"
-              placeholder="Search candidates by name, email, headline, or location..."
+              placeholder="Search candidates by name, email, role, or location..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setPage(1);
               }}
               icon={<Search className="h-4 w-4" />}
-              className="bg-[#0D0F12]"
+              className="bg-background"
             />
           </div>
         </div>
       </Section>
 
       {/* Main Candidate Table */}
-      <Section title="Candidate Workspace Database">
+      <Section className="my-0">
         {loading ? (
-          /* Loading Skeleton State */
-          <div className="p-12 text-center rounded-xl border border-[#242932] bg-[#12151A] space-y-4">
-            <Loader2 className="h-8 w-8 text-[#39D9FF] animate-spin mx-auto" />
-            <p className="text-xs text-[#A7AFBC] font-mono">Updating candidate records...</p>
+          <div className="flex h-64 items-center justify-center rounded-xl border border-border bg-surface">
+            <Loader2 className="h-6 w-6 animate-spin text-action-blue" />
           </div>
         ) : candidates.length === 0 ? (
-          /* Clean Empty State with image asset */
-          <div className="p-12 sm:p-16 text-center rounded-2xl border border-[#242932] bg-[#0D0F12] space-y-5">
-            <div className="relative w-48 h-36 mx-auto rounded-xl overflow-hidden border border-[#242932] bg-[#12151A] shadow-lg">
-              <Image
-                src="/images/empty-candidates.png"
-                alt="No Candidates Found"
-                fill
-                className="object-cover opacity-90"
-              />
+          /* Empty State */
+          <div className="p-12 text-center rounded-xl border border-border bg-surface space-y-4">
+            <div className="h-12 w-12 rounded-xl bg-background border border-border text-text-muted mx-auto flex items-center justify-center">
+              <Users className="h-6 w-6" />
             </div>
-            <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-lg font-bold font-display text-[#F5F7FA]">
-                {searchQuery ? "No matching candidates found" : "No candidates yet"}
-              </h3>
-              <p className="text-xs text-[#A7AFBC] leading-relaxed">
+            <div className="max-w-md mx-auto space-y-1.5">
+              <h3 className="text-base font-semibold text-text-primary">
                 {searchQuery
-                  ? "Try adjusting your search query or clear the filter to view all workspace profiles."
-                  : "Candidates will appear here when they apply through your public job links."}
+                  ? "No matching candidates found"
+                  : "No candidates yet"}
+              </h3>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                {searchQuery
+                  ? "Try clearing your search query to view all organization candidate profiles."
+                  : "When candidates apply through public job links, their profiles and screening dossiers appear here."}
               </p>
             </div>
-
-
           </div>
         ) : (
-          /* Populated Table View */
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-[#242932] bg-[#12151A]">
+            <div className="overflow-hidden rounded-xl border border-border bg-surface">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-b border-[#242932] bg-[#0D0F12]">
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Candidate</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Headline / Title</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Location</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">AI Evaluation Status</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Added Date</TableHead>
-                    <TableHead className="text-right text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Actions</TableHead>
+                  <TableRow className="border-b border-border bg-background hover:bg-background">
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Candidate
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Headline
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Location
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Added
+                    </TableHead>
+                    <TableHead className="text-right text-xs font-medium text-text-secondary">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -285,48 +293,59 @@ export function CandidatesClientView({
                     <TableRow
                       key={cand.id}
                       onClick={() => router.push(`/candidates/${cand.id}`)}
-                      className="cursor-pointer border-b border-[#1C2027] transition-micro hover:bg-[#171B21]/80"
+                      className="cursor-pointer border-b border-border transition-colors hover:bg-hover"
                     >
-                      <TableCell className="py-4">
+                      <TableCell className="py-3.5">
                         <div className="flex items-center gap-3">
-                          <Avatar fallback={getInitials(cand.full_name)} size="sm" />
+                          <Avatar
+                            fallback={getInitials(cand.full_name)}
+                            size="sm"
+                          />
                           <div className="flex flex-col">
-                            <span className="font-semibold text-[#F5F7FA] text-xs">
+                            <span className="font-medium text-text-primary text-xs">
                               {cand.full_name}
                             </span>
-                            <span className="text-[11px] text-[#A7AFBC] flex items-center gap-1">
-                              <Mail className="h-3 w-3 text-[#39D9FF]" /> {cand.email}
+                            <span className="text-xs text-text-muted flex items-center gap-1">
+                              <Mail className="h-3 w-3 text-text-muted" />{" "}
+                              {cand.email}
                             </span>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-[#F5F7FA] font-medium">
-                        {(cand as unknown as { headline?: string }).headline || "Candidate Profile"}
+                      <TableCell className="text-xs text-text-primary">
+                        {(cand as unknown as { headline?: string }).headline ||
+                          "Candidate Profile"}
                       </TableCell>
-                      <TableCell className="text-xs text-[#A7AFBC]">
+                      <TableCell className="text-xs text-text-secondary">
                         {cand.location ? (
                           <span className="flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5 text-[#68717E]" /> {cand.location}
+                            <MapPin className="h-3.5 w-3.5 text-text-muted" />{" "}
+                            {cand.location}
                           </span>
                         ) : (
                           "—"
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] text-[#A7AFBC] border-[#242932]">
-                          AI Analysis Pending
+                        <Badge variant="secondary" className="text-xs">
+                          Profile active
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-[#68717E] font-mono">
+                      <TableCell className="text-xs text-text-muted">
                         {formatDate(cand.created_at)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="flex items-center justify-end gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => router.push(`/candidates/${cand.id}`)}
-                            className="h-7 w-7 text-[#A7AFBC] hover:text-[#39D9FF]"
+                            onClick={() =>
+                              router.push(`/candidates/${cand.id}`)
+                            }
+                            className="h-7 w-7 text-text-muted hover:text-text-primary"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </Button>
@@ -335,7 +354,7 @@ export function CandidatesClientView({
                               variant="ghost"
                               size="icon"
                               onClick={() => setCandidateToDelete(cand)}
-                              className="h-7 w-7 text-[#A7AFBC] hover:text-[#FF5C67]"
+                              className="h-7 w-7 text-text-muted hover:text-danger"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -350,9 +369,17 @@ export function CandidatesClientView({
 
             {/* Server-Side Pagination Bar */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 rounded-xl border border-[#242932] bg-[#12151A] text-xs text-[#A7AFBC]">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface text-xs text-text-secondary">
                 <span>
-                  Showing page <strong className="text-[#F5F7FA]">{page}</strong> of <strong className="text-[#F5F7FA]">{totalPages}</strong> ({totalCandidates} candidates)
+                  Showing page{" "}
+                  <strong className="text-text-primary font-medium">
+                    {page}
+                  </strong>{" "}
+                  of{" "}
+                  <strong className="text-text-primary font-medium">
+                    {totalPages}
+                  </strong>{" "}
+                  ({totalCandidates} candidates)
                 </span>
                 <div className="flex items-center gap-2">
                   <Button
@@ -378,22 +405,27 @@ export function CandidatesClientView({
         )}
       </Section>
 
-
-
       {/* Delete Candidate Confirmation Modal */}
       {candidateToDelete && (
         <div className="fixed inset-0 z-[1650] flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-[#08090B]/80 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity"
             onClick={() => setCandidateToDelete(null)}
           />
-          <div className="relative z-[1750] w-full max-w-md rounded-2xl border border-[#FF5C67]/40 bg-[#12151A] p-6 shadow-2xl space-y-4 text-[#F5F7FA]">
-            <div className="flex items-center gap-3 border-b border-[#242932] pb-3 text-[#FF5C67]">
+          <div className="relative z-[1750] w-full max-w-md rounded-2xl border border-danger/40 bg-surface p-6 shadow-sm space-y-4 text-text-primary">
+            <div className="flex items-center gap-3 border-b border-border pb-3 text-danger">
               <AlertCircle className="h-6 w-6" />
-              <h3 className="text-base font-bold font-display">Delete Candidate Profile?</h3>
+              <h3 className="text-base font-bold font-display">
+                Delete Candidate Profile?
+              </h3>
             </div>
-            <p className="text-xs text-[#A7AFBC] leading-relaxed">
-              Are you sure you want to delete <strong className="text-[#F5F7FA]">{candidateToDelete.full_name}</strong>? This action will permanently remove the candidate record and associated workspace data.
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Are you sure you want to delete{" "}
+              <strong className="text-text-primary">
+                {candidateToDelete.full_name}
+              </strong>
+              ? This action will permanently remove the candidate record and
+              associated workspace data.
             </p>
             <div className="flex items-center justify-end gap-3 pt-3">
               <Button
@@ -409,7 +441,7 @@ export function CandidatesClientView({
                 size="sm"
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="border-[#FF5C67]/50 text-[#FF5C67] hover:bg-[#FF5C67]/10"
+                className="border-danger/50 text-danger hover:bg-danger/10"
               >
                 {isDeleting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1.5" />

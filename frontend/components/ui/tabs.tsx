@@ -6,7 +6,9 @@ interface TabsContextValue {
   setActiveTab: (value: string) => void;
 }
 
-const TabsContext = React.createContext<TabsContextValue | undefined>(undefined);
+const TabsContext = React.createContext<TabsContextValue | undefined>(
+  undefined,
+);
 
 export interface TabsProps {
   defaultValue: string;
@@ -45,8 +47,8 @@ const TabList: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 }) => (
   <div
     className={cn(
-      "inline-flex items-center gap-1 rounded-lg border border-[#242932] bg-[#0D0F12] p-1 text-[#A7AFBC]",
-      className
+      "inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1 text-text-secondary",
+      className,
     )}
     role="tablist"
     {...props}
@@ -55,8 +57,7 @@ const TabList: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   </div>
 );
 
-export interface TabTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface TabTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   value: string;
 }
 
@@ -77,11 +78,11 @@ const TabTrigger: React.FC<TabTriggerProps> = ({
       aria-selected={isActive}
       onClick={() => context.setActiveTab(value)}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-micro focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#39D9FF]",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-action-blue",
         isActive
-          ? "bg-[#171B21] text-[#F5F7FA] shadow-xs font-semibold text-[#39D9FF] border border-[#242932]"
-          : "text-[#A7AFBC] hover:text-[#F5F7FA] hover:bg-[#12151A]",
-        className
+          ? "bg-hover text-text-primary shadow-xs font-semibold text-action-blue border border-border"
+          : "text-text-secondary hover:text-text-primary hover:bg-hover",
+        className,
       )}
       {...props}
     >
@@ -90,8 +91,7 @@ const TabTrigger: React.FC<TabTriggerProps> = ({
   );
 };
 
-export interface TabContentProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface TabContentProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
 }
 
@@ -109,7 +109,10 @@ const TabContent: React.FC<TabContentProps> = ({
   return (
     <div
       role="tabpanel"
-      className={cn("animate-in fade-in-50 duration-200 focus:outline-none", className)}
+      className={cn(
+        "animate-in fade-in-50 duration-200 focus:outline-none",
+        className,
+      )}
       {...props}
     >
       {children}

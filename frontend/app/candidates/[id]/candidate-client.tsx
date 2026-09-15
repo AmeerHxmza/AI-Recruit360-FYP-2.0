@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -20,7 +20,11 @@ import {
   getCandidateIntelligenceAction,
 } from "@/app/actions/candidates";
 import { updateApplicationStatusAction } from "@/app/actions/applications";
-import { Candidate, CandidateApplicationItem, CandidateDocumentWithUrl } from "@/lib/services/candidate-service";
+import {
+  Candidate,
+  CandidateApplicationItem,
+  CandidateDocumentWithUrl,
+} from "@/lib/services/candidate-service";
 import { CandidateIntelligence } from "@/lib/services/candidate-intelligence-service";
 import { CandidateIntelligencePanel } from "@/components/candidates/candidate-intelligence-panel";
 import {
@@ -44,6 +48,7 @@ import {
 } from "lucide-react";
 
 export interface CandidateClientProps {
+  selectedApplication?: string;
   initialCandidate: Candidate | null;
   initialApplications: CandidateApplicationItem[];
   initialDocuments: CandidateDocumentWithUrl[];
@@ -51,6 +56,7 @@ export interface CandidateClientProps {
 }
 
 export function CandidateClient({
+  selectedApplication,
   initialCandidate,
   initialApplications,
   initialDocuments,
@@ -60,10 +66,15 @@ export function CandidateClient({
   const { role, organization } = useAuth();
   const isAuthorizedToManage = canManageCandidates(role);
 
-  const [candidate, setCandidate] = React.useState<Candidate | null>(initialCandidate);
-  const [applications, setApplications] = React.useState<CandidateApplicationItem[]>(initialApplications);
-  const [documents, setDocuments] = React.useState<CandidateDocumentWithUrl[]>(initialDocuments);
-  const [intelligence, setIntelligence] = React.useState<CandidateIntelligence | null>(initialIntelligence);
+  const [candidate, setCandidate] = React.useState<Candidate | null>(
+    initialCandidate,
+  );
+  const [applications, setApplications] =
+    React.useState<CandidateApplicationItem[]>(initialApplications);
+  const [documents, setDocuments] =
+    React.useState<CandidateDocumentWithUrl[]>(initialDocuments);
+  const [intelligence, setIntelligence] =
+    React.useState<CandidateIntelligence | null>(initialIntelligence);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   // Edit Modal State
@@ -88,14 +99,14 @@ export function CandidateClient({
       getCandidateByIdAction(candId),
       getCandidateApplicationsAction(candId),
       getCandidateDocumentsAction(candId),
-      getCandidateIntelligenceAction(candId),
+      getCandidateIntelligenceAction(candId, selectedApplication),
     ]);
 
     if (candRes.success && candRes.data) setCandidate(candRes.data);
     if (appsRes.success && appsRes.data) setApplications(appsRes.data);
     if (docsRes.success && docsRes.data) setDocuments(docsRes.data);
     if (intRes.success && intRes.data) setIntelligence(intRes.data);
-  }, [candidate]);
+  }, [candidate, selectedApplication]);
 
   // Initial data is passed as props, so we don't need a mounting fetch
 
@@ -176,19 +187,31 @@ export function CandidateClient({
     return name.slice(0, 2).toUpperCase();
   };
 
-
-
   if (errorMsg || !candidate) {
     return (
-      <ApplicationShell pageBreadcrumb={[organization?.name || "AI-Recruit360", "Candidates", "Not Found"]}>
-        <div className="p-12 text-center rounded-2xl border border-[#242932] bg-[#0D0F12] space-y-4 max-w-lg mx-auto my-8">
-          <AlertCircle className="h-10 w-10 text-[#FF5C67] mx-auto" />
-          <h3 className="text-lg font-bold text-[#F5F7FA]">Candidate Not Found</h3>
-          <p className="text-xs text-[#A7AFBC] leading-relaxed">
-            {errorMsg || "The requested candidate record does not exist or you do not have permission to view it."}
+      <ApplicationShell
+        pageBreadcrumb={[
+          organization?.name || "AI-Recruit360",
+          "Candidates",
+          "Not Found",
+        ]}
+      >
+        <div className="p-12 text-center rounded-2xl border border-border bg-surface space-y-4 max-w-lg mx-auto my-8">
+          <AlertCircle className="h-10 w-10 text-danger mx-auto" />
+          <h3 className="text-lg font-bold text-text-primary">
+            Candidate Not Found
+          </h3>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            {errorMsg ||
+              "The requested candidate record does not exist or you do not have permission to view it."}
           </p>
-          <Button variant="secondary" size="md" onClick={() => router.push("/candidates")}>
-            <ArrowLeft className="h-4 w-4 mr-1.5" /> Return to Candidates Directory
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => router.push("/candidates")}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1.5" /> Return to Candidates
+            Directory
           </Button>
         </div>
       </ApplicationShell>
@@ -196,7 +219,13 @@ export function CandidateClient({
   }
 
   return (
-    <ApplicationShell pageBreadcrumb={[organization?.name || "AI-Recruit360", "Candidates", candidate.full_name]}>
+    <ApplicationShell
+      pageBreadcrumb={[
+        organization?.name || "AI-Recruit360",
+        "Candidates",
+        candidate.full_name,
+      ]}
+    >
       <PageHeader
         title={candidate.full_name}
         description={`${candidate.location || "Workspace Applicant"}`}
@@ -213,23 +242,37 @@ export function CandidateClient({
           <button
             type="button"
             onClick={() => router.push("/candidates")}
-            className="inline-flex items-center text-xs text-[#A7AFBC] hover:text-[#39D9FF] transition-micro mb-1"
+            className="inline-flex items-center text-xs text-text-secondary hover:text-action-blue transition-micro mb-1"
           >
-            <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back to Candidates Directory
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back to Candidates
+            Directory
           </button>
         }
         actions={
           isAuthorizedToManage ? (
             <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={openEditModal}>
+                <Edit3 className="size-4 mr-2" />
+                Edit profile
+              </Button>
               {intelligence?.application && (
                 <>
                   <Button
                     variant="primary"
                     size="sm"
-                    disabled={intelligence.application.status === "shortlisted"}
+                    disabled={intelligence.application.status !== "evaluation"}
                     onClick={async () => {
                       if (!intelligence.application?.id) return;
-                      await updateApplicationStatusAction(intelligence.application.id, "shortlisted");
+                      const result = await updateApplicationStatusAction(
+                        intelligence.application.id,
+                        "shortlisted",
+                      );
+                      if (!result.success) {
+                        setErrorMsg(
+                          result.error || "Could not shortlist candidate.",
+                        );
+                        return;
+                      }
                       await refreshData();
                       router.refresh();
                     }}
@@ -239,11 +282,20 @@ export function CandidateClient({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-[#FF5C67]/40 text-[#FF5C67] hover:bg-[#FF5C67]/10"
+                    className="border-danger/40 text-danger hover:bg-danger/10"
                     disabled={intelligence.application.status === "rejected"}
                     onClick={async () => {
                       if (!intelligence.application?.id) return;
-                      await updateApplicationStatusAction(intelligence.application.id, "rejected");
+                      const result = await updateApplicationStatusAction(
+                        intelligence.application.id,
+                        "rejected",
+                      );
+                      if (!result.success) {
+                        setErrorMsg(
+                          result.error || "Could not reject candidate.",
+                        );
+                        return;
+                      }
                       await refreshData();
                       router.refresh();
                     }}
@@ -256,7 +308,7 @@ export function CandidateClient({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsDeleteModalOpen(true)}
-                className="text-[#68717E] hover:text-[#FF5C67] hover:bg-[#FF5C67]/10 text-xs"
+                className="text-text-muted hover:text-danger hover:bg-danger/10 text-xs"
                 title="Delete candidate record"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -271,23 +323,27 @@ export function CandidateClient({
         {/* Left Column: Candidate Information & Document Ingestion */}
         <div className="lg:col-span-8 space-y-6">
           {/* Main Candidate Profile Card */}
-          <Card className="p-6 border-[#242932] bg-[#12151A] space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#242932]">
+          <Card className="p-6 border-border bg-surface space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-border">
               <div className="flex items-center gap-4">
                 <Avatar fallback={getInitials(candidate.full_name)} size="xl" />
                 <div className="flex flex-col">
-                  <h2 className="text-lg font-bold text-[#F5F7FA] font-display">{candidate.full_name}</h2>
-                  <span className="text-xs text-[#39D9FF] font-medium">
+                  <h2 className="text-lg font-bold text-text-primary font-display">
+                    {candidate.full_name}
+                  </h2>
+                  <span className="text-xs text-action-blue font-medium">
                     Registered Workspace Candidate
                   </span>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-[#A7AFBC] mt-2">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary mt-2">
                     {candidate.location && (
                       <span className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-[#68717E]" /> {candidate.location}
+                        <MapPin className="h-3.5 w-3.5 text-text-muted" />{" "}
+                        {candidate.location}
                       </span>
                     )}
-                    <span className="flex items-center gap-1 font-mono text-[11px] text-[#68717E]">
-                      <Clock className="h-3.5 w-3.5" /> Added {formatDate(candidate.created_at)}
+                    <span className="flex items-center gap-1 font-mono text-xs text-text-muted">
+                      <Clock className="h-3.5 w-3.5" /> Added{" "}
+                      {formatDate(candidate.created_at)}
                     </span>
                   </div>
                 </div>
@@ -296,13 +352,15 @@ export function CandidateClient({
 
             {/* Contact Information & Links */}
             <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-6 text-xs text-[#A7AFBC]">
+              <div className="flex flex-wrap items-center gap-6 text-xs text-text-secondary">
                 <span className="flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5 text-[#39D9FF]" /> {candidate.email}
+                  <Mail className="h-3.5 w-3.5 text-action-blue" />{" "}
+                  {candidate.email}
                 </span>
                 {candidate.phone && (
                   <span className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-[#39D9FF]" /> {candidate.phone}
+                    <Phone className="h-3.5 w-3.5 text-action-blue" />{" "}
+                    {candidate.phone}
                   </span>
                 )}
                 {candidate.linkedin_url && (
@@ -310,7 +368,7 @@ export function CandidateClient({
                     href={candidate.linkedin_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-[#39D9FF] hover:underline"
+                    className="flex items-center gap-1.5 text-action-blue hover:underline"
                   >
                     <Globe className="h-3.5 w-3.5" /> LinkedIn Profile
                   </a>
@@ -320,7 +378,7 @@ export function CandidateClient({
                     href={candidate.portfolio_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-[#39D9FF] hover:underline"
+                    className="flex items-center gap-1.5 text-action-blue hover:underline"
                   >
                     <Globe className="h-3.5 w-3.5" /> Portfolio
                   </a>
@@ -330,19 +388,19 @@ export function CandidateClient({
           </Card>
 
           {/* Candidate Applications Section (Real Database Joins) */}
-          <Card className="p-6 border-[#242932] bg-[#12151A] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#242932] pb-3">
+          <Card className="p-6 border-border bg-surface space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-[#39D9FF]" />
-                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+                <Briefcase className="h-4 w-4 text-action-blue" />
+                <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider font-display">
                   Job Applications ({applications.length})
                 </h3>
               </div>
             </div>
 
             {applications.length === 0 ? (
-              <div className="p-6 text-center rounded-xl bg-[#0D0F12] border border-[#242932]/60 space-y-2">
-                <p className="text-xs text-[#A7AFBC]">
+              <div className="p-6 text-center rounded-xl bg-surface border border-border/60 space-y-2">
+                <p className="text-xs text-text-secondary">
                   No active job applications associated with this candidate.
                 </p>
               </div>
@@ -351,17 +409,26 @@ export function CandidateClient({
                 {applications.map((app) => (
                   <div
                     key={app.id}
-                    className="p-3.5 rounded-xl bg-[#0D0F12] border border-[#1C2027] flex items-center justify-between gap-3 text-xs"
+                    className="p-3.5 rounded-xl bg-surface border border-border flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="flex flex-col">
-                      <span className="font-bold text-[#F5F7FA]">{app.jobTitle}</span>
-                      <span className="text-[11px] text-[#A7AFBC]">{app.department}</span>
+                      <span className="font-bold text-text-primary">
+                        {app.jobTitle}
+                      </span>
+                      <span className="text-xs text-text-secondary">
+                        {app.department}
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-[10px] uppercase font-mono border-[#242932]">
+                      <Badge
+                        variant="outline"
+                        className="text-xs uppercase font-mono border-border"
+                      >
                         {app.status}
                       </Badge>
-                      <span className="text-[10px] text-[#68717E] font-mono">{formatDate(app.appliedAt)}</span>
+                      <span className="text-xs text-text-muted font-mono">
+                        {formatDate(app.appliedAt)}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -370,20 +437,21 @@ export function CandidateClient({
           </Card>
 
           {/* Candidate Documents Section (Real Supabase Storage Files) */}
-          <Card className="p-6 border-[#242932] bg-[#12151A] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#242932] pb-3">
+          <Card className="p-6 border-border bg-surface space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#39D9FF]" />
-                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+                <FileText className="h-4 w-4 text-action-blue" />
+                <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider font-display">
                   Uploaded Candidate Documents ({documents.length})
                 </h3>
               </div>
             </div>
 
             {documents.length === 0 ? (
-              <div className="p-6 text-center rounded-xl bg-[#0D0F12] border border-[#242932]/60 space-y-2">
-                <p className="text-xs text-[#A7AFBC]">
-                  No document files uploaded yet. Use the upload panel above to ingest resume PDFs.
+              <div className="p-6 text-center rounded-xl bg-surface border border-border/60 space-y-2">
+                <p className="text-xs text-text-secondary">
+                  No document files uploaded yet. Use the upload panel above to
+                  ingest resume PDFs.
                 </p>
               </div>
             ) : (
@@ -391,18 +459,30 @@ export function CandidateClient({
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className="p-3.5 rounded-xl bg-[#0D0F12] border border-[#1C2027] flex items-center justify-between gap-3 text-xs"
+                    className="p-3.5 rounded-xl bg-surface border border-border flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-[#12151A] border border-[#242932] text-[#39D9FF]">
+                      <div className="p-2 rounded-lg bg-surface border border-border text-action-blue">
                         <FileText className="h-4 w-4" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-[#F5F7FA]">
-                          {(doc as unknown as { original_filename?: string; file_name?: string }).original_filename || doc.original_filename}
+                        <span className="font-bold text-text-primary">
+                          {(
+                            doc as unknown as {
+                              original_filename?: string;
+                              file_name?: string;
+                            }
+                          ).original_filename || doc.original_filename}
                         </span>
-                        <span className="text-[10px] text-[#A7AFBC] font-mono">
-                          {(doc.file_size / 1024).toFixed(1)} KB · {doc.document_type} · Status: {(doc as unknown as { extraction_status?: string; processing_status?: string }).extraction_status || doc.extraction_status}
+                        <span className="text-xs text-text-secondary font-mono">
+                          {(doc.file_size / 1024).toFixed(1)} KB ·{" "}
+                          {doc.document_type} · Status:{" "}
+                          {(
+                            doc as unknown as {
+                              extraction_status?: string;
+                              processing_status?: string;
+                            }
+                          ).extraction_status || doc.extraction_status}
                         </span>
                       </div>
                     </div>
@@ -412,7 +492,7 @@ export function CandidateClient({
                         href={doc.signedUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center text-xs text-[#39D9FF] hover:underline gap-1 bg-[#171B21] px-3 py-1.5 rounded-lg border border-[#39D9FF]/20"
+                        className="inline-flex items-center text-xs text-action-blue hover:underline gap-1 bg-hover px-3 py-1.5 rounded-lg border border-action-blue/20"
                       >
                         <Download className="h-3.5 w-3.5" /> Download
                       </a>
@@ -424,54 +504,66 @@ export function CandidateClient({
           </Card>
 
           {/* AI Analysis Integration */}
-          <CandidateIntelligencePanel intelligence={intelligence} onStatusChange={refreshData} />
+          <CandidateIntelligencePanel
+            intelligence={intelligence}
+            onStatusChange={refreshData}
+          />
         </div>
 
         {/* Right Column: Metadata Panel */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="p-5 border-[#242932] bg-[#12151A] space-y-4">
-            <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display border-b border-[#242932] pb-3">
+          <Card className="p-5 border-border bg-surface space-y-4">
+            <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider font-display border-b border-border pb-3">
               Candidate Metadata
             </h3>
 
-            <div className="space-y-3 text-xs text-[#A7AFBC]">
+            <div className="space-y-3 text-xs text-text-secondary">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5 text-[#39D9FF]" />
+                  <User className="h-3.5 w-3.5 text-action-blue" />
                   <span>Record ID</span>
                 </span>
-                <span className="font-mono text-[11px] text-[#68717E] truncate max-w-[140px]">
+                <span className="font-mono text-xs text-text-muted truncate max-w-[140px]">
                   {candidate.id}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-[#35D07F]" />
+                  <Clock className="h-3.5 w-3.5 text-success" />
                   <span>Created Date</span>
                 </span>
-                <span className="font-mono text-[#68717E]">{formatDate(candidate.created_at)}</span>
+                <span className="font-mono text-text-muted">
+                  {formatDate(candidate.created_at)}
+                </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-[#F5B942]" />
+                  <FileText className="h-3.5 w-3.5 text-text-secondary" />
                   <span>Last Updated</span>
                 </span>
-                <span className="font-mono text-[#68717E]">{formatDate(candidate.updated_at)}</span>
+                <span className="font-mono text-text-muted">
+                  {formatDate(candidate.updated_at)}
+                </span>
               </div>
             </div>
           </Card>
 
-          <Card elevated className="p-5 border-[#39D9FF]/30 bg-[#171B21] space-y-3">
-            <div className="flex items-center gap-2 border-b border-[#242932] pb-3">
-              <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-              <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+          <Card
+            elevated
+            className="p-5 border-action-blue/30 bg-hover space-y-3"
+          >
+            <div className="flex items-center gap-2 border-b border-border pb-3">
+              <Sparkles className="h-4 w-4 text-action-blue" />
+              <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider font-display">
                 Multi-Tenant Guard
               </h3>
             </div>
-            <p className="text-[11px] text-[#A7AFBC] leading-relaxed">
-              This candidate record belongs exclusively to {organization?.name || "your organization"}. Access control is governed by Row Level Security (RLS).
+            <p className="text-xs text-text-secondary leading-relaxed">
+              This candidate record belongs exclusively to{" "}
+              {organization?.name || "your organization"}. Access control is
+              governed by Row Level Security (RLS).
             </p>
           </Card>
         </div>
@@ -481,22 +573,24 @@ export function CandidateClient({
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-[#08090B]/80 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity"
             onClick={() => setIsEditModalOpen(false)}
           />
-          <div className="relative z-[1700] w-full max-w-xl rounded-2xl border border-[#39D9FF]/30 bg-[#12151A] p-6 shadow-2xl space-y-5 text-[#F5F7FA] max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#242932] pb-4">
-              <h3 className="text-lg font-bold font-display text-[#F5F7FA]">Edit Candidate Profile</h3>
+          <div className="relative z-[1700] w-full max-w-xl rounded-2xl border border-action-blue/30 bg-surface p-6 shadow-sm space-y-5 text-text-primary max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <h3 className="text-lg font-bold font-display text-text-primary">
+                Edit Candidate Profile
+              </h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="p-1 text-[#A7AFBC] hover:text-[#F5F7FA]"
+                className="p-1 text-text-secondary hover:text-text-primary"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {editErrorMsg && (
-              <div className="p-3 rounded-lg bg-[#FF5C67]/10 border border-[#FF5C67]/30 text-xs text-[#FF5C67] flex items-center gap-2">
+              <div className="p-3 rounded-lg bg-danger/10 border border-danger/30 text-xs text-danger flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{editErrorMsg}</span>
               </div>
@@ -505,7 +599,9 @@ export function CandidateClient({
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Full Name *</label>
+                  <label className="text-xs font-semibold text-text-secondary">
+                    Full Name *
+                  </label>
                   <Input
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
@@ -515,7 +611,9 @@ export function CandidateClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Email Address *</label>
+                  <label className="text-xs font-semibold text-text-secondary">
+                    Email Address *
+                  </label>
                   <Input
                     type="email"
                     value={editEmail}
@@ -528,7 +626,9 @@ export function CandidateClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Phone Number</label>
+                  <label className="text-xs font-semibold text-text-secondary">
+                    Phone Number
+                  </label>
                   <Input
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
@@ -537,7 +637,9 @@ export function CandidateClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Location</label>
+                  <label className="text-xs font-semibold text-text-secondary">
+                    Location
+                  </label>
                   <Input
                     value={editLocation}
                     onChange={(e) => setEditLocation(e.target.value)}
@@ -548,7 +650,9 @@ export function CandidateClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">LinkedIn URL</label>
+                  <label className="text-xs font-semibold text-text-secondary">
+                    LinkedIn URL
+                  </label>
                   <Input
                     type="url"
                     value={editLinkedinUrl}
@@ -558,7 +662,9 @@ export function CandidateClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#A7AFBC]">Portfolio URL</label>
+                  <label className="text-xs font-semibold text-text-secondary">
+                    Portfolio URL
+                  </label>
                   <Input
                     type="url"
                     value={editPortfolioUrl}
@@ -568,7 +674,7 @@ export function CandidateClient({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#242932]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
                 <Button
                   type="button"
                   variant="secondary"
@@ -577,7 +683,12 @@ export function CandidateClient({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" variant="ai" size="sm" disabled={editSubmitting}>
+                <Button
+                  type="submit"
+                  variant="ai"
+                  size="sm"
+                  disabled={editSubmitting}
+                >
                   {editSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
                   ) : (
@@ -595,16 +706,22 @@ export function CandidateClient({
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[1650] flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-[#08090B]/80 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity"
             onClick={() => setIsDeleteModalOpen(false)}
           />
-          <div className="relative z-[1750] w-full max-w-md rounded-2xl border border-[#FF5C67]/40 bg-[#12151A] p-6 shadow-2xl space-y-4 text-[#F5F7FA]">
-            <div className="flex items-center gap-3 border-b border-[#242932] pb-3 text-[#FF5C67]">
+          <div className="relative z-[1750] w-full max-w-md rounded-2xl border border-danger/40 bg-surface p-6 shadow-sm space-y-4 text-text-primary">
+            <div className="flex items-center gap-3 border-b border-border pb-3 text-danger">
               <AlertCircle className="h-6 w-6" />
-              <h3 className="text-base font-bold font-display">Delete Candidate Profile?</h3>
+              <h3 className="text-base font-bold font-display">
+                Delete Candidate Profile?
+              </h3>
             </div>
-            <p className="text-xs text-[#A7AFBC] leading-relaxed">
-              This will permanently remove <strong className="text-[#F5F7FA]">{candidate.full_name}</strong> and associated recruitment records. This action cannot be undone.
+            <p className="text-xs text-text-secondary leading-relaxed">
+              This will permanently remove{" "}
+              <strong className="text-text-primary">
+                {candidate.full_name}
+              </strong>{" "}
+              and associated recruitment records. This action cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-3 pt-3">
               <Button
@@ -620,7 +737,7 @@ export function CandidateClient({
                 size="sm"
                 onClick={handleDeleteCandidate}
                 disabled={isDeleting}
-                className="border-[#FF5C67]/50 text-[#FF5C67] hover:bg-[#FF5C67]/10"
+                className="border-danger/50 text-danger hover:bg-danger/10"
               >
                 {isDeleting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1.5" />

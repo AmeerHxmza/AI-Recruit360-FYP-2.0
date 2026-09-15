@@ -1,72 +1,38 @@
-from app.schemas.screening import JobAnalysisResult, CVExtractedData, SkillRequirement, CVExtractedExperience
-from app.services.screening.agents import (
-    evaluate_skills,
-    evaluate_experience,
-    evaluate_education,
-    synthesize_screening_decision
-)
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
+import pytest
+from app.services.screening.orchestrator import run_screening_pipeline
+from app.schemas.screening import ScreeningDecisionResult
 
-def test_multi_agent_screening_qualified():
-    job = JobAnalysisResult(
-        normalized_title="Senior AI Engineer",
-        critical_skills=[SkillRequirement(name="Python", importance="critical"), SkillRequirement(name="FastAPI", importance="critical")],
-        important_skills=[SkillRequirement(name="LangGraph", importance="important")],
-        nice_to_have_skills=[],
-        minimum_experience_years=2.0,
-        preferred_experience_years=3.0,
-        education_requirements=["BS Software Engineering"],
-        responsibilities=["Develop production AI microservices"],
-        technical_domains=["AI Development"]
-    )
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["extraction", "provider"])
+async def test_outages_do_not_reject_or_assign_zero(failure):
+    provider=MagicMock(generate_structured=AsyncMock(side_effect=RuntimeError("Provider unavailable")))
+    cv = AsyncMock(side_effect=RuntimeError("Download unavailable")) if failure=="extraction" else AsyncMock(return_value=(b"", "resume.txt", "text/plain", "Resume evidence"))
+    db=MagicMock()
+    with patch("app.services.screening.orchestrator.get_supabase_client",return_value=db), patch("app.services.screening.orchestrator.run_sync",new=AsyncMock(return_value=SimpleNamespace(data=[]))), patch("app.services.screening.orchestrator.get_application_context",new=AsyncMock(return_value=({"status":"applied","organization_id":"org"},{"title":"Engineer"},{"full_name":"Candidate"}))), patch("app.services.screening.orchestrator.get_candidate_cv_data",new=cv), patch("app.services.screening.orchestrator.get_ai_provider",return_value=provider):
+        with pytest.raises(ValueError): await run_screening_pipeline("app")
+    db.rpc.assert_not_called()
 
-    cv = CVExtractedData(
-        candidate_name="Ameer Hamza",
-        skills=["Python", "FastAPI", "LangGraph", "Next.js", "PostgreSQL"],
-        experience=[CVExtractedExperience(title="AI Developer", duration_years=2.5, highlights=["Built FastAPI microservices"])],
-        education=["BS Software Engineering"],
-        projects=[],
-        certifications=[]
-    )
+@pytest.mark.asyncio
+async def test_existing_result_does_not_call_ai():
+    row={"match_score":80,"recommendation":"match","skills_score":80,"experience_score":80,"education_score":80,"keyword_score":80,"matched_skills":[],"missing_skills":[],"matched_experience":[],"missing_requirements":[],"evidence":[],"reasoning_summary":"Saved evidence"}
+    with patch("app.services.screening.orchestrator.get_supabase_client"), patch("app.services.screening.orchestrator.run_sync",new=AsyncMock(return_value=SimpleNamespace(data=[row]))),patch("app.services.screening.orchestrator.get_ai_provider") as provider:
+        result=await run_screening_pipeline("app")
+        assert result.match_score==80
+        provider.assert_not_called()
 
-    skills_eval = evaluate_skills(job, cv)
-    exp_eval = evaluate_experience(job, cv)
-    edu_eval = evaluate_education(job, cv)
-
-    decision = synthesize_screening_decision(job, cv, skills_eval, exp_eval, edu_eval, [])
-
-    assert decision.match_score >= 70.0
-    assert decision.qualified is True
-    assert decision.recommendation in ["match", "strong_match"]
-    assert "Python" in decision.matched_skills
-
-def test_multi_agent_screening_unqualified():
-    job = JobAnalysisResult(
-        normalized_title="Senior AI Engineer",
-        critical_skills=[SkillRequirement(name="Python", importance="critical"), SkillRequirement(name="FastAPI", importance="critical")],
-        important_skills=[SkillRequirement(name="LangGraph", importance="important")],
-        nice_to_have_skills=[],
-        minimum_experience_years=5.0,
-        preferred_experience_years=7.0,
-        education_requirements=["BS CS"],
-        responsibilities=[],
-        technical_domains=[]
-    )
-
-    cv = CVExtractedData(
-        candidate_name="Unqualified Candidate",
-        skills=["Photoshop", "Graphic Design"],
-        experience=[],
-        education=[],
-        projects=[],
-        certifications=[]
-    )
-
-    skills_eval = evaluate_skills(job, cv)
-    exp_eval = evaluate_experience(job, cv)
-    edu_eval = evaluate_education(job, cv)
-
-    decision = synthesize_screening_decision(job, cv, skills_eval, exp_eval, edu_eval, [])
-
-    assert decision.match_score < 70.0
-    assert decision.qualified is False
-    assert decision.recommendation == "no_match"
+@pytest.mark.asyncio
+async def test_screening_uses_configured_threshold_and_atomic_persistence(monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "CV_PASS_THRESHOLD", 70)
+    decision=ScreeningDecisionResult(match_score=80,recommendation="no_match",qualified=False,skills_score=80,experience_score=80,education_score=80,relevance_score=80,matched_skills=["Python"],missing_skills=[],matched_experience=[],missing_requirements=[],evidence=[],reasoning_summary="Relevant project evidence")
+    provider=MagicMock(generate_structured=AsyncMock(return_value=decision))
+    db=MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.eq.return_value.limit.return_value.execute.return_value.data=[]
+    with patch("app.services.screening.orchestrator.get_supabase_client",return_value=db),patch("app.services.screening.orchestrator.get_application_context",new=AsyncMock(return_value=({"status":"applied","organization_id":"org","job_id":"job"},{"title":"Engineer"},{"full_name":"Candidate"}))),patch("app.services.screening.orchestrator.get_candidate_cv_data",new=AsyncMock(return_value=(b"","resume.txt","text/plain","Built Python APIs"))),patch("app.services.screening.orchestrator.get_ai_provider",return_value=provider):
+        result=await run_screening_pipeline("app")
+    assert result.qualified is True
+    assert result.recommendation=="match"
+    assert db.rpc.call_args.args[0]=="save_screening_result"
+    assert db.rpc.call_args.args[1]["_qualified"] is True

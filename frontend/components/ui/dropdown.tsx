@@ -49,9 +49,9 @@ const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-[1500] mt-2 min-w-[200px] rounded-lg border border-[#242932] bg-[#171B21] p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95 duration-150 text-[#F5F7FA]",
+            "absolute z-[1500] mt-2 min-w-[200px] rounded-lg border border-border bg-hover p-1.5 shadow-sm animate-in fade-in-50 zoom-in-95 duration-150 text-text-primary",
             align === "right" ? "right-0" : "left-0",
-            className
+            className,
           )}
         >
           {children}
@@ -61,8 +61,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   );
 };
 
-export interface DropdownItemProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface DropdownItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: React.ReactNode;
   danger?: boolean;
 }
@@ -76,11 +75,11 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
 }) => (
   <button
     className={cn(
-      "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium transition-micro focus:outline-none focus:bg-[#242932]",
+      "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium transition-micro focus:outline-none focus:bg-hover",
       danger
-        ? "text-[#FF5C67] hover:bg-[#FF5C67]/10"
-        : "text-[#A7AFBC] hover:bg-[#242932] hover:text-[#F5F7FA]",
-      className
+        ? "text-danger hover:bg-danger/10"
+        : "text-text-secondary hover:bg-hover hover:text-text-primary",
+      className,
     )}
     {...props}
   >
@@ -90,13 +89,13 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
 );
 
 const DropdownSeparator: React.FC = () => (
-  <div className="my-1 h-px bg-[#242932]" />
+  <div className="my-1 h-px bg-hover" />
 );
 
 const DropdownHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
-  <div className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-[#68717E] uppercase">
+  <div className="px-3 py-1.5 text-xs font-semibold tracking-wider text-text-muted uppercase">
     {children}
   </div>
 );

@@ -1,9 +1,9 @@
+from app.core.operation_lock import serialized
 import json
 import logging
 from app.providers.factory import get_ai_provider
 from app.schemas.interview import GeneratedInterviewQuestion, NextInterviewQuestionResponse
 from app.db.supabase import get_supabase_client, run_sync
-from app.services.ai_activity import log_ai_activity
 
 logger = logging.getLogger("ai_service.services.interview.question_generator")
 
@@ -12,12 +12,16 @@ Your goal is to conduct a highly personalized, dynamic, adaptive voice technical
 You MUST generate questions tailored specifically to the candidate's actual CV/Resume, their stated projects, technologies, and the target job position requirements.
 Do NOT generate generic textbook questions. Ground your questions in the candidate's actual background and previous answers in this session."""
 
+@serialized("interview")
 async def get_or_create_interview_session(application_id: str) -> dict:
     supabase = get_supabase_client()
     res = await run_sync(lambda: supabase.table("interviews").select("*").eq("application_id", application_id).order("created_at", desc=True).execute())
     if res.data and len(res.data) > 0:
         for s in res.data:
             if s.get("status") in ["pending", "in_progress"]:
+                s["interview_id"] = s["id"]
+                return s
+            if s.get("status") == "completed":
                 s["interview_id"] = s["id"]
                 return s
 
@@ -28,7 +32,7 @@ async def get_or_create_interview_session(application_id: str) -> dict:
         
     app_record = app_rec.data[0]
     current_status = app_record.get("status")
-    if current_status in ["knocked_out", "assessment_failed", "rejected"]:
+    if current_status != "interview":
         raise ValueError(f"Application {application_id} is in status '{current_status}'. Not eligible for interview.")
         
     org_id = app_record.get("organization_id")
@@ -37,7 +41,7 @@ async def get_or_create_interview_session(application_id: str) -> dict:
     int_payload = {
         "application_id": application_id,
         "interview_type": "ai_adaptive",
-        "status": "pending"
+        "status": "in_progress"
     }
     if org_id:
         int_payload["organization_id"] = org_id
@@ -48,16 +52,10 @@ async def get_or_create_interview_session(application_id: str) -> dict:
     interview_id = interview_session["id"]
     interview_session["interview_id"] = interview_id
 
-    if org_id:
-        await log_ai_activity(
-            application_id=application_id,
-            event_type="interview_started",
-            organization_id=org_id,
-            metadata={"interview_id": interview_id}
-        )
         
     return interview_session
 
+@serialized("interview")
 async def generate_next_interview_question(interview_id: str) -> NextInterviewQuestionResponse:
     supabase = get_supabase_client()
 
@@ -76,7 +74,7 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
 
     job_title = job.get("title", "Software Engineer")
     job_desc = job.get("description") or job.get("raw_text") or "Technical position"
-    job_reqs = job.get("requirements_structured") or {}
+    job_desc += "\n" + (job.get("requirements") or "")
     cand_name = cand.get("full_name", "Candidate")
 
     # 1. Fetch Candidate's uploaded CV / Resume extracted text
@@ -90,15 +88,6 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
         if doc_res.data and len(doc_res.data) > 0:
             cv_text = doc_res.data[0].get("extracted_text") or ""
         
-        if not cv_text and candidate_id:
-            cand_doc = await run_sync(lambda: supabase.table("candidate_documents")
-                .select("extracted_text, original_filename")
-                .eq("candidate_id", candidate_id)
-                .order("created_at", desc=True)
-                .limit(1)
-                .execute())
-            if cand_doc.data and len(cand_doc.data) > 0:
-                cv_text = cand_doc.data[0].get("extracted_text") or ""
     except Exception as doc_err:
         logger.warning(f"Could not retrieve candidate document text: {doc_err}")
 
@@ -124,12 +113,14 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
     q_res = await run_sync(lambda: supabase.table("interview_questions").select("*").eq("interview_id", interview_id).order("question_number").execute())
     existing_questions = q_res.data or []
 
-    resp_res = await run_sync(lambda: supabase.table("interview_responses").select("question_id, response_text, transcript, technical_score, ai_feedback").eq("interview_id", interview_id).execute())
+    resp_res = await run_sync(lambda: supabase.table("interview_responses").select("question_id, response_text, transcript, technical_score, communication_score, relevance_score, ai_feedback").eq("interview_id", interview_id).execute())
     responses = resp_res.data or []
     resp_map = {r["question_id"]: r for r in responses}
     answered_q_ids = set(resp_map.keys())
 
-    total_allowed = 5
+    total_allowed = interview.get("total_questions") or 5
+    if app.get("status") not in ("interview", "evaluation", "shortlisted", "hired", "rejected"):
+        raise ValueError("Application is not eligible for interview.")
 
     # If there is already an unanswered question generated, return it first (recovery / page reload)
     for eq in existing_questions:
@@ -143,7 +134,7 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
                     question_text=eq["question_text"],
                     question_type=eq.get("question_type", "technical"),
                     skill_category=eq.get("skill_category", "Technical Competency"),
-                    source=eq.get("source", "ai_adaptive"),
+                    source=eq.get("source", "adaptive"),
                     is_follow_up=eq.get("is_follow_up", False)
                 ),
                 questions_answered=len(answered_q_ids),
@@ -161,7 +152,7 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
                 item_scores = [s for s in (ts, cs, rs) if s is not None]
                 if item_scores:
                     scores.append(sum(item_scores) / len(item_scores))
-            avg_score = round(sum(scores) / len(scores), 1) if scores else 85.0
+            avg_score = round(sum(scores) / len(scores), 1) if scores else None
 
             await run_sync(lambda: supabase.table("interviews").update({
                 "status": "completed",
@@ -169,14 +160,6 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
                 "overall_score": avg_score
             }).eq("id", interview_id).execute())
 
-            org_id = app.get("organization_id")
-            if org_id:
-                await log_ai_activity(
-                    application_id=interview["application_id"],
-                    event_type="interview_evaluated",
-                    organization_id=org_id,
-                    metadata={"interview_id": interview_id, "questions_answered": len(answered_q_ids), "overall_score": avg_score}
-                )
 
         return NextInterviewQuestionResponse(
             interview_id=interview_id,
@@ -248,10 +231,7 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
         q_type = generated.question_type
         skill_cat = generated.skill_category
     except Exception as e:
-        logger.warning(f"Interview question generation AI failed, using fallback: {str(e)}")
-        q_text = f"Looking at your experience as {cand_name}, could you explain how you would design and optimize a production-ready system for the {job_title} role?"
-        q_type = "technical"
-        skill_cat = "System Architecture"
+        raise ValueError("Question generation is temporarily unavailable. Please retry.") from e
 
     # Insert into interview_questions table
     ins = await run_sync(lambda: supabase.table("interview_questions").insert({
@@ -259,7 +239,9 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
         "question_number": question_num,
         "question_text": q_text,
         "question_type": q_type,
-        "skill_category": skill_cat
+        "skill_category": skill_cat,
+        "source": "adaptive",
+        "is_follow_up": question_num == 4
     }).execute())
 
     db_q = ins.data[0]
@@ -273,7 +255,7 @@ async def generate_next_interview_question(interview_id: str) -> NextInterviewQu
             question_text=db_q["question_text"],
             question_type=db_q["question_type"],
             skill_category=db_q["skill_category"],
-            source="ai_adaptive",
+            source="adaptive",
             is_follow_up=(question_num == 4)
         ),
         questions_answered=len(answered_q_ids),

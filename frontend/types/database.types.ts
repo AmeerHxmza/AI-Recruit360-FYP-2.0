@@ -6,9 +6,11 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type OrganizationRole = "owner" | "admin" | "recruiter" | "interviewer" | "viewer";
+export type OrganizationRole =
+  "owner" | "admin" | "recruiter" | "interviewer" | "viewer";
 export type JobStatus = "draft" | "active" | "paused" | "closed";
-export type EmploymentType = "full_time" | "part_time" | "contract" | "internship";
+export type EmploymentType =
+  "full_time" | "part_time" | "contract" | "internship";
 export type WorkplaceType = "on_site" | "hybrid" | "remote";
 
 export type ApplicationStatus =
@@ -23,17 +25,29 @@ export type ApplicationStatus =
   | "rejected"
   | "hired";
 
-export type DocumentType = "resume" | "cover_letter" | "portfolio" | "assessment" | "other";
-export type ExtractionStatus = "pending" | "processing" | "completed" | "failed";
+export type DocumentType =
+  "resume" | "cover_letter" | "portfolio" | "assessment" | "other";
+export type ExtractionStatus =
+  "pending" | "processing" | "completed" | "failed";
 
-export type CvRecommendation = "strong_match" | "match" | "borderline" | "no_match";
-export type AssessmentStatus = "pending" | "in_progress" | "completed" | "failed" | "abandoned";
+export type CvRecommendation =
+  "strong_match" | "match" | "borderline" | "no_match";
+export type AssessmentStatus =
+  "pending" | "in_progress" | "completed" | "failed" | "abandoned";
 
-export type InterviewStatus = "pending" | "in_progress" | "completed" | "abandoned" | "scheduled" | "cancelled";
-export type InterviewType = "ai_adaptive" | "technical" | "behavioral" | "screening";
+export type InterviewStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "abandoned"
+  | "scheduled"
+  | "cancelled";
+export type InterviewType =
+  "ai_adaptive" | "technical" | "behavioral" | "screening";
 export type QuestionSource = "job" | "cv" | "previous_answer" | "adaptive";
 
-export type FinalRecommendation = "strong_hire" | "hire" | "review" | "no_hire" | "strong_no_hire";
+export type FinalRecommendation =
+  "strong_hire" | "hire" | "review" | "no_hire" | "strong_no_hire";
 export type EvaluationStatus = "pending" | "in_review" | "completed";
 
 export type AiEventType =
@@ -244,6 +258,7 @@ export type Database = {
           job_id: string;
           candidate_id: string;
           status: ApplicationStatus;
+          submission_key?: string;
           applied_at: string;
           screening_started_at: string | null;
           screening_completed_at: string | null;
@@ -296,7 +311,7 @@ export type Database = {
           id: string;
           organization_id: string;
           candidate_id: string;
-          application_id: string;
+          application_id: string | null;
           document_type: DocumentType;
           storage_path: string;
           original_filename: string;
@@ -313,7 +328,7 @@ export type Database = {
           id?: string;
           organization_id: string;
           candidate_id: string;
-          application_id: string;
+          application_id: string | null;
           document_type?: DocumentType;
           storage_path: string;
           original_filename: string;
@@ -330,7 +345,7 @@ export type Database = {
           id?: string;
           organization_id?: string;
           candidate_id?: string;
-          application_id?: string;
+          application_id?: string | null;
           document_type?: DocumentType;
           storage_path?: string;
           original_filename?: string;
@@ -463,6 +478,7 @@ export type Database = {
         Row: {
           id: string;
           assessment_id: string;
+          presented_at?: string | null;
           question_number: number;
           question: string;
           option_a: string;
@@ -478,6 +494,7 @@ export type Database = {
         Insert: {
           id?: string;
           assessment_id: string;
+          presented_at?: string | null;
           question_number: number;
           question: string;
           option_a: string;
@@ -493,6 +510,7 @@ export type Database = {
         Update: {
           id?: string;
           assessment_id?: string;
+          presented_at?: string | null;
           question_number?: number;
           question?: string;
           option_a?: string;
@@ -800,6 +818,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      search_workspace_applications: {
+        Args: {
+          _org: string;
+          _stage: string;
+          _search: string;
+          _page: number;
+          _size: number;
+        };
+        Returns: Json[];
+      };
+      workspace_dashboard: { Args: { _org: string }; Returns: Json };
+      submit_candidate_application: { Args: { payload: Json }; Returns: Json };
       is_org_member: {
         Args: { _org_id: string };
         Returns: boolean;

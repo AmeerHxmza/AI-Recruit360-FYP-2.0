@@ -57,8 +57,9 @@ def configure_logging() -> None:
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
-    root_logger.setLevel(logging.DEBUG if settings.ENVIRONMENT != "production" else logging.INFO)
+    # HTTP/2 and SDK debug logs can contain request headers and resume content.
+    root_logger.setLevel(logging.INFO)
 
     # Quieten noisy third-party loggers
-    for noisy in ("uvicorn.access", "httpx", "httpcore", "supabase"):
+    for noisy in ("uvicorn.access", "httpx", "httpcore", "supabase", "openai", "hpack", "h2"):
         logging.getLogger(noisy).setLevel(logging.WARNING)

@@ -4,48 +4,48 @@
 
 export const colors = {
   background: {
-    primary: "#08090B",
-    secondary: "#0D0F12",
-    surface: "#12151A",
-    elevated: "#171B21",
+    primary: "#08090C",
+    secondary: "#0E1117",
+    surface: "#12161E",
+    elevated: "#161B24",
   },
   border: {
-    default: "#242932",
-    subtle: "#1C212A",
-    focus: "#39D9FF",
+    default: "rgba(255, 255, 255, 0.08)",
+    subtle: "rgba(255, 255, 255, 0.05)",
+    focus: "#2F7BFF",
   },
   text: {
-    primary: "#F5F7FA",
-    secondary: "#A7AFBC",
-    muted: "#68717E",
+    primary: "#F8FAFC",
+    secondary: "#94A3B8",
+    muted: "#64748B",
   },
   accent: {
-    ai: "#39D9FF",
-    bright: "#63E3FF",
+    ai: "#2F7BFF",
+    bright: "#38BDF8",
   },
   status: {
-    success: "#35D07F",
-    warning: "#F5B942",
-    danger: "#FF5C67",
+    success: "#10B981",
+    warning: "#F59E0B",
+    danger: "#EF4444",
   },
 } as const;
 
 export const spacing = {
   xs: "0.25rem", // 4px
-  sm: "0.5rem",  // 8px
-  md: "1rem",    // 16px
-  lg: "1.5rem",  // 24px
-  xl: "2rem",    // 32px
+  sm: "0.5rem", // 8px
+  md: "1rem", // 16px
+  lg: "1.5rem", // 24px
+  xl: "2rem", // 32px
   "2xl": "3rem", // 48px
 } as const;
 
 export const radii = {
   none: "0px",
   xs: "0.25rem", // 4px
-  sm: "0.375rem",// 6px
-  md: "0.5rem",  // 8px
+  sm: "0.375rem", // 6px
+  md: "0.5rem", // 8px
   lg: "0.75rem", // 12px
-  xl: "1rem",    // 16px
+  xl: "1rem", // 16px
   full: "9999px",
 } as const;
 
@@ -56,13 +56,13 @@ export const typography = {
     mono: "var(--font-geist-mono), monospace",
   },
   fontSize: {
-    xs: ["0.75rem", { lineHeight: "1rem" }],      // 12px
-    sm: ["0.875rem", { lineHeight: "1.25rem" }],  // 14px
-    base: ["1rem", { lineHeight: "1.5rem" }],     // 16px
-    lg: ["1.125rem", { lineHeight: "1.75rem" }],  // 18px
-    xl: ["1.25rem", { lineHeight: "1.75rem" }],   // 20px
-    "2xl": ["1.5rem", { lineHeight: "2rem" }],    // 24px
-    "3xl": ["1.875rem", { lineHeight: "2.25rem" }],// 30px
+    xs: ["0.75rem", { lineHeight: "1rem" }], // 12px
+    sm: ["0.875rem", { lineHeight: "1.25rem" }], // 14px
+    base: ["1rem", { lineHeight: "1.5rem" }], // 16px
+    lg: ["1.125rem", { lineHeight: "1.75rem" }], // 18px
+    xl: ["1.25rem", { lineHeight: "1.75rem" }], // 20px
+    "2xl": ["1.5rem", { lineHeight: "2rem" }], // 24px
+    "3xl": ["1.875rem", { lineHeight: "2.25rem" }], // 30px
     "4xl": ["2.25rem", { lineHeight: "2.5rem" }], // 36px
   },
   fontWeight: {

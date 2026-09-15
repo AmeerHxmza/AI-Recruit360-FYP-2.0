@@ -13,12 +13,15 @@ function DashboardSkeleton() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-28 rounded-xl bg-[#131B2A] border border-[#1E293B] animate-pulse" />
+          <div
+            key={i}
+            className="h-28 rounded-xl bg-surface border border-border animate-pulse"
+          />
         ))}
       </div>
-      <div className="h-64 rounded-xl bg-[#131B2A] border border-[#1E293B] animate-pulse flex items-center justify-center">
-        <div className="flex items-center gap-2 text-xs text-[#94A3B8] font-mono">
-          <Loader2 className="h-4 w-4 text-[#38BDF8] animate-spin" />
+      <div className="h-64 rounded-xl bg-surface border border-border animate-pulse flex items-center justify-center">
+        <div className="flex items-center gap-2 text-xs text-text-secondary font-mono">
+          <Loader2 className="h-4 w-4 text-action-blue animate-spin" />
           <span>Streaming Workspace Data...</span>
         </div>
       </div>
@@ -26,14 +29,17 @@ function DashboardSkeleton() {
   );
 }
 
-async function DashboardServerData({ userName, orgId }: { userName: string, orgId: string }) {
+async function DashboardServerData({
+  userName,
+  orgId,
+}: {
+  userName: string;
+  orgId: string;
+}) {
   const dashboardData = await getDashboardDataForOrg(orgId);
 
   return (
-    <DashboardClientView
-      initialData={dashboardData}
-      userName={userName}
-    />
+    <DashboardClientView initialData={dashboardData} userName={userName} />
   );
 }
 
@@ -41,13 +47,14 @@ export default async function DashboardPage() {
   const ctx = await getOrganizationContext();
   if (!ctx) redirect("/onboarding/organization");
 
-  const userName = ctx.profile.full_name || ctx.user.email?.split("@")[0] || "Recruiter";
+  const userName =
+    ctx.profile.full_name || ctx.user.email?.split("@")[0] || "Recruiter";
   const orgName = ctx.organization.name;
 
   return (
     <ApplicationShell
       activeNavId="dashboard"
-      pageBreadcrumb={[orgName || "AI-Recruit360", "Command Center", "Overview"]}
+      pageBreadcrumb={[orgName || "AI-Recruit360", "Overview"]}
     >
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardServerData userName={userName} orgId={ctx.organization.id} />

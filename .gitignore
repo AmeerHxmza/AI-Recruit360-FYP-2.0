@@ -63,3 +63,7 @@ pnpm-debug.log*
 scratch/
 tmp/
 temp/
+# Local verification output
+.artifacts/
+build-results.txt
+lint-results.txt

@@ -11,9 +11,9 @@ export const revalidate = 0; // Dynamic server component
 function JobsSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-96 rounded-xl bg-[#131B2A] border border-[#1E293B] animate-pulse flex items-center justify-center">
-        <div className="flex items-center gap-2 text-xs text-[#94A3B8] font-mono">
-          <Loader2 className="h-4 w-4 text-[#38BDF8] animate-spin" />
+      <div className="h-96 rounded-xl bg-surface border border-border animate-pulse flex items-center justify-center">
+        <div className="flex items-center gap-2 text-xs text-text-secondary font-mono">
+          <Loader2 className="h-4 w-4 text-action-blue animate-spin" />
           <span>Streaming Jobs Directory...</span>
         </div>
       </div>
@@ -23,15 +23,16 @@ function JobsSkeleton() {
 
 import { OrganizationRole } from "@/types/database.types";
 
-async function JobsServerData({ role, orgId }: { role: OrganizationRole, orgId: string }) {
+async function JobsServerData({
+  role,
+  orgId,
+}: {
+  role: OrganizationRole;
+  orgId: string;
+}) {
   const jobs = await getJobsForOrg(orgId);
 
-  return (
-    <JobsClientView
-      initialJobs={jobs}
-      role={role}
-    />
-  );
+  return <JobsClientView initialJobs={jobs} role={role} />;
 }
 
 export default async function JobsPage() {

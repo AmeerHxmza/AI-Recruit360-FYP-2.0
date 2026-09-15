@@ -2,9 +2,19 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser, getCurrentMembership, getOrganizationContext } from "@/lib/auth/session";
-import { createOrganization, Organization } from "@/lib/services/organization-service";
-import { getDashboardDataForOrg, DashboardData } from "@/lib/services/dashboard-service";
+import {
+  getCurrentUser,
+  getCurrentMembership,
+  getOrganizationContext,
+} from "@/lib/auth/session";
+import {
+  createOrganization,
+  Organization,
+} from "@/lib/services/organization-service";
+import {
+  getDashboardDataForOrg,
+  DashboardData,
+} from "@/lib/services/dashboard-service";
 import { AppError } from "@/lib/utils/errors";
 
 export interface CreateOrganizationActionResult {
@@ -15,7 +25,7 @@ export interface CreateOrganizationActionResult {
 
 export async function createOrganizationAction(
   name: string,
-  slug: string
+  slug: string,
 ): Promise<CreateOrganizationActionResult> {
   try {
     // 1. Verify user authentication
@@ -57,12 +67,15 @@ export async function createOrganizationAction(
       if (err.message.includes("unique") || err.message.includes("slug")) {
         return {
           success: false,
-          error: "An organization with this URL slug already exists. Please choose a different slug.",
+          error:
+            "An organization with this URL slug already exists. Please choose a different slug.",
         };
       }
       return {
         success: false,
-        error: err.message || "An unexpected error occurred while creating your organization.",
+        error:
+          err.message ||
+          "An unexpected error occurred while creating your organization.",
       };
     }
 
@@ -74,7 +87,7 @@ export async function createOrganizationAction(
 }
 
 export async function switchOrganizationAction(
-  orgId: string
+  orgId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await getCurrentUser();
@@ -103,7 +116,10 @@ export async function switchOrganizationAction(
     if (err instanceof AppError) {
       return { success: false, error: err.message };
     }
-    return { success: false, error: "Failed to switch organization workspace." };
+    return {
+      success: false,
+      error: "Failed to switch organization workspace.",
+    };
   }
 }
 

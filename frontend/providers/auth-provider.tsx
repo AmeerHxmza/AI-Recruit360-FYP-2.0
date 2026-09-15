@@ -8,8 +8,10 @@ import { Database, OrganizationRole } from "@/types/database.types";
 import { switchOrganizationAction } from "@/app/actions/organization";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
-export type OrganizationRow = Database["public"]["Tables"]["organizations"]["Row"];
-export type OrganizationMemberRow = Database["public"]["Tables"]["organization_members"]["Row"];
+export type OrganizationRow =
+  Database["public"]["Tables"]["organizations"]["Row"];
+export type OrganizationMemberRow =
+  Database["public"]["Tables"]["organization_members"]["Row"];
 
 export interface AuthMetadata {
   fullName: string;
@@ -33,9 +35,7 @@ export interface AuthContextType {
   switchOrganization: (orgId: string) => Promise<void>;
 }
 
-const AuthContext = React.createContext<AuthContextType | undefined>(
-  undefined
-);
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
@@ -43,9 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState<boolean>(true);
 
   const [profile, setProfile] = React.useState<ProfileRow | null>(null);
-  const [organization, setOrganization] = React.useState<OrganizationRow | null>(null);
-  const [membership, setMembership] = React.useState<OrganizationMemberRow | null>(null);
-  const [organizations, setOrganizations] = React.useState<OrganizationRow[]>([]);
+  const [organization, setOrganization] =
+    React.useState<OrganizationRow | null>(null);
+  const [membership, setMembership] =
+    React.useState<OrganizationMemberRow | null>(null);
+  const [organizations, setOrganizations] = React.useState<OrganizationRow[]>(
+    [],
+  );
   const [role, setRole] = React.useState<OrganizationRole | null>(null);
 
   const router = useRouter();
@@ -75,12 +79,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const [{ data: prof }, { data: memberRows }] = await Promise.all([
           supabase
             .from("profiles")
-            .select("id, full_name, avatar_url, job_title, created_at, updated_at")
+            .select(
+              "id, full_name, avatar_url, job_title, created_at, updated_at",
+            )
             .eq("id", currentUser.id)
             .single(),
           supabase
             .from("organization_members")
-            .select("id, organization_id, user_id, role, created_at, organizations(id, name, slug, created_by, created_at, updated_at)")
+            .select(
+              "id, organization_id, user_id, role, created_at, organizations(id, name, slug, created_by, created_at, updated_at)",
+            )
             .eq("user_id", currentUser.id),
         ]);
 
@@ -89,7 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (memberRows && memberRows.length > 0) {
           // Extract organizations from the joined data (no 3rd query needed)
           const orgs = memberRows
-            .map((m: Record<string, unknown>) => m.organizations as OrganizationRow | null)
+            .map(
+              (m: Record<string, unknown>) =>
+                m.organizations as OrganizationRow | null,
+            )
             .filter(Boolean) as OrganizationRow[];
 
           if (orgs.length > 0) {
@@ -97,7 +108,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Determine active organization
             const activeMember = memberRows[0];
-            const activeOrg = orgs.find((o) => o.id === activeMember.organization_id) || orgs[0];
+            const activeOrg =
+              orgs.find((o) => o.id === activeMember.organization_id) ||
+              orgs[0];
             setMembership(activeMember as OrganizationMemberRow);
             setRole(activeMember.role as OrganizationRole);
             setOrganization(activeOrg);
@@ -115,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Error fetching auth context data:", err);
       }
     },
-    [supabase]
+    [supabase],
   );
 
   const refreshSession = React.useCallback(async () => {
@@ -146,10 +159,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await refreshSession();
         router.refresh();
       } else {
-        throw new Error(res.error || "Failed to switch organization workspace.");
+        throw new Error(
+          res.error || "Failed to switch organization workspace.",
+        );
       }
     },
-    [refreshSession, router]
+    [refreshSession, router],
   );
 
   React.useEffect(() => {
@@ -160,17 +175,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isMounted = true;
 
-    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
-      if (isMounted) {
-        setSession(initialSession);
-        const currentUser = initialSession?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          await fetchContextData(currentUser);
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session: initialSession } }) => {
+        if (isMounted) {
+          setSession(initialSession);
+          const currentUser = initialSession?.user ?? null;
+          setUser(currentUser);
+          if (currentUser) {
+            await fetchContextData(currentUser);
+          }
+          setLoading(false);
         }
-        setLoading(false);
-      }
-    });
+      });
 
     const {
       data: { subscription },
@@ -230,9 +247,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
 
     const fullUserTitle =
-      profile?.full_name || meta.full_name || meta.name || formattedPrefix || "Recruiter";
-    const activeOrgName = organization?.name || meta.organization || "AI-Recruit360 Workspace";
-    const formattedRole = role ? role.charAt(0).toUpperCase() + role.slice(1) : "Member";
+      profile?.full_name ||
+      meta.full_name ||
+      meta.name ||
+      formattedPrefix ||
+      "Recruiter";
+    const activeOrgName =
+      organization?.name || meta.organization || "AI-Recruit360 Workspace";
+    const formattedRole = role
+      ? role.charAt(0).toUpperCase() + role.slice(1)
+      : "Member";
 
     return {
       fullName: fullUserTitle,
@@ -270,7 +294,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut,
       refreshSession,
       switchOrganization,
-    ]
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

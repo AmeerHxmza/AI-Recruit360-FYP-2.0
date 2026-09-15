@@ -23,7 +23,9 @@ export interface ActionResult<T> {
   error?: string;
 }
 
-export async function getInterviewsAction(): Promise<ActionResult<InterviewItemWithDetails[]>> {
+export async function getInterviewsAction(): Promise<
+  ActionResult<InterviewItemWithDetails[]>
+> {
   try {
     const org = await getCurrentOrganization();
     const interviews = await getInterviewsForOrgWithDetails(org.id);
@@ -37,8 +39,14 @@ export async function getInterviewsAction(): Promise<ActionResult<InterviewItemW
 }
 
 export async function getInterviewByIdAction(
-  interviewId: string
-): Promise<ActionResult<{ interview: InterviewItemWithDetails; questions: InterviewQuestion[]; responses: InterviewResponse[] }>> {
+  interviewId: string,
+): Promise<
+  ActionResult<{
+    interview: InterviewItemWithDetails;
+    questions: InterviewQuestion[];
+    responses: InterviewResponse[];
+  }>
+> {
   try {
     const org = await getCurrentOrganization();
     const interview = await getInterviewByIdWithDetails(org.id, interviewId);
@@ -80,11 +88,15 @@ export async function createInterviewAction(input: {
 
 export async function updateInterviewStatusAction(
   interviewId: string,
-  newStatus: InterviewStatus
+  newStatus: InterviewStatus,
 ): Promise<ActionResult<Interview>> {
   try {
     const org = await getCurrentOrganization();
-    const interview = await updateInterviewStatus(org.id, interviewId, newStatus);
+    const interview = await updateInterviewStatus(
+      org.id,
+      interviewId,
+      newStatus,
+    );
 
     revalidatePath("/interviews");
     revalidatePath(`/interviews/${interviewId}`);

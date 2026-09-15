@@ -19,7 +19,10 @@ import {
   CreateCandidateInput,
   UpdateCandidateInput,
 } from "@/lib/services/candidate-service";
-import { getCandidateIntelligence, CandidateIntelligence } from "@/lib/services/candidate-intelligence-service";
+import {
+  getCandidateIntelligence,
+  CandidateIntelligence,
+} from "@/lib/services/candidate-intelligence-service";
 import { AppError } from "@/lib/utils/errors";
 
 export interface ActionResult<T> {
@@ -29,7 +32,7 @@ export interface ActionResult<T> {
 }
 
 export async function getCandidatesAction(
-  filters?: CandidateFilters
+  filters?: CandidateFilters,
 ): Promise<ActionResult<PaginatedCandidatesResult>> {
   try {
     const org = await getCurrentOrganization();
@@ -43,7 +46,9 @@ export async function getCandidatesAction(
   }
 }
 
-export async function getCandidateByIdAction(candidateId: string): Promise<ActionResult<Candidate>> {
+export async function getCandidateByIdAction(
+  candidateId: string,
+): Promise<ActionResult<Candidate>> {
   try {
     const org = await getCurrentOrganization();
     const candidate = await getCandidateById(org.id, candidateId);
@@ -57,7 +62,7 @@ export async function getCandidateByIdAction(candidateId: string): Promise<Actio
 }
 
 export async function createCandidateAction(
-  input: CreateCandidateInput
+  input: CreateCandidateInput,
 ): Promise<ActionResult<Candidate>> {
   try {
     const org = await getCurrentOrganization();
@@ -77,7 +82,7 @@ export async function createCandidateAction(
 
 export async function updateCandidateAction(
   candidateId: string,
-  input: UpdateCandidateInput
+  input: UpdateCandidateInput,
 ): Promise<ActionResult<Candidate>> {
   try {
     const org = await getCurrentOrganization();
@@ -96,7 +101,9 @@ export async function updateCandidateAction(
   }
 }
 
-export async function deleteCandidateAction(candidateId: string): Promise<ActionResult<boolean>> {
+export async function deleteCandidateAction(
+  candidateId: string,
+): Promise<ActionResult<boolean>> {
   try {
     const org = await getCurrentOrganization();
     await deleteCandidate(org.id, candidateId);
@@ -114,7 +121,7 @@ export async function deleteCandidateAction(candidateId: string): Promise<Action
 }
 
 export async function getCandidateApplicationsAction(
-  candidateId: string
+  candidateId: string,
 ): Promise<ActionResult<CandidateApplicationItem[]>> {
   try {
     const org = await getCurrentOrganization();
@@ -129,7 +136,7 @@ export async function getCandidateApplicationsAction(
 }
 
 export async function getCandidateDocumentsAction(
-  candidateId: string
+  candidateId: string,
 ): Promise<ActionResult<CandidateDocumentWithUrl[]>> {
   try {
     const org = await getCurrentOrganization();
@@ -144,7 +151,12 @@ export async function getCandidateDocumentsAction(
 }
 
 export async function getCandidateCountsAction(): Promise<
-  ActionResult<{ total: number; withLocation: number; withLinkedin: number; recentCount: number }>
+  ActionResult<{
+    total: number;
+    withLocation: number;
+    withLinkedin: number;
+    recentCount: number;
+  }>
 > {
   try {
     const org = await getCurrentOrganization();
@@ -162,10 +174,11 @@ export async function getCandidateCountsAction(): Promise<
 }
 
 export async function getCandidateIntelligenceAction(
-  candidateId: string
+  candidateId: string,
+  applicationId?: string,
 ): Promise<ActionResult<CandidateIntelligence>> {
   try {
-    const data = await getCandidateIntelligence(candidateId);
+    const data = await getCandidateIntelligence(candidateId, applicationId);
     return { success: true, data };
   } catch (err: unknown) {
     if (err instanceof AppError) {

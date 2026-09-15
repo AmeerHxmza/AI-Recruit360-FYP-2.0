@@ -100,44 +100,65 @@ const ROLE_PERMISSIONS: Record<OrganizationRole, PermissionAction[]> = {
   ],
 };
 
-export function hasPermission(role: OrganizationRole | null | undefined, action: PermissionAction): boolean {
+export function hasPermission(
+  role: OrganizationRole | null | undefined,
+  action: PermissionAction,
+): boolean {
   if (!role) return false;
   const permissions = ROLE_PERMISSIONS[role];
   return permissions ? permissions.includes(action) : false;
 }
 
-export function canManageOrganization(role: OrganizationRole | null | undefined): boolean {
+export function canManageOrganization(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "org:manage");
 }
 
-export function canManageMembers(role: OrganizationRole | null | undefined): boolean {
+export function canManageMembers(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "members:manage");
 }
 
-export function canManageJobs(role: OrganizationRole | null | undefined): boolean {
+export function canManageJobs(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "jobs:create");
 }
 
-export function canManageCandidates(role: OrganizationRole | null | undefined): boolean {
+export function canManageCandidates(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "candidates:manage");
 }
 
-export function canManageApplications(role: OrganizationRole | null | undefined): boolean {
+export function canManageApplications(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "applications:manage");
 }
 
-export function canManageDocuments(role: OrganizationRole | null | undefined): boolean {
+export function canManageDocuments(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "documents:upload");
 }
 
-export function canManageInterviews(role: OrganizationRole | null | undefined): boolean {
+export function canManageInterviews(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "interviews:manage");
 }
 
-export function canManageEvaluations(role: OrganizationRole | null | undefined): boolean {
+export function canManageEvaluations(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "evaluations:manage");
 }
 
-export function canViewSecurityAudit(role: OrganizationRole | null | undefined): boolean {
+export function canViewSecurityAudit(
+  role: OrganizationRole | null | undefined,
+): boolean {
   return hasPermission(role, "audit:view");
 }

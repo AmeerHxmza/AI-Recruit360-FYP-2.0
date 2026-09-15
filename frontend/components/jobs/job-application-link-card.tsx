@@ -10,9 +10,12 @@ interface JobApplicationLinkCardProps {
   jobTitle?: string;
 }
 
-export function JobApplicationLinkCard({ slugOrId }: JobApplicationLinkCardProps) {
+export function JobApplicationLinkCard({
+  slugOrId,
+}: JobApplicationLinkCardProps) {
   const [copied, setCopied] = React.useState(false);
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app";
   const fullUrl = `${baseUrl}/apply/${slugOrId}`;
 
   const handleCopy = async () => {
@@ -35,26 +38,32 @@ export function JobApplicationLinkCard({ slugOrId }: JobApplicationLinkCardProps
   };
 
   return (
-    <Card elevated className="p-5 border-[#39D9FF]/40 bg-[#12151A] space-y-4 shadow-xl relative overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[#242932] pb-3">
+    <Card
+      elevated
+      className="p-5 border-border bg-surface space-y-4 shadow-sm relative overflow-hidden"
+    >
+      <div className="flex items-center justify-between border-b border-border pb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-          <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
+          <Sparkles className="h-4 w-4 text-action-blue" />
+          <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
             Candidate Application Link
           </h3>
         </div>
-        <span className="flex items-center gap-1 text-[10px] font-mono text-[#39D9FF] bg-[#39D9FF]/10 px-2 py-0.5 rounded border border-[#39D9FF]/20">
+        <span className="flex items-center gap-1 text-xs font-mono text-action-blue bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
           <Share2 className="h-3 w-3" /> Public
         </span>
       </div>
 
-      <p className="text-xs text-[#A7AFBC] leading-relaxed">
-        Share this direct link with candidates across job boards, LinkedIn, and careers pages to receive applications.
+      <p className="text-xs text-text-secondary leading-relaxed">
+        Share this direct link with candidates across job boards, LinkedIn, and
+        careers pages to receive applications.
       </p>
 
       {/* URL Display Bar */}
-      <div className="p-2.5 rounded-lg bg-[#0D0F12] border border-[#242932] flex items-center justify-between text-xs font-mono text-[#39D9FF] gap-2">
-        <span className="truncate select-all text-[#CBD5E1] text-[11px]">{fullUrl}</span>
+      <div className="p-2.5 rounded-lg bg-background border border-border flex items-center justify-between text-xs font-mono text-action-blue gap-2">
+        <span className="truncate select-all text-text-secondary text-xs">
+          {fullUrl}
+        </span>
       </div>
 
       {/* Action Buttons */}
@@ -64,7 +73,9 @@ export function JobApplicationLinkCard({ slugOrId }: JobApplicationLinkCardProps
           size="sm"
           onClick={handleCopy}
           className={`flex-1 text-xs gap-1.5 h-8.5 font-medium transition-all ${
-            copied ? "bg-[#35D07F] hover:bg-[#35D07F] text-black font-bold" : "border-[#39D9FF]/40 text-[#39D9FF] hover:bg-[#39D9FF]/10"
+            copied
+              ? "bg-success hover:bg-success text-primary-foreground font-semibold"
+              : "border-border text-text-primary hover:bg-hover"
           }`}
         >
           {copied ? (
@@ -84,7 +95,7 @@ export function JobApplicationLinkCard({ slugOrId }: JobApplicationLinkCardProps
           variant="secondary"
           size="sm"
           onClick={() => window.open(fullUrl, "_blank")}
-          className="text-xs gap-1 h-8.5 px-3 border border-[#242932] text-[#A7AFBC] hover:text-[#F5F7FA]"
+          className="text-xs gap-1 h-8.5 px-3 border border-border text-text-secondary hover:text-text-primary"
           title="Open application page in a new tab"
         >
           <ExternalLink className="h-3.5 w-3.5" />

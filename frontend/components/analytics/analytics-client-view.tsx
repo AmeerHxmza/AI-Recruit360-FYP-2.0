@@ -26,59 +26,107 @@ interface AnalyticsClientViewProps {
   orgName: string;
 }
 
-export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientViewProps) {
+export function AnalyticsClientView({
+  initialData,
+  orgName,
+}: AnalyticsClientViewProps) {
   const router = useRouter();
-  const [data] = React.useState<DashboardData>(initialData);
+  const data = initialData;
 
   const totalApplications = data.metrics.totalApplications ?? 0;
 
   const funnelStages = React.useMemo(() => {
     if (totalApplications === 0) return [];
     return [
-      { step: 1, stage: "Applied & Ingested", count: data.funnel.applied, color: "#A7AFBC", desc: "Total candidate applications submitted" },
-      { step: 2, stage: "CV Screened", count: data.funnel.screening, color: "#39D9FF", desc: "Automated CV extraction & skills matching" },
-      { step: 3, stage: "Technical Assessment", count: data.funnel.assessment, color: "#F5B942", desc: "Dynamic role-specific MCQ test completed" },
-      { step: 4, stage: "Voice AI Interview", count: data.funnel.interview, color: "#63E3FF", desc: "Adaptive voice technical interview conducted" },
-      { step: 5, stage: "AI Final Evaluation", count: data.funnel.evaluation, color: "#35D07F", desc: "Comprehensive scorecards generated" },
-      { step: 6, stage: "Shortlisted for Hire", count: data.funnel.shortlisted, color: "#00E5A3", desc: "Recruiter approved for final hire" },
+      {
+        step: 1,
+        stage: "Applied",
+        count: data.funnel.applied,
+        color: "var(--text-muted)",
+        desc: "Total candidate applications submitted",
+      },
+      {
+        step: 2,
+        stage: "Screened",
+        count: data.funnel.screening,
+        color: "var(--action-blue)",
+        desc: "Automated CV extraction and skills matching",
+      },
+      {
+        step: 3,
+        stage: "Technical assessment",
+        count: data.funnel.assessment,
+        color: "var(--warning)",
+        desc: "Timed MCQ test completed",
+      },
+      {
+        step: 4,
+        stage: "AI interview",
+        count: data.funnel.interview,
+        color: "var(--action-blue)",
+        desc: "Adaptive technical interview conducted",
+      },
+      {
+        step: 5,
+        stage: "Final evaluation",
+        count: data.funnel.evaluation,
+        color: "var(--success)",
+        desc: "Multi-signal scorecard generated",
+      },
+      {
+        step: 6,
+        stage: "Shortlisted",
+        count: data.funnel.shortlisted,
+        color: "var(--success)",
+        desc: "Recruiter approved for final hire",
+      },
     ];
   }, [data, totalApplications]);
 
-  const screeningPassRate = data.aiSummary.totalScreened > 0
-    ? Math.round((data.aiSummary.qualifiedCount / data.aiSummary.totalScreened) * 100)
-    : 0;
+  const screeningPassRate =
+    data.aiSummary.totalScreened > 0
+      ? Math.round(
+          (data.aiSummary.qualifiedCount / data.aiSummary.totalScreened) * 100,
+        )
+      : 0;
 
   return (
-    <ApplicationShell pageBreadcrumb={[orgName || "AI-Recruit360", "Analytics"]}>
+    <ApplicationShell
+      pageBreadcrumb={[orgName || "AI-Recruit360", "Analytics"]}
+    >
       <PageHeader
-        title="Recruitment Analytics & Funnel Intelligence"
-        description="Real-time pipeline progression, candidate conversion rates across hiring stages, and AI screening efficiency metrics."
+        title="Analytics"
+        description="Pipeline progression, stage conversion rates, and recruitment velocity metrics."
       />
 
       {/* Top Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <MetricCard
-          label="Active Positions"
+          label="Active jobs"
           value={data.metrics.activeJobs ?? 0}
-          description="Open recruiting roles"
+          description="Open recruitment positions"
           icon={<Clock className="h-4 w-4" />}
         />
         <MetricCard
-          label="Pipeline Volume"
+          label="Pipeline volume"
           value={data.metrics.totalApplications ?? 0}
-          description="Submitted candidate profiles"
+          description="Total candidate applications"
           icon={<TrendingUp className="h-4 w-4" />}
         />
         <MetricCard
-          label="AI Screenings"
+          label="CV screenings"
           value={data.aiSummary.totalScreened ?? 0}
-          description="Automated CV evaluations"
+          description="Automated resume analyses"
           icon={<Sparkles className="h-4 w-4" />}
           highlight={true}
         />
         <MetricCard
-          label="Avg Match Score"
-          value={data.aiSummary.averageMatchScore ? `${data.aiSummary.averageMatchScore}%` : "0%"}
+          label="Average match score"
+          value={
+            data.aiSummary.averageMatchScore
+              ? `${data.aiSummary.averageMatchScore}%`
+              : "0%"
+          }
           description="Candidate alignment index"
           icon={<Target className="h-4 w-4" />}
         />
@@ -86,60 +134,81 @@ export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientVie
 
       {/* Analytics Visual Grid or Empty State */}
       {totalApplications === 0 ? (
-        <Card className="p-12 text-center bg-[#12151A] border-[#242932] space-y-4">
-          <BarChart2 className="h-10 w-10 text-[#39D9FF] mx-auto opacity-80" />
-          <div className="max-w-md mx-auto space-y-1">
-            <h4 className="text-base font-bold text-[#F5F7FA]">No recruitment data recorded</h4>
-            <p className="text-xs text-[#A7AFBC]">
-              Analytics and funnel conversion metrics will populate as candidate applications progress through stages.
+        <Card className="p-12 text-center bg-surface border-border space-y-4">
+          <BarChart2 className="h-10 w-10 text-text-muted mx-auto" />
+          <div className="max-w-md mx-auto space-y-1.5">
+            <h4 className="text-base font-semibold text-text-primary">
+              No recruitment data recorded yet
+            </h4>
+            <p className="text-xs text-text-secondary">
+              Analytics and funnel conversion metrics will populate as candidate
+              applications progress through stages.
             </p>
           </div>
           <div className="pt-2">
-            <Button variant="ai" size="sm" onClick={() => router.push("/jobs/new")}>
-              Create First Job Position
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => router.push("/jobs/new")}
+            >
+              Create job
             </Button>
           </div>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Recruitment Funnel Visual */}
-          <Card className="lg:col-span-8 p-6 bg-[#12151A] border-[#242932] space-y-6">
-            <div className="flex items-center justify-between border-b border-[#242932] pb-4">
+          <Card className="lg:col-span-8 p-6 bg-surface border-border space-y-6">
+            <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="space-y-0.5">
-                <h3 className="text-sm font-bold text-[#F5F7FA] font-display flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-[#39D9FF]" /> Workspace Recruitment Funnel
+                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-action-blue" /> Recruitment
+                  pipeline conversion
                 </h3>
-                <p className="text-xs text-[#A7AFBC]">Cumulative conversion rates and stage milestone completions</p>
+                <p className="text-xs text-text-secondary">
+                  Cumulative conversion rates and stage milestone completions
+                </p>
               </div>
-              <span className="text-xs font-mono text-[#39D9FF] bg-[#39D9FF]/10 px-2.5 py-1 rounded-md border border-[#39D9FF]/20">
-                {totalApplications} Total Candidates
+              <span className="text-xs text-text-secondary bg-background px-2.5 py-1 rounded-md border border-border">
+                {totalApplications} total applicants
               </span>
             </div>
 
             <div className="space-y-5">
               {funnelStages.map((stageItem) => {
-                const percentage = totalApplications > 0 ? Math.round((stageItem.count / totalApplications) * 100) : 0;
+                const percentage =
+                  totalApplications > 0
+                    ? Math.round((stageItem.count / totalApplications) * 100)
+                    : 0;
 
                 return (
                   <div key={stageItem.stage} className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#0D0F12] border border-[#242932] text-[10px] font-mono text-[#A7AFBC]">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-background border border-border text-xs text-text-secondary">
                           {stageItem.step}
                         </span>
-                        <span className="font-semibold text-[#F5F7FA]">{stageItem.stage}</span>
-                        <span className="text-[10px] text-[#68717E] hidden sm:inline">— {stageItem.desc}</span>
+                        <span className="font-medium text-text-primary">
+                          {stageItem.stage}
+                        </span>
+                        <span className="text-xs text-text-muted hidden sm:inline">
+                          — {stageItem.desc}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 font-mono">
-                        <span className="text-[#F5F7FA] font-bold">{stageItem.count} Candidates</span>
-                        <span className="text-[#39D9FF] font-semibold">({percentage}%)</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-text-primary font-medium">
+                          {stageItem.count} candidates
+                        </span>
+                        <span className="text-action-blue font-medium">
+                          ({percentage}%)
+                        </span>
                       </div>
                     </div>
-                    <div className="h-3 rounded-full bg-[#0D0F12] border border-[#242932] overflow-hidden p-0.5">
+                    <div className="h-2 rounded-full bg-background border border-border overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-300"
                         style={{
-                          width: `${Math.max(percentage, stageItem.count > 0 ? 4 : 0)}%`,
+                          width: `${Math.max(percentage, stageItem.count > 0 ? 3 : 0)}%`,
                           backgroundColor: stageItem.color,
                         }}
                       />
@@ -149,69 +218,79 @@ export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientVie
               })}
             </div>
 
-            <div className="pt-2 border-t border-[#242932] flex items-center justify-between">
-              <span className="text-xs text-[#A7AFBC]">Looking for candidate-specific hiring scorecards?</span>
+            <div className="pt-2 border-t border-border flex items-center justify-between">
+              <span className="text-xs text-text-secondary">
+                Looking for candidate-specific hiring scorecards?
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push("/evaluations")}
-                className="text-xs text-[#39D9FF] hover:text-[#63E3FF] h-8"
+                className="text-xs text-action-blue hover:text-action-blue h-8"
               >
-                Go to Evaluations <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                Go to evaluations <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </div>
           </Card>
 
           {/* AI Intelligence & Pipeline Distribution */}
           <div className="lg:col-span-4 space-y-6">
-            <Card className="p-6 bg-[#12151A] border-[#242932] space-y-5">
-              <div className="border-b border-[#242932] pb-3 space-y-0.5">
-                <h3 className="text-sm font-bold text-[#F5F7FA] font-display flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[#39D9FF]" /> AI Efficiency Overview
+            <Card className="p-6 bg-surface border-border space-y-5">
+              <div className="border-b border-border pb-3 space-y-0.5">
+                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-action-blue" /> Screening
+                  efficiency
                 </h3>
-                <p className="text-xs text-[#A7AFBC]">Automated CV screening insights</p>
+                <p className="text-xs text-text-secondary">
+                  Automated resume screening insights
+                </p>
               </div>
 
-              <div className="space-y-4 text-xs">
-                <div className="p-4 rounded-xl bg-[#0D0F12] border border-[#35D07F]/20 space-y-2">
-                  <div className="flex justify-between items-center text-[#F5F7FA]">
-                    <span className="font-semibold flex items-center gap-1.5 text-[#35D07F]">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Qualified Candidates
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 rounded-xl bg-background border border-success/20 space-y-1.5">
+                  <div className="flex justify-between items-center text-text-primary">
+                    <span className="font-medium flex items-center gap-1.5 text-success">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Qualified
+                      candidates
                     </span>
-                    <span className="font-mono text-[#35D07F] font-bold">
-                      {data.aiSummary.qualifiedCount} Passed
+                    <span className="text-success font-medium font-sans">
+                      {data.aiSummary.qualifiedCount} passed
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#A7AFBC] leading-relaxed">
-                    {data.aiSummary.qualifiedCount} candidates met the required threshold and proceeded in the pipeline.
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    {data.aiSummary.qualifiedCount} candidates met required
+                    criteria and unlocked assessment.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#0D0F12] border border-[#FF5C67]/20 space-y-2">
-                  <div className="flex justify-between items-center text-[#F5F7FA]">
-                    <span className="font-semibold flex items-center gap-1.5 text-[#FF5C67]">
-                      <XCircle className="w-3.5 h-3.5" /> Knocked Out / Rejected
+                <div className="p-3.5 rounded-xl bg-background border border-danger/20 space-y-1.5">
+                  <div className="flex justify-between items-center text-text-primary">
+                    <span className="font-medium flex items-center gap-1.5 text-danger">
+                      <XCircle className="w-3.5 h-3.5" /> Not advanced
                     </span>
-                    <span className="font-mono text-[#FF5C67] font-bold">
-                      {data.aiSummary.knockedOutCount || data.funnel.knocked_out} Candidates
+                    <span className="text-danger font-medium font-sans">
+                      {data.aiSummary.knockedOutCount ||
+                        data.funnel.knocked_out}{" "}
+                      candidates
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#A7AFBC] leading-relaxed">
-                    Filtered automatically due to low screening match scores or assessment criteria.
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    Filtered automatically due to unmet role requirements or
+                    knockout rules.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#0D0F12] border border-[#242932] space-y-2">
-                  <div className="flex justify-between items-center text-[#F5F7FA]">
-                    <span className="font-semibold flex items-center gap-1.5 text-[#39D9FF]">
-                      <Award className="w-3.5 h-3.5" /> Screening Pass Rate
+                <div className="p-3.5 rounded-xl bg-background border border-border space-y-1.5">
+                  <div className="flex justify-between items-center text-text-primary">
+                    <span className="font-medium flex items-center gap-1.5 text-action-blue">
+                      <Award className="w-3.5 h-3.5" /> Screening pass rate
                     </span>
-                    <span className="font-mono text-[#39D9FF] font-bold">
+                    <span className="text-action-blue font-medium font-sans">
                       {screeningPassRate}%
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#A7AFBC] leading-relaxed">
-                    Ratio of applicants qualifying for technical assessment vs total applications.
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    Ratio of applicants advancing to technical assessment.
                   </p>
                 </div>
               </div>
@@ -222,4 +301,3 @@ export function AnalyticsClientView({ initialData, orgName }: AnalyticsClientVie
     </ApplicationShell>
   );
 }
-

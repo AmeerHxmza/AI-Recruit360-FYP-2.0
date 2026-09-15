@@ -7,7 +7,6 @@ AI Adaptive Interview API — rate-limited.
 import logging
 
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File
-from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.core.rate_limit import limiter
@@ -31,15 +30,28 @@ class NextQuestionRequest(BaseModel):
     interview_id: str
 
 
+class InterviewSpeechRequest(BaseModel):
+    interview_id: str
+    question_id: str
+
+
+@router.post("/speech")
+@limiter.limit("10/minute")
+async def interview_speech(request: Request, req: InterviewSpeechRequest):
+    from app.services.interview.tts import synthesize_question
+    try:
+        return await synthesize_question(req.interview_id, req.question_id)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except Exception as error:
+        logger.warning("Interview speech unavailable: %s", type(error).__name__)
+        raise HTTPException(status_code=503, detail="Interviewer audio is unavailable. You can still read and answer the question.") from error
+
+
 class EvaluateResponseRequest(BaseModel):
     interview_id: str
     question_id: str
     response_text: str
-
-
-class TTSRequest(BaseModel):
-    text: str
-    tld: str = "com"
 
 
 @router.post("/initialize")
@@ -77,85 +89,18 @@ async def evaluate_response(request: Request, req: EvaluateResponseRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/tts")
-@limiter.limit("30/minute")
-async def generate_interview_tts(request: Request, req: TTSRequest):
-    """Generate text-to-speech audio for interview question narration."""
-    try:
-        from app.services.interview.tts import generate_female_voice_tts
-        audio_bytes = await generate_female_voice_tts(req.text, tld=req.tld)
-        return Response(content=audio_bytes, media_type="audio/mpeg")
-    except Exception as e:
-        logger.error(f"TTS audio error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.post("/stt")
 @limiter.limit("30/minute")
 async def process_speech_to_text(request: Request, audio: UploadFile = File(...)):
     """Transcribe audio bytes to text using OpenAI Whisper."""
     try:
         from app.services.interview.stt import transcribe_audio_file
-        content = await audio.read()
+        content = await audio.read(10 * 1024 * 1024 + 1)
+        if len(content) > 10 * 1024 * 1024:
+            raise ValueError("Recording exceeds 10 MB. Please use a shorter answer.")
         transcript = await transcribe_audio_file(content, audio.filename)
         return {"transcript": transcript}
     except Exception as e:
         logger.error(f"STT audio error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/simli-token")
-@limiter.limit("10/minute")
-async def get_simli_token(request: Request):
-    """Fetch Simli WebRTC Session Token."""
-    import httpx
-    try:
-        if not settings.SIMLI_API_KEY:
-            raise ValueError("SIMLI_API_KEY is missing.")
-            
-        url = "https://api.simli.ai/compose/token"
-        payload = {
-            "faceId": settings.SIMLI_FACE_ID or "cace3ef7-a4c4-425d-a8cf-a5358eb0c427",
-            "handleSilence": True,
-            "maxSessionLength": 3600,
-            "maxIdleTime": 300
-        }
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url,
-                json=payload,
-                headers={
-                    "Content-Type": "application/json",
-                    "x-simli-api-key": settings.SIMLI_API_KEY
-                },
-                timeout=15.0
-            )
-            if response.status_code != 200:
-                logger.error(f"[Simli] Token request failed [{response.status_code}]: {response.text}")
-                raise HTTPException(status_code=response.status_code, detail=f"Simli API error: {response.text}")
-            data = response.json()
-            return {"session_token": data.get("session_token", "")}
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"[Simli] Unexpected token error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/degrade-avatar")
-@limiter.limit("5/minute")
-async def degrade_avatar(request: Request, req: NextQuestionRequest):
-    """Mark an interview as having a degraded avatar experience."""
-    try:
-        from app.db.supabase import get_supabase_client, run_sync
-        supabase = get_supabase_client()
-        await run_sync(
-            lambda: supabase.table("interviews")
-            .update({"status": "avatar_degraded"})
-            .eq("id", req.interview_id)
-            .execute()
-        )
-        return {"status": "avatar_degraded marked"}
-    except Exception as e:
-        logger.error(f"Degrade avatar error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))

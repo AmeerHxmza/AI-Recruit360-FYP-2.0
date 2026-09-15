@@ -17,7 +17,9 @@ export interface ActionResult<T> {
   error?: string;
 }
 
-export async function getEvaluationsAction(): Promise<ActionResult<FinalEvaluationItemWithDetails[]>> {
+export async function getEvaluationsAction(): Promise<
+  ActionResult<FinalEvaluationItemWithDetails[]>
+> {
   try {
     const org = await getCurrentOrganization();
     const evaluations = await getEvaluationsForOrgWithDetails(org.id);
@@ -26,7 +28,10 @@ export async function getEvaluationsAction(): Promise<ActionResult<FinalEvaluati
     if (err instanceof AppError) {
       return { success: false, error: err.message };
     }
-    return { success: false, error: "Failed to retrieve candidate evaluations." };
+    return {
+      success: false,
+      error: "Failed to retrieve candidate evaluations.",
+    };
   }
 }
 

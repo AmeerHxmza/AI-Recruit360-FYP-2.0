@@ -1,46 +1,25 @@
-import logging
-import asyncio
-import io
+"""Read saved interview questions using a consistent configured voice."""
+import base64
 from openai import AsyncOpenAI
 from app.core.config import settings
-from app.core.exceptions import AIProviderError
+from app.db.supabase import get_supabase_client, run_sync
 
-logger = logging.getLogger("ai_service.services.interview.tts")
 
-openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
-
-def _generate_gtts_sync(text: str, lang: str, tld: str) -> bytes:
-    from gtts import gTTS
-    tts = gTTS(text=text, lang=lang, tld=tld, slow=False)
-    fp = io.BytesIO()
-    tts.write_to_fp(fp)
-    return fp.getvalue()
-
-async def generate_female_voice_tts(text: str, lang: str = "en", tld: str = "com") -> bytes:
-    """
-    Generate ultra-low-latency voice audio bytes using OpenAI tts-1 (voice: nova),
-    with graceful fallback to gTTS.
-    """
-    if not text or len(text.strip()) == 0:
-        raise AIProviderError("Text input for TTS voice generation cannot be empty.")
-
-    clean_text = text.strip()
-
-    if openai_client and settings.OPENAI_API_KEY:
-        try:
-            response = await openai_client.audio.speech.create(
-                model="tts-1",
-                voice="nova",
-                input=clean_text,
-                speed=1.05
-            )
-            return response.content
-        except Exception as e:
-            logger.warning(f"OpenAI TTS API call failed, falling back to gTTS: {e}")
-
-    try:
-        audio_bytes = await asyncio.to_thread(_generate_gtts_sync, clean_text, lang, tld)
-        return audio_bytes
-    except Exception as e:
-        logger.error(f"gTTS fallback generation failed: {str(e)}")
-        raise AIProviderError(f"Failed to generate interviewer voice audio: {str(e)}")
+async def synthesize_question(interview_id: str, question_id: str) -> dict:
+    db = get_supabase_client()
+    result = await run_sync(lambda: db.table("interview_questions")
+        .select("question_text").eq("id", question_id)
+        .eq("interview_id", interview_id).limit(1).execute())
+    if not result.data:
+        raise ValueError("Question does not belong to this interview.")
+    text = result.data[0]["question_text"]
+    if not text or len(text) > 4000:
+        raise ValueError("Question is unavailable for audio playback.")
+    if not settings.OPENAI_API_KEY:
+        raise ValueError("Configure the backend OpenAI key to enable interviewer speech.")
+    async with AsyncOpenAI(api_key=settings.OPENAI_API_KEY, timeout=45, max_retries=0) as client:
+        response = await client.audio.speech.create(
+            model="tts-1", voice=settings.OPENAI_TTS_VOICE,
+            input=text, response_format="wav",
+        )
+    return {"audio": base64.b64encode(response.content).decode("ascii"), "mime_type": "audio/wav"}

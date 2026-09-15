@@ -8,15 +8,18 @@ interface JobContentRendererProps {
   className?: string;
 }
 
-export function JobContentRenderer({ content, className = "" }: JobContentRendererProps) {
+export function JobContentRenderer({
+  content,
+  className = "",
+}: JobContentRendererProps) {
   if (!content || !content.trim()) {
-    return <p className="text-xs text-[#A7AFBC] italic">No details provided.</p>;
+    return (
+      <p className="text-xs text-text-secondary italic">No details provided.</p>
+    );
   }
 
   // Pre-process content: insert line breaks before common headings if they are squished together
-  let normalized = content
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n");
+  let normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   // Common section headings to split on if pasted without newlines
   const knownHeaders = [
@@ -56,7 +59,9 @@ export function JobContentRenderer({ content, className = "" }: JobContentRender
     .filter(Boolean);
 
   return (
-    <div className={`space-y-4 text-xs text-[#A7AFBC] font-sans ${className}`}>
+    <div
+      className={`space-y-4 text-xs text-text-secondary font-sans ${className}`}
+    >
       {blocks.map((block, bIdx) => {
         const lines = block
           .split("\n")
@@ -70,7 +75,9 @@ export function JobContentRenderer({ content, className = "" }: JobContentRender
         const isHeader =
           firstLine.startsWith("#") ||
           /^[A-Z][A-Za-z\s&/]{2,30}:?$/.test(firstLine) ||
-          knownHeaders.some((kh) => firstLine.toLowerCase().startsWith(kh.toLowerCase()));
+          knownHeaders.some((kh) =>
+            firstLine.toLowerCase().startsWith(kh.toLowerCase()),
+          );
 
         if (isHeader && lines.length > 1) {
           const headerText = firstLine.replace(/^[#\s]+/, "").replace(/:$/, "");
@@ -78,8 +85,8 @@ export function JobContentRenderer({ content, className = "" }: JobContentRender
 
           return (
             <div key={bIdx} className="space-y-2.5 pt-1">
-              <div className="flex items-center gap-2 text-[#F5F7FA] font-bold text-xs uppercase tracking-wider font-display border-b border-[#242932]/60 pb-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#39D9FF]" />
+              <div className="flex items-center gap-2 text-text-primary font-bold text-xs uppercase tracking-wider font-display border-b border-border/60 pb-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-action-blue" />
                 <span>{headerText}</span>
               </div>
               <ul className="space-y-2 pl-1">
@@ -93,19 +100,27 @@ export function JobContentRenderer({ content, className = "" }: JobContentRender
                     const title = cleanedLine.slice(0, colonIdx);
                     const rest = cleanedLine.slice(colonIdx + 1);
                     return (
-                      <li key={lIdx} className="flex items-start gap-2.5 leading-relaxed text-[#CBD5E1]">
-                        <ChevronRight className="w-3.5 h-3.5 text-[#39D9FF] shrink-0 mt-0.5" />
+                      <li
+                        key={lIdx}
+                        className="flex items-start gap-2.5 leading-relaxed text-text-secondary"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5 text-action-blue shrink-0 mt-0.5" />
                         <div>
-                          <strong className="text-[#F5F7FA] font-semibold">{title}:</strong>
-                          <span className="text-[#A7AFBC]">{rest}</span>
+                          <strong className="text-text-primary font-semibold">
+                            {title}:
+                          </strong>
+                          <span className="text-text-secondary">{rest}</span>
                         </div>
                       </li>
                     );
                   }
 
                   return (
-                    <li key={lIdx} className="flex items-start gap-2.5 leading-relaxed text-[#A7AFBC]">
-                      <span className="w-1 h-1 rounded-full bg-[#39D9FF] shrink-0 mt-2" />
+                    <li
+                      key={lIdx}
+                      className="flex items-start gap-2.5 leading-relaxed text-text-secondary"
+                    >
+                      <span className="w-1 h-1 rounded-full bg-action-blue shrink-0 mt-2" />
                       <span>{cleanedLine}</span>
                     </li>
                   );
@@ -124,8 +139,11 @@ export function JobContentRenderer({ content, className = "" }: JobContentRender
               {lines.map((line, lIdx) => {
                 const cleanedLine = line.replace(/^[-*•\d.)\s]+/, "").trim();
                 return (
-                  <li key={lIdx} className="flex items-start gap-2.5 leading-relaxed text-[#CBD5E1]">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#35D07F] shrink-0 mt-0.5" />
+                  <li
+                    key={lIdx}
+                    className="flex items-start gap-2.5 leading-relaxed text-text-secondary"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
                     <span>{cleanedLine}</span>
                   </li>
                 );
@@ -136,7 +154,10 @@ export function JobContentRenderer({ content, className = "" }: JobContentRender
 
         // Standard paragraph
         return (
-          <p key={bIdx} className="leading-relaxed text-[#CBD5E1] whitespace-normal">
+          <p
+            key={bIdx}
+            className="leading-relaxed text-text-secondary whitespace-normal"
+          >
             {block}
           </p>
         );

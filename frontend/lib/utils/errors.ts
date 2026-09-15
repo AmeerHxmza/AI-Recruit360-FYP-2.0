@@ -41,7 +41,9 @@ export class DatabaseError extends AppError {
 }
 
 export class AIProviderError extends AppError {
-  constructor(message = "AI service provider unavailable or failed to generate output") {
+  constructor(
+    message = "AI service provider unavailable or failed to generate output",
+  ) {
     super(message, 502, "AI_PROVIDER_ERROR");
   }
 }
@@ -58,7 +60,11 @@ export class AIConfigError extends AppError {
   }
 }
 
-export function handleServerError(error: unknown): { message: string; code: string; status: number } {
+export function handleServerError(error: unknown): {
+  message: string;
+  code: string;
+  status: number;
+} {
   if (error instanceof AppError) {
     return {
       message: error.message,

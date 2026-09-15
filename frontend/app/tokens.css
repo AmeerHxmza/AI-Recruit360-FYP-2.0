@@ -1,0 +1,47 @@
+/* Hallmark · modern-minimal · recruitment workbench · design-system: design.md
+   Pre-emit critique: Philosophy 4, Hierarchy 5, Execution 4, Specificity 5, Restraint 5, Variety 4. */
+:root {
+  --background: #f5f7fa;
+  --foreground: #172b4d;
+  --sidebar-bg: #172b4d;
+  --surface: #ffffff;
+  --surface-secondary: #f5f7fa;
+  --elevated: #ffffff;
+  --hover: #edf2f8;
+  --border: #dee5ee;
+  --border-subtle: #e9edf3;
+  --border-strong: #b6c3d5;
+  --text-primary: #172b4d;
+  --text-secondary: #52637a;
+  --text-muted: #62718a;
+  --action-blue: #2459c4;
+  --accent-ai: #2459c4;
+  --success: #167348;
+  --warning: #8a5700;
+  --danger: #b42335;
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--action-blue);
+  --primary-foreground: #ffffff;
+  --secondary: var(--hover);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-secondary);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--hover);
+  --accent-foreground: var(--action-blue);
+  --destructive: var(--danger);
+  --input: var(--surface);
+  --ring: var(--action-blue);
+  --radius: 0.5rem;
+  --rail-ink: #f5f8ff;
+  --rail-muted: #bdcce2;
+  --rail-hover: #263e60;
+  --font-body: "Segoe UI", system-ui, sans-serif;
+  --font-heading: "Segoe UI", system-ui, sans-serif;
+  --space-page: 2rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-short: 150ms;
+  --panel-shadow: 0 2px 5px rgb(23 43 77 / 0.025);
+}

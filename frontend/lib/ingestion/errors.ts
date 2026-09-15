@@ -1,7 +1,11 @@
 import { AppError } from "@/lib/utils/errors";
 
 export class DocumentIngestionError extends AppError {
-  constructor(message: string, statusCode = 400, code = "DOCUMENT_INGESTION_ERROR") {
+  constructor(
+    message: string,
+    statusCode = 400,
+    code = "DOCUMENT_INGESTION_ERROR",
+  ) {
     super(message, statusCode, code);
   }
 }
@@ -25,13 +29,18 @@ export class DocumentStorageError extends DocumentIngestionError {
 }
 
 export class DocumentExtractionError extends DocumentIngestionError {
-  constructor(message = "Failed to extract text from document.", code = "DOCUMENT_TEXT_EXTRACTION_FAILED") {
+  constructor(
+    message = "Failed to extract text from document.",
+    code = "DOCUMENT_TEXT_EXTRACTION_FAILED",
+  ) {
     super(message, 422, code);
   }
 }
 
 export class DocumentProcessingError extends DocumentIngestionError {
-  constructor(message = "An error occurred during document ingestion processing.") {
+  constructor(
+    message = "An error occurred during document ingestion processing.",
+  ) {
     super(message, 500, "DOCUMENT_PROCESSING_FAILED");
   }
 }

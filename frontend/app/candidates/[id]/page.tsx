@@ -11,8 +11,15 @@ import {
 
 export const revalidate = 0; // Dynamic server component
 
-export default async function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CandidateDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ application?: string }>;
+}) {
   const resolvedParams = await params;
+  const { application: selectedApplication } = await searchParams;
   const candId = resolvedParams.id;
   const ctx = await getOrganizationContext();
   if (!ctx) redirect("/onboarding/organization");
@@ -22,11 +29,13 @@ export default async function CandidateDetailPage({ params }: { params: Promise<
     getCandidateByIdAction(candId),
     getCandidateApplicationsAction(candId),
     getCandidateDocumentsAction(candId),
-    getCandidateIntelligenceAction(candId),
+    getCandidateIntelligenceAction(candId, selectedApplication),
   ]);
 
   return (
     <CandidateClient
+      key={`${candId}:${selectedApplication || "latest"}`}
+      selectedApplication={selectedApplication}
       initialCandidate={candRes.success && candRes.data ? candRes.data : null}
       initialApplications={appsRes.success && appsRes.data ? appsRes.data : []}
       initialDocuments={docsRes.success && docsRes.data ? docsRes.data : []}

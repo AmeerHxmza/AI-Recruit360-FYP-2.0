@@ -1,80 +1,52 @@
-/**
- * API Client for communicating with the Python FastAPI AI Service (http://localhost:8000/api/v1).
- * Features request timeouts, retry policies, and structured error handling.
- */
-
-if (typeof window !== "undefined") {
-  console.error("CRITICAL SECURITY ERROR: aiServiceClient cannot be imported or executed in the browser.");
-}
+import "server-only";
 
 const AI_SERVICE_BASE_URL =
-  process.env.AI_SERVICE_URL ||
-  process.env.NEXT_PUBLIC_AI_SERVICE_URL ||
-  "https://ai-recruit360-fyp.onrender.com/api/v1";
-const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "recruit360_shared_backend_secret_2026";
-const DEFAULT_TIMEOUT_MS = 90000; // 90s timeout for cold starts and multi-agent LLM reasoning
+  process.env.AI_SERVICE_URL || "http://127.0.0.1:8000/api/v1";
+const SHARED_SECRET = process.env.AI_SERVICE_SHARED_SECRET || "";
 
 async function aiServiceFetch<T>(
   endpoint: string,
   options: RequestInit = {},
-  retries = 2
 ): Promise<T> {
-  if (typeof window !== "undefined") {
-    throw new Error("SECURITY VIOLATION: AI Service cannot be called from the browser.");
-  }
-
-  const url = `${AI_SERVICE_BASE_URL}${endpoint}`;
-  const headers = new Headers(options.headers || {});
+  if (SHARED_SECRET.length < 32)
+    throw new Error(
+      "Configure the shared AI service secret before using assessments.",
+    );
+  const headers = new Headers(options.headers);
   headers.set("Authorization", `Bearer ${SHARED_SECRET}`);
-  
-  if (options.body instanceof FormData) {
-    // Let browser set the multipart/form-data boundary automatically
-    headers.delete("Content-Type");
-  } else if (!headers.has("Content-Type")) {
+  if (!(options.body instanceof FormData))
     headers.set("Content-Type", "application/json");
-  }
-
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
-
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        // Do not retry 4xx user errors
-        if (response.status >= 400 && response.status < 500) {
-          throw new Error(`[HTTP ${response.status}] ${errorText}`);
-        }
-        throw new Error(`[HTTP ${response.status}] ${errorText}`);
-      }
-
-      return await response.json();
-    } catch (err: unknown) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      
-      // If client abort or non-retryable 4xx error, throw immediately
-      if (lastError.name === "AbortError") {
-        throw new Error(`AI Service request timed out after ${DEFAULT_TIMEOUT_MS}ms.`);
-      }
-
-      if (attempt < retries) {
-        // Exponential backoff: 300ms, 600ms
-        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 300));
-      }
+  let response: Response;
+  try {
+    response = await fetch(`${AI_SERVICE_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      cache: "no-store",
+      signal: AbortSignal.timeout(90000),
+    });
+  } catch (error) {
+    const cause = error instanceof Error ? error.cause : undefined;
+    const code =
+      cause && typeof cause === "object" && "code" in cause
+        ? String(cause.code)
+        : "";
+    if (process.env.NODE_ENV !== "production" && code === "ECONNREFUSED") {
+      throw new Error(
+        "The local AI backend is not running. Start FastAPI in a second terminal, then retry screening. Your application is saved.",
+      );
     }
+    throw new Error(
+      "The AI service could not be reached or timed out. Your application is saved; please retry shortly.",
+    );
   }
-
-  throw lastError || new Error("Failed to communicate with AI Engine after retries.");
+  const data = await response.json().catch(() => null);
+  if (!response.ok)
+    throw new Error(
+      typeof data?.detail === "string"
+        ? data.detail
+        : "Could not complete this step. Please retry.",
+    );
+  return data as T;
 }
 
 export interface PythonScreeningResult {
@@ -89,7 +61,11 @@ export interface PythonScreeningResult {
   missing_skills: string[];
   matched_experience: string[];
   missing_requirements: string[];
-  evidence: Array<{ requirement: string; evidence_quote: string; is_matched: boolean }>;
+  evidence: Array<{
+    requirement: string;
+    evidence_quote: string;
+    is_matched: boolean;
+  }>;
   reasoning_summary: string;
 }
 
@@ -120,13 +96,29 @@ export interface PythonAssessmentFinalResult {
 }
 
 export const aiServiceClient = {
+  interviewSpeech: (interviewId: string, questionId: string) =>
+    aiServiceFetch<{ audio: string; mime_type: string }>("/interviews/speech", {
+      method: "POST",
+      body: JSON.stringify({
+        interview_id: interviewId,
+        question_id: questionId,
+      }),
+    }),
   /**
-   * Triggers Multi-Agent CV Screening via Python FastAPI AI Engine
+   * Runs CV screening via Python FastAPI AI Engine
    */
   screenApplication: async (payload: {
     application_id: string;
-  }): Promise<{ status: string; message: string; application_id: string }> => {
-    return aiServiceFetch<{ status: string; message: string; application_id: string }>("/screening/screen-application", {
+  }): Promise<{
+    status: string;
+    application_id: string;
+    result: PythonScreeningResult;
+  }> => {
+    return aiServiceFetch<{
+      status: string;
+      application_id: string;
+      result: PythonScreeningResult;
+    }>("/screening/screen-application", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -137,8 +129,16 @@ export const aiServiceClient = {
    */
   generateAssessment: async (payload: {
     application_id: string;
-  }): Promise<{ status: "ready" | "generating"; message?: string; questions?: PythonMCQItem[] }> => {
-    return aiServiceFetch<{ status: "ready" | "generating"; message?: string; questions?: PythonMCQItem[] }>("/assessments/generate", {
+  }): Promise<{
+    status: "ready" | "generating";
+    message?: string;
+    questions?: PythonMCQItem[];
+  }> => {
+    return aiServiceFetch<{
+      status: "ready" | "generating";
+      message?: string;
+      questions?: PythonMCQItem[];
+    }>("/assessments/generate", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -153,7 +153,11 @@ export const aiServiceClient = {
     question_number: number;
     selected_option: string;
     time_taken_seconds: number;
-  }): Promise<{ status: string; question_number: number; timed_out: boolean }> => {
+  }): Promise<{
+    status: string;
+    question_number: number;
+    timed_out: boolean;
+  }> => {
     return aiServiceFetch("/assessments/submit-answer", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -163,18 +167,27 @@ export const aiServiceClient = {
   /**
    * Finalizes assessment score & updates application stage
    */
-  finalizeAssessment: async (payload: { assessment_id: string }): Promise<PythonAssessmentFinalResult> => {
-    return aiServiceFetch<PythonAssessmentFinalResult>("/assessments/finalize", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+  finalizeAssessment: async (payload: {
+    assessment_id: string;
+  }): Promise<PythonAssessmentFinalResult> => {
+    return aiServiceFetch<PythonAssessmentFinalResult>(
+      "/assessments/finalize",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
   },
 
   /**
    * Initializes adaptive AI interview session via Python FastAPI engine
    */
   initializeInterview: async (applicationId: string) => {
-    return aiServiceFetch<{ interview_id: string; total_questions: number; initial_questions: Array<Record<string, unknown>> }>("/interviews/initialize", {
+    return aiServiceFetch<{
+      interview_id: string;
+      total_questions: number;
+      initial_questions: Array<Record<string, unknown>>;
+    }>("/interviews/initialize", {
       method: "POST",
       body: JSON.stringify({ application_id: applicationId }),
     });
@@ -206,8 +219,15 @@ export const aiServiceClient = {
   /**
    * Evaluates candidate interview response
    */
-  evaluateInterviewResponse: async (interviewId: string, questionId: string, responseText: string) => {
-    return aiServiceFetch<{ status: string; evaluation: Record<string, unknown> }>("/interviews/evaluate-response", {
+  evaluateInterviewResponse: async (
+    interviewId: string,
+    questionId: string,
+    responseText: string,
+  ) => {
+    return aiServiceFetch<{
+      status: string;
+      evaluation: Record<string, unknown>;
+    }>("/interviews/evaluate-response", {
       method: "POST",
       body: JSON.stringify({
         interview_id: interviewId,
@@ -228,31 +248,14 @@ export const aiServiceClient = {
   },
 
   /**
-   * Fetches Simli session token
-   */
-  getSimliToken: async (): Promise<{ session_token: string }> => {
-    return aiServiceFetch<{ session_token: string }>("/interviews/simli-token", {
-      method: "POST",
-    });
-  },
-
-  /**
    * Transcribe recorded audio file
    */
-  transcribeAudioFile: async (formData: FormData): Promise<{ transcript: string }> => {
+  transcribeAudioFile: async (
+    formData: FormData,
+  ): Promise<{ transcript: string }> => {
     return aiServiceFetch<{ transcript: string }>("/interviews/stt", {
       method: "POST",
       body: formData,
-    });
-  },
-
-  /**
-   * Mark interview as avatar_degraded
-   */
-  degradeAvatar: async (interviewId: string): Promise<{ status: string }> => {
-    return aiServiceFetch<{ status: string }>("/interviews/degrade-avatar", {
-      method: "POST",
-      body: JSON.stringify({ interview_id: interviewId }),
     });
   },
 };

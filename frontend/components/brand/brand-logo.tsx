@@ -1,10 +1,5 @@
-"use client";
-
-import * as React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
 export interface BrandLogoProps {
   variant?: "full" | "mark" | "wordmark";
   size?: "sm" | "md" | "lg";
@@ -12,74 +7,42 @@ export interface BrandLogoProps {
   className?: string;
   priority?: boolean;
 }
-
-export const BrandMark: React.FC<{ size?: "sm" | "md" | "lg"; className?: string }> = ({
-  size = "md",
-  className,
-}) => {
-  const dimensions = {
-    sm: { width: 28, height: 28 },
-    md: { width: 34, height: 34 },
-    lg: { width: 42, height: 42 },
-  }[size];
-
-  return (
-    <div className={cn("relative shrink-0 flex items-center justify-center", className)}>
-      <Image
-        src="/images/air360-favicon.png"
-        alt="AI-Recruit360 Symbol"
-        width={dimensions.width}
-        height={dimensions.height}
-        className="object-contain"
-        priority
-      />
-    </div>
-  );
-};
-
-export const BrandWordmark: React.FC<{ size?: "sm" | "md" | "lg"; className?: string }> = ({
-  size = "md",
-  className,
-}) => {
-  const dimensions = {
-    sm: { width: 110, height: 22 },
-    md: { width: 135, height: 26 },
-    lg: { width: 160, height: 32 },
-  }[size];
-
-  return (
-    <div className={cn("relative shrink-0 flex items-center", className)}>
-      <Image
-        src="/images/air360-wordmark.png"
-        alt="AI-Recruit360"
-        width={dimensions.width}
-        height={dimensions.height}
-        className="object-contain h-auto"
-        priority
-      />
-    </div>
-  );
-};
-
-export const BrandLogo: React.FC<BrandLogoProps> = ({
+export function BrandLogo({
   variant = "full",
-  size = "md",
   href = "/",
   className,
-}) => {
+}: BrandLogoProps) {
   const content = (
-    <div className={cn("flex items-center group select-none", className)}>
-      {variant === "mark" ? <BrandMark size={size} /> : <BrandWordmark size={size} />}
-    </div>
+    <span
+      className={cn(
+        "inline-flex items-center gap-2.5 whitespace-nowrap font-semibold tracking-tight",
+        className,
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className="inline-flex size-8 items-center justify-center rounded-lg border border-current text-xs font-bold"
+      >
+        360
+      </span>
+      {variant !== "mark" && (
+        <span className="text-base">
+          Recruit<span className="font-normal opacity-70">360</span>
+        </span>
+      )}
+    </span>
   );
-
-  if (href) {
-    return (
-      <Link href={href} className="inline-flex items-center focus:outline-none">
-        {content}
-      </Link>
-    );
-  }
-
-  return content;
-};
+  return href ? (
+    <Link aria-label="Recruit360 home" href={href}>
+      {content}
+    </Link>
+  ) : (
+    content
+  );
+}
+export const BrandMark = (props: BrandLogoProps) => (
+  <BrandLogo {...props} variant="mark" href="" />
+);
+export const BrandWordmark = (props: BrandLogoProps) => (
+  <BrandLogo {...props} variant="wordmark" href="" />
+);

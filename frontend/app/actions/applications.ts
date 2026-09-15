@@ -13,6 +13,11 @@ import {
 } from "@/lib/services/application-service";
 import { ApplicationStatus } from "@/types/database.types";
 import { AppError } from "@/lib/utils/errors";
+import {
+  issueCandidateSession,
+  requireCandidateSession,
+  validateCandidateSessionConfiguration,
+} from "@/lib/auth/candidate-session";
 
 export interface ActionResult<T> {
   success: boolean;
@@ -23,6 +28,8 @@ export interface ActionResult<T> {
 export async function getApplicationsAction(filters?: {
   stage?: string;
   search?: string;
+  page?: number;
+  pageSize?: number;
 }): Promise<ActionResult<ApplicationItemWithDetails[]>> {
   try {
     const org = await getCurrentOrganization();
@@ -39,10 +46,11 @@ export async function getApplicationsAction(filters?: {
 import { withPerfProfile } from "@/lib/performance/logger";
 
 export async function submitPublicApplicationAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<{ candidate_id: string; application_id: string }>> {
   return withPerfProfile("submitPublicApplicationAction", async () => {
     try {
+      validateCandidateSessionConfiguration();
       const job_id = formData.get("job_id") as string;
       const organization_id = formData.get("organization_id") as string;
       const full_name = formData.get("full_name") as string;
@@ -59,6 +67,7 @@ export async function submitPublicApplicationAction(
 
       const result = await submitPublicCandidateApplication({
         job_id,
+        submission_key: String(formData.get("submission_key") || ""),
         organization_id,
         full_name,
         email,
@@ -70,6 +79,7 @@ export async function submitPublicApplicationAction(
       });
 
       revalidatePath("/applications");
+      await issueCandidateSession(result.application_id);
       revalidatePath("/candidates");
       revalidatePath("/dashboard");
 
@@ -79,7 +89,10 @@ export async function submitPublicApplicationAction(
       if (err instanceof AppError) {
         return { success: false, error: err.message };
       }
-      return { success: false, error: "Failed to submit application. Please check your information." };
+      return {
+        success: false,
+        error: "Failed to submit application. Please check your information.",
+      };
     }
   });
 }
@@ -108,7 +121,7 @@ export async function createApplicationAction(input: {
 
 export async function updateApplicationStatusAction(
   applicationId: string,
-  newStatus: ApplicationStatus
+  newStatus: ApplicationStatus,
 ): Promise<ActionResult<Application>> {
   try {
     const org = await getCurrentOrganization();
@@ -128,8 +141,11 @@ export async function updateApplicationStatusAction(
   }
 }
 
-export async function getPublicApplicationStatusAction(applicationId: string): Promise<ActionResult<ApplicationStatus>> {
+export async function getPublicApplicationStatusAction(
+  applicationId: string,
+): Promise<ActionResult<ApplicationStatus>> {
   try {
+    await requireCandidateSession(applicationId);
     const status = await getPublicApplicationStatus(applicationId);
     return { success: true, data: status };
   } catch (err: unknown) {

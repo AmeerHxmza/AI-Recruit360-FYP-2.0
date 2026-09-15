@@ -1,58 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/providers/auth-provider";
-import { QueryProvider } from "@/providers/query-provider";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app"),
-  title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  ),
+  title: "AI-Recruit360 — Recruitment workspace",
   description:
     "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",
-  icons: {
-    icon: "/images/air360-favicon.png",
-    shortcut: "/images/air360-favicon.png",
-    apple: "/images/air360-favicon.png",
-  },
-  openGraph: {
-    title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
-    description:
-      "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",
-    type: "website",
-    siteName: "AI-Recruit360",
-    images: [
-      {
-        url: "/images/dashboard-intelligence.png",
-        width: 1200,
-        height: 630,
-        alt: "AI-Recruit360 Enterprise Recruitment Intelligence Platform",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "AI-Recruit360 — AI-Powered Recruitment Intelligence",
-    description:
-      "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",
-  },
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({
@@ -61,20 +18,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body
-        className="min-h-full bg-[#0B0F17] text-[#94A3B8] font-sans flex flex-col selection:bg-[#2563EB]/25 selection:text-[#38BDF8] [&_h1]:text-[#F8FAFC] [&_h1]:tracking-tight [&_h2]:text-[#F8FAFC] [&_h2]:tracking-tight [&_h3]:text-[#F8FAFC] [&_h4]:text-[#F8FAFC]"
+        className="min-h-full bg-background text-foreground font-sans antialiased"
         suppressHydrationWarning
       >
-        <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </QueryProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
 }
-

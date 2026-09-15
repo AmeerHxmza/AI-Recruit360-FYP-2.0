@@ -15,7 +15,10 @@ export default function JobsLoading() {
       {/* Grid Skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="p-6 rounded-xl border border-[#242932] bg-[#12151A] space-y-5">
+          <div
+            key={i}
+            className="p-6 rounded-xl border border-border bg-surface space-y-5"
+          >
             <div className="flex justify-between items-start">
               <div className="space-y-2">
                 <Skeleton className="h-6 w-48" />
@@ -23,7 +26,7 @@ export default function JobsLoading() {
               </div>
               <Skeleton className="h-6 w-16 rounded-full" />
             </div>
-            
+
             <div className="space-y-2 pt-2">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-[80%]" />

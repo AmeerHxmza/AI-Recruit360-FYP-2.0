@@ -1,0 +1,33 @@
+# Render Blueprint Specification for AI-Recruit360 Backend
+# Docs: https://render.com/docs/blueprint-spec
+
+version: "1"
+services:
+  - type: web
+    name: ai-recruit360-backend
+    runtime: python
+    rootDir: ai-service
+    plan: starter
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1"
+    healthCheckPath: /api/v1/health
+    autoDeploy: false
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: ENVIRONMENT
+        value: production
+      - key: AI_PROVIDER
+        value: openai
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: AI_SERVICE_SHARED_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        sync: false

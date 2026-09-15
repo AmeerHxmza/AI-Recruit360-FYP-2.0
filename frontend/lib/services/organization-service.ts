@@ -6,7 +6,10 @@ import { Database } from "@/types/database.types";
 
 export type Organization = Database["public"]["Tables"]["organizations"]["Row"];
 
-export async function createOrganization(name: string, slug: string): Promise<Organization> {
+export async function createOrganization(
+  name: string,
+  slug: string,
+): Promise<Organization> {
   await getCurrentUser();
   const valid = validateOrganizationInput(name, slug);
 
@@ -20,13 +23,19 @@ export async function createOrganization(name: string, slug: string): Promise<Or
 
   if (error) {
     if (error.message.includes("unique") || error.message.includes("slug")) {
-      throw new DatabaseError("An organization with this URL slug already exists. Please choose a different slug.");
+      throw new DatabaseError(
+        "An organization with this URL slug already exists. Please choose a different slug.",
+      );
     }
-    throw new DatabaseError(error.message || "Failed to create organization workspace.");
+    throw new DatabaseError(
+      error.message || "Failed to create organization workspace.",
+    );
   }
 
   if (!data) {
-    throw new DatabaseError("Organization workspace creation produced no record.");
+    throw new DatabaseError(
+      "Organization workspace creation produced no record.",
+    );
   }
 
   return data;

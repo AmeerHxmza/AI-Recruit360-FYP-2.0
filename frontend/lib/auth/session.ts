@@ -6,8 +6,10 @@ import { AuthError, ForbiddenError, NotFoundError } from "@/lib/utils/errors";
 import { Database, OrganizationRole } from "@/types/database.types";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
-export type OrganizationRow = Database["public"]["Tables"]["organizations"]["Row"];
-export type OrganizationMemberRow = Database["public"]["Tables"]["organization_members"]["Row"];
+export type OrganizationRow =
+  Database["public"]["Tables"]["organizations"]["Row"];
+export type OrganizationMemberRow =
+  Database["public"]["Tables"]["organization_members"]["Row"];
 
 export interface OrganizationContext {
   user: User;
@@ -44,7 +46,10 @@ export const getCurrentProfile = cache(async (): Promise<ProfileRow> => {
   if (error || !profile) {
     return {
       id: user.id,
-      full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Recruiter",
+      full_name:
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        "Recruiter",
       avatar_url: user.user_metadata?.avatar_url || null,
       job_title: user.user_metadata?.job_title || "Recruitment Specialist",
       created_at: new Date().toISOString(),
@@ -55,42 +60,38 @@ export const getCurrentProfile = cache(async (): Promise<ProfileRow> => {
   return profile;
 });
 
-export const getUserOrganizations = cache(async (): Promise<OrganizationRow[]> => {
-  const user = await getCurrentUser();
-  const supabase = await createClient();
-
-  const { data: memberOrgs, error } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", user.id);
-
-  if (error || !memberOrgs || memberOrgs.length === 0) {
-    return [];
-  }
-
-  const orgIds = memberOrgs.map((m) => m.organization_id);
-  const { data: orgs, error: orgsError } = await supabase
-    .from("organizations")
-    .select("id, name, slug, created_by, created_at, updated_at")
-    .in("id", orgIds);
-
-  if (orgsError || !orgs) {
-    return [];
-  }
-
-  return orgs;
-});
-
-import { getCachedData } from "@/lib/redis/cache";
-
-export const getOrganizationContext = cache(async (
-  requestedOrgId?: string
-): Promise<OrganizationContext | null> => {
-  try {
+export const getUserOrganizations = cache(
+  async (): Promise<OrganizationRow[]> => {
     const user = await getCurrentUser();
-    const cacheKey = `org_ctx:${user.id}:${requestedOrgId || 'default'}`;
+    const supabase = await createClient();
 
-    return await getCachedData(cacheKey, async () => {
+    const { data: memberOrgs, error } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", user.id);
+
+    if (error || !memberOrgs || memberOrgs.length === 0) {
+      return [];
+    }
+
+    const orgIds = memberOrgs.map((m) => m.organization_id);
+    const { data: orgs, error: orgsError } = await supabase
+      .from("organizations")
+      .select("id, name, slug, created_by, created_at, updated_at")
+      .in("id", orgIds);
+
+    if (orgsError || !orgs) {
+      return [];
+    }
+
+    return orgs;
+  },
+);
+
+export const getOrganizationContext = cache(
+  async (requestedOrgId?: string): Promise<OrganizationContext | null> => {
+    try {
+      const user = await getCurrentUser();
       const supabase = await createClient();
 
       let targetOrgId = requestedOrgId;
@@ -104,55 +105,33 @@ export const getOrganizationContext = cache(async (
         }
       }
 
-    let { data: memberships } = await supabase
-      .from("organization_members")
-      .select("id, organization_id, user_id, role, created_at")
-      .eq("user_id", user.id);
+      const { data: memberships } = await supabase
+        .from("organization_members")
+        .select("id, organization_id, user_id, role, created_at")
+        .eq("user_id", user.id);
 
-    if (!memberships || memberships.length === 0) {
-      // Self-healing fallback: Check if user owns an existing organization
-      const { data: ownedOrg } = await supabase
+      if (!memberships || memberships.length === 0) {
+        return null;
+      }
+
+      let activeMembership = targetOrgId
+        ? memberships.find((m) => m.organization_id === targetOrgId)
+        : undefined;
+
+      if (!activeMembership) {
+        if (requestedOrgId) return null;
+        activeMembership = memberships[0];
+      }
+
+      const { data: org } = await supabase
         .from("organizations")
         .select("id, name, slug, created_by, created_at, updated_at")
-        .eq("created_by", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .eq("id", activeMembership.organization_id)
+        .single();
 
-      if (ownedOrg) {
-        const { data: newMember } = await supabase
-          .from("organization_members")
-          .insert({ organization_id: ownedOrg.id, user_id: user.id, role: "owner" })
-          .select("id, organization_id, user_id, role, created_at")
-          .single();
-
-        if (newMember) {
-          memberships = [newMember];
-        }
+      if (!org) {
+        return null;
       }
-    }
-
-    if (!memberships || memberships.length === 0) {
-      return null;
-    }
-
-    let activeMembership = targetOrgId
-      ? memberships.find((m) => m.organization_id === targetOrgId)
-      : undefined;
-
-    if (!activeMembership) {
-      activeMembership = memberships[0];
-    }
-
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("id, name, slug, created_by, created_at, updated_at")
-      .eq("id", activeMembership.organization_id)
-      .single();
-
-    if (!org) {
-      return null;
-    }
 
       const profile = await getCurrentProfile();
 
@@ -163,38 +142,48 @@ export const getOrganizationContext = cache(async (
         membership: activeMembership as OrganizationMemberRow,
         role: activeMembership.role as OrganizationRole,
       };
-    }, 60);
-  } catch {
-    return null;
-  }
-});
+    } catch {
+      return null;
+    }
+  },
+);
 
-export const getCurrentOrganization = cache(async (requestedOrgId?: string): Promise<OrganizationRow> => {
-  const ctx = await getOrganizationContext(requestedOrgId);
+export const getCurrentOrganization = cache(
+  async (requestedOrgId?: string): Promise<OrganizationRow> => {
+    const ctx = await getOrganizationContext(requestedOrgId);
 
-  if (!ctx) {
-    throw new NotFoundError(
-      "No active organization membership found. Please create an organization workspace."
-    );
-  }
+    if (!ctx) {
+      throw new NotFoundError(
+        "No active organization membership found. Please create an organization workspace.",
+      );
+    }
 
-  return ctx.organization;
-});
+    return ctx.organization;
+  },
+);
 
-export const getCurrentMembership = cache(async (orgId: string): Promise<OrganizationMemberRow> => {
-  const ctx = await getOrganizationContext(orgId);
+export const getCurrentMembership = cache(
+  async (orgId: string): Promise<OrganizationMemberRow> => {
+    const ctx = await getOrganizationContext(orgId);
 
-  if (!ctx || ctx.organization.id !== orgId) {
-    throw new ForbiddenError("Access denied. Active organization membership required.");
-  }
+    if (!ctx || ctx.organization.id !== orgId) {
+      throw new ForbiddenError(
+        "Access denied. Active organization membership required.",
+      );
+    }
 
-  return ctx.membership;
-});
+    return ctx.membership;
+  },
+);
 
-export const getCurrentRole = cache(async (orgId: string): Promise<OrganizationRole> => {
-  const ctx = await getOrganizationContext(orgId);
-  if (!ctx) {
-    throw new ForbiddenError("Access denied. Active organization membership required.");
-  }
-  return ctx.role;
-});
+export const getCurrentRole = cache(
+  async (orgId: string): Promise<OrganizationRole> => {
+    const ctx = await getOrganizationContext(orgId);
+    if (!ctx || ctx.organization.id !== orgId) {
+      throw new ForbiddenError(
+        "Access denied. Active organization membership required.",
+      );
+    }
+    return ctx.role;
+  },
+);

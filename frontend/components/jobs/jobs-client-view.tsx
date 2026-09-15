@@ -19,7 +19,12 @@ import {
 import { canManageJobs } from "@/lib/auth/permissions";
 import { getJobsAction } from "@/app/actions/jobs";
 import { Job } from "@/lib/services/job-service";
-import { EmploymentType, JobStatus, OrganizationRole, WorkplaceType } from "@/types/database.types";
+import {
+  EmploymentType,
+  JobStatus,
+  OrganizationRole,
+  WorkplaceType,
+} from "@/types/database.types";
 import {
   Plus,
   Search,
@@ -27,9 +32,7 @@ import {
   AlertCircle,
   Briefcase,
   MapPin,
-  Clock,
   FilterX,
-  Building2,
   Copy,
   Check,
 } from "lucide-react";
@@ -48,9 +51,14 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [copiedJobId, setCopiedJobId] = React.useState<string | null>(null);
 
-  const handleCopyLink = async (e: React.MouseEvent, slugOrId: string, id: string) => {
+  const handleCopyLink = async (
+    e: React.MouseEvent,
+    slugOrId: string,
+    id: string,
+  ) => {
     e.stopPropagation();
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://ai-recruit360.vercel.app";
     const url = `${baseUrl}/apply/${slugOrId}`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -65,9 +73,15 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
 
   // Filters
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [statusFilter, setStatusFilter] = React.useState<JobStatus | "all">("all");
-  const [employmentFilter, setEmploymentFilter] = React.useState<EmploymentType | "all">("all");
-  const [workplaceFilter, setWorkplaceFilter] = React.useState<WorkplaceType | "all">("all");
+  const [statusFilter, setStatusFilter] = React.useState<JobStatus | "all">(
+    "all",
+  );
+  const [employmentFilter, setEmploymentFilter] = React.useState<
+    EmploymentType | "all"
+  >("all");
+  const [workplaceFilter, setWorkplaceFilter] = React.useState<
+    WorkplaceType | "all"
+  >("all");
 
   const loadJobs = React.useCallback(async () => {
     setLoading(true);
@@ -105,7 +119,12 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
     prevEmploymentRef.current = employmentFilter;
     prevWorkplaceRef.current = workplaceFilter;
 
-    if (searchChanged || statusChanged || employmentChanged || workplaceChanged) {
+    if (
+      searchChanged ||
+      statusChanged ||
+      employmentChanged ||
+      workplaceChanged
+    ) {
       loadJobs();
     }
   }, [searchQuery, statusFilter, employmentFilter, workplaceFilter, loadJobs]);
@@ -113,15 +132,15 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
   const getStatusBadge = (status: JobStatus) => {
     switch (status) {
       case "active":
-        return <Badge variant="success" className="text-[11px] font-mono">Active</Badge>;
+        return <Badge variant="success">Active</Badge>;
       case "draft":
-        return <Badge variant="default" className="text-[11px] font-mono">Draft</Badge>;
+        return <Badge variant="secondary">Draft</Badge>;
       case "paused":
-        return <Badge variant="warning" className="text-[11px] font-mono">Paused</Badge>;
+        return <Badge variant="warning">Paused</Badge>;
       case "closed":
-        return <Badge variant="danger" className="text-[11px] font-mono">Closed</Badge>;
+        return <Badge variant="danger">Closed</Badge>;
       default:
-        return <Badge variant="outline" className="text-[11px] font-mono">{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -141,20 +160,6 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
     }
   };
 
-  const formatWorkplaceType = (type: WorkplaceType | null) => {
-    if (!type) return "Hybrid";
-    switch (type) {
-      case "on_site":
-        return "On-Site";
-      case "hybrid":
-        return "Hybrid";
-      case "remote":
-        return "Remote";
-      default:
-        return type;
-    }
-  };
-
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString("en-US", {
@@ -168,19 +173,18 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageHeader
-        title="Jobs Directory"
-        description="Create positions, publish application links, and monitor candidate activity."
+        title="Jobs"
+        description="Manage open roles, public application gateways, and screening thresholds."
         actions={
           isAuthorizedToManage ? (
             <Button
-              variant="ai"
+              variant="primary"
               size="md"
               onClick={() => router.push("/jobs/new")}
-              className="shadow-[0_0_16px_rgba(57,217,255,0.25)]"
             >
-              <Plus className="h-4 w-4 mr-1.5" /> Create Job
+              <Plus className="h-4 w-4 mr-1.5" /> Create job
             </Button>
           ) : undefined
         }
@@ -188,20 +192,25 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
 
       {/* Error State Banner */}
       {errorMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-[#FF5C67]/10 border border-[#FF5C67]/30 flex items-center justify-between text-xs text-[#FF5C67]">
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/25 flex items-center justify-between text-xs text-danger">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={loadJobs} className="text-[#FF5C67] hover:bg-[#FF5C67]/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadJobs}
+            className="text-danger hover:bg-danger/20"
+          >
             Retry
           </Button>
         </div>
       )}
 
       {/* Filter & Search Bar */}
-      <Section className="my-0 mb-6">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 rounded-xl border border-[#242932] bg-[#12151A]">
+      <Section className="my-0">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-surface">
           <div className="flex flex-1 items-center gap-3">
             <Input
               type="search"
@@ -209,7 +218,7 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               icon={<Search className="h-4 w-4" />}
-              className="bg-[#0D0F12]"
+              className="bg-background"
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -217,10 +226,12 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
             <div className="w-36">
               <Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as JobStatus | "all")}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as JobStatus | "all")
+                }
                 options={[
-                  { value: "all", label: "Status: All" },
-                  { value: "active", label: "Active" },
+                  { value: "all", label: "All statuses" },
+                  { value: "published", label: "Published" },
                   { value: "draft", label: "Draft" },
                   { value: "paused", label: "Paused" },
                   { value: "closed", label: "Closed" },
@@ -229,12 +240,14 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
             </div>
 
             {/* Employment Type Filter */}
-            <div className="w-40">
+            <div className="w-36">
               <Select
                 value={employmentFilter}
-                onChange={(e) => setEmploymentFilter(e.target.value as EmploymentType | "all")}
+                onChange={(e) =>
+                  setEmploymentFilter(e.target.value as EmploymentType | "all")
+                }
                 options={[
-                  { value: "all", label: "Type: All" },
+                  { value: "all", label: "All types" },
                   { value: "full_time", label: "Full-Time" },
                   { value: "part_time", label: "Part-Time" },
                   { value: "contract", label: "Contract" },
@@ -243,13 +256,15 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
               />
             </div>
 
-            {/* Workplace Filter */}
+            {/* Workplace Type Filter */}
             <div className="w-36">
               <Select
                 value={workplaceFilter}
-                onChange={(e) => setWorkplaceFilter(e.target.value as WorkplaceType | "all")}
+                onChange={(e) =>
+                  setWorkplaceFilter(e.target.value as WorkplaceType | "all")
+                }
                 options={[
-                  { value: "all", label: "Workplace: All" },
+                  { value: "all", label: "All locations" },
                   { value: "remote", label: "Remote" },
                   { value: "hybrid", label: "Hybrid" },
                   { value: "on_site", label: "On-Site" },
@@ -260,64 +275,89 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
         </div>
       </Section>
 
-      {/* Main Content Area */}
-      <Section title="Active & Historic Job Positions">
+      {/* Main Jobs Listing */}
+      <Section className="my-0">
         {loading ? (
-          /* Loading State Skeleton */
-          <div className="p-12 text-center rounded-xl border border-[#242932] bg-[#12151A] space-y-4">
-            <Loader2 className="h-8 w-8 text-[#39D9FF] animate-spin mx-auto" />
-            <p className="text-xs text-[#A7AFBC] font-mono">Filtering jobs...</p>
+          <div className="flex h-64 items-center justify-center rounded-xl border border-border bg-surface">
+            <Loader2 className="h-6 w-6 animate-spin text-action-blue" />
           </div>
         ) : jobs.length === 0 ? (
           /* Empty State */
-          <div className="p-12 sm:p-16 text-center rounded-2xl border border-[#242932] bg-[#0D0F12] space-y-5">
-            <div className="h-14 w-14 rounded-2xl bg-[#12151A] border border-[#242932] text-[#39D9FF] mx-auto flex items-center justify-center shadow-[0_0_20px_rgba(57,217,255,0.15)]">
-              {searchQuery || statusFilter !== "all" || employmentFilter !== "all" || workplaceFilter !== "all" ? (
-                <FilterX className="h-7 w-7" />
+          <div className="p-12 text-center rounded-xl border border-border bg-surface space-y-4">
+            <div className="h-12 w-12 rounded-xl bg-background border border-border text-text-muted mx-auto flex items-center justify-center">
+              {searchQuery ||
+              statusFilter !== "all" ||
+              employmentFilter !== "all" ||
+              workplaceFilter !== "all" ? (
+                <FilterX className="h-6 w-6" />
               ) : (
-                <Briefcase className="h-7 w-7" />
+                <Briefcase className="h-6 w-6" />
               )}
             </div>
-            <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-lg font-bold font-display text-[#F5F7FA]">
-                {searchQuery || statusFilter !== "all" || employmentFilter !== "all" || workplaceFilter !== "all"
+            <div className="max-w-md mx-auto space-y-1.5">
+              <h3 className="text-base font-semibold text-text-primary">
+                {searchQuery ||
+                statusFilter !== "all" ||
+                employmentFilter !== "all" ||
+                workplaceFilter !== "all"
                   ? "No matching positions found"
-                  : "No job positions created yet"}
+                  : "No jobs created yet"}
               </h3>
-              <p className="text-xs text-[#A7AFBC] leading-relaxed">
-                {searchQuery || statusFilter !== "all" || employmentFilter !== "all" || workplaceFilter !== "all"
-                  ? "Try clearing filters or search queries to view existing organization roles."
-                  : "Create your organization's first role to start screening candidate profiles and scheduling interviews."}
+              <p className="text-xs text-text-secondary leading-relaxed">
+                {searchQuery ||
+                statusFilter !== "all" ||
+                employmentFilter !== "all" ||
+                workplaceFilter !== "all"
+                  ? "Try clearing your filters or search terms to view existing roles."
+                  : "Create your first role to start receiving candidates and scheduling AI interviews."}
               </p>
             </div>
 
             {isAuthorizedToManage && (
               <Button
-                variant="ai"
+                variant="primary"
                 size="md"
                 onClick={() => router.push("/jobs/new")}
                 className="mt-2"
               >
-                <Plus className="h-4 w-4 mr-1.5" /> Create First Job Position
+                <Plus className="h-4 w-4 mr-1.5" /> Create job
               </Button>
             )}
           </div>
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-hidden rounded-xl border border-[#242932] bg-[#12151A]">
+            <div className="hidden md:block overflow-hidden rounded-xl border border-border bg-surface">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-b border-[#242932] bg-[#0D0F12]">
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Job</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Department</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Location</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Type</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider text-center">Applicants</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider text-center">Qualified</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Status</TableHead>
-                    <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Created</TableHead>
-                    <TableHead className="text-right text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Actions</TableHead>
+                  <TableRow className="border-b border-border bg-background hover:bg-background">
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Role
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Department
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Location
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Type
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary text-center">
+                      Applicants
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary text-center">
+                      Qualified
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-text-secondary">
+                      Created
+                    </TableHead>
+                    <TableHead className="text-right text-xs font-medium text-text-secondary">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -325,63 +365,76 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
                     <TableRow
                       key={job.id}
                       onClick={() => router.push(`/jobs/${job.id}`)}
-                      className="cursor-pointer border-b border-[#1C2027] transition-micro hover:bg-[#171B21]/80"
+                      className="cursor-pointer border-b border-border transition-colors hover:bg-hover"
                     >
-                      <TableCell className="py-4">
+                      <TableCell className="py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#242932] bg-[#0D0F12] text-[#39D9FF] shrink-0">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-action-blue shrink-0">
                             <Briefcase className="h-4 w-4" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-semibold text-[#F5F7FA] text-xs">
+                            <span className="font-medium text-text-primary text-xs">
                               {job.title}
                             </span>
-                            <span className="text-[11px] text-[#A7AFBC] font-mono">
+                            <span className="text-xs text-text-muted">
                               {formatEmploymentType(job.employment_type)}
                             </span>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-[#A7AFBC] font-medium">{job.department}</TableCell>
-                      <TableCell className="text-xs text-[#A7AFBC]">{job.location}</TableCell>
-                      <TableCell className="text-xs text-[#A7AFBC]">
-                        <span className="rounded bg-[#0D0F12] px-2 py-0.5 border border-[#242932] text-[11px] font-mono">
+                      <TableCell className="text-xs text-text-secondary font-medium">
+                        {job.department}
+                      </TableCell>
+                      <TableCell className="text-xs text-text-secondary">
+                        {job.location}
+                      </TableCell>
+                      <TableCell className="text-xs text-text-secondary">
+                        <span className="rounded bg-background px-2 py-0.5 border border-border text-xs">
                           {formatEmploymentType(job.employment_type)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-xs text-[#F5F7FA] font-bold text-center">
+                      <TableCell className="text-xs text-text-primary font-medium text-center">
                         {job.applicantsCount ?? 0}
                       </TableCell>
-                      <TableCell className="text-xs text-[#35D07F] font-bold text-center">
+                      <TableCell className="text-xs text-success font-medium text-center">
                         {job.qualifiedCount ?? 0}
                       </TableCell>
                       <TableCell>{getStatusBadge(job.status)}</TableCell>
-                      <TableCell className="text-xs text-[#68717E] font-mono">{formatDate(job.created_at)}</TableCell>
-                      <TableCell className="text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                      <TableCell className="text-xs text-text-muted">
+                        {formatDate(job.created_at)}
+                      </TableCell>
+                      <TableCell
+                        className="text-right space-x-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => handleCopyLink(e, job.slug || job.id, job.id)}
-                          className="h-8 text-xs text-[#A7AFBC] hover:text-[#39D9FF] hover:bg-[#39D9FF]/10 gap-1 px-2"
+                          onClick={(e) =>
+                            handleCopyLink(e, job.slug || job.id, job.id)
+                          }
+                          className="h-7 text-xs text-text-secondary hover:text-text-primary gap-1 px-2"
                           title="Copy public candidate application link"
                         >
                           {copiedJobId === job.id ? (
                             <>
-                              <Check className="h-3 w-3 text-[#35D07F]" />
-                              <span className="text-[#35D07F] font-semibold text-[11px]">Copied!</span>
+                              <Check className="h-3 w-3 text-success" />
+                              <span className="text-success font-medium text-xs">
+                                Copied!
+                              </span>
                             </>
                           ) : (
                             <>
                               <Copy className="h-3 w-3" />
-                              <span className="text-[11px]">Share</span>
+                              <span className="text-xs">Share</span>
                             </>
                           )}
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => router.push(`/jobs/${job.id}`)}
-                          className="h-8 text-xs text-[#39D9FF] hover:text-[#63E3FF] hover:bg-[#39D9FF]/10"
+                          className="h-8 text-xs text-action-blue hover:text-text-secondary hover:bg-blue-500/10"
                         >
                           Manage
                         </Button>
@@ -398,29 +451,41 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
                 <div
                   key={job.id}
                   onClick={() => router.push(`/jobs/${job.id}`)}
-                  className="p-4 rounded-xl border border-[#242932] bg-[#12151A] space-y-3 cursor-pointer hover:border-[#39D9FF]/40 transition-all"
+                  className="p-4 rounded-xl border border-border bg-surface space-y-3 cursor-pointer hover:border-border transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-0.5">
-                      <h4 className="text-sm font-bold text-[#F5F7FA] font-display">{job.title}</h4>
-                      <p className="text-xs text-[#A7AFBC]">{job.department}</p>
+                      <h4 className="text-sm font-semibold text-text-primary">
+                        {job.title}
+                      </h4>
+                      <p className="text-xs text-text-secondary">
+                        {job.department}
+                      </p>
                     </div>
                     {getStatusBadge(job.status)}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#A7AFBC] border-t border-[#242932] pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary border-t border-border pt-2">
                     <div className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-[#68717E]" />
+                      <MapPin className="h-3.5 w-3.5 text-text-muted" />
                       <span>{job.location}</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => handleCopyLink(e, job.slug || job.id, job.id)}
-                      className="h-7 text-xs text-[#39D9FF] hover:bg-[#39D9FF]/10 gap-1 px-2"
+                      onClick={(e) =>
+                        handleCopyLink(e, job.slug || job.id, job.id)
+                      }
+                      className="h-7 text-xs text-action-blue hover:bg-blue-500/10 gap-1 px-2"
                     >
-                      {copiedJobId === job.id ? <Check className="h-3 w-3 text-[#35D07F]" /> : <Copy className="h-3 w-3" />}
-                      <span className="text-[10px]">{copiedJobId === job.id ? "Copied" : "Copy Link"}</span>
+                      {copiedJobId === job.id ? (
+                        <Check className="h-3 w-3 text-success" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                      <span className="text-xs">
+                        {copiedJobId === job.id ? "Copied" : "Copy Link"}
+                      </span>
                     </Button>
                   </div>
                 </div>

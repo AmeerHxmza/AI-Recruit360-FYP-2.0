@@ -1,16 +1,4 @@
-"""
-app/main.py
-───────────
-AI-Recruit360 Python FastAPI Application Entry Point.
-
-Improvements in this version:
- ✅ Async lifespan context for Redis pool open/close
- ✅ CORS restricted to explicit ALLOWED_ORIGINS (no wildcard)
- ✅ slowapi rate limiting attached (Redis-backed, multi-process safe)
- ✅ OpenTelemetry auto-instrumentation (when OTLP_ENDPOINT is configured)
- ✅ Structured JSON logging via structlog
-"""
-
+"""Recruit360 API: synchronous, retryable AI workflows for local FYP use."""
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -52,7 +40,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="AI-Recruit360 Intelligence Engine",
     description=(
-        "Python FastAPI Multi-Agent Recruitment Intelligence Service for "
+        "Python FastAPI Recruitment Service for "
         "CV Screening, Personalized MCQs, Adaptive AI Interviews, and Final "
         "Candidate Evaluations."
     ),
@@ -107,7 +95,6 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
-    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.onrender\.com|http://localhost:\d+|http://127\.0\.0\.1:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

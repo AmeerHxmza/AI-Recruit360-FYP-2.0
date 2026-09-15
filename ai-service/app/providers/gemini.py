@@ -33,8 +33,10 @@ class GeminiProvider:
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
-        self.model_name = model_name or settings.GEMINI_MODEL or "gemini-1.5-flash"
+        self.model_name = model_name or settings.GEMINI_MODEL
 
+        if not self.model_name:
+            raise AIProviderError("Configure GEMINI_MODEL with an enabled model for your account.")
         if not self.api_key:
             logger.warning("GEMINI_API_KEY is missing.")
 

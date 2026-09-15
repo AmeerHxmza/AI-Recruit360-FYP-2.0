@@ -19,11 +19,11 @@ const Progress: React.FC<ProgressProps> = ({
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
 
   const fillVariants = {
-    default: "bg-[#F5F7FA]",
-    ai: "bg-gradient-to-r from-[#39D9FF] to-[#63E3FF] shadow-[0_0_10px_rgba(57,217,255,0.4)]",
-    success: "bg-[#35D07F]",
-    warning: "bg-[#F5B942]",
-    danger: "bg-[#FF5C67]",
+    default: "bg-text-primary",
+    ai: "bg-gradient-to-r from-action-blue to-action-blue shadow-[0_0_10px_rgba(47,123,255,0.4)]",
+    success: "bg-success",
+    warning: "bg-warning",
+    danger: "bg-danger",
   };
 
   const heightClasses = {
@@ -35,9 +35,9 @@ const Progress: React.FC<ProgressProps> = ({
   return (
     <div
       className={cn(
-        "w-full overflow-hidden rounded-full border border-[#242932] bg-[#0D0F12]",
+        "w-full overflow-hidden rounded-full border border-border bg-background",
         heightClasses[size],
-        className
+        className,
       )}
       role="progressbar"
       aria-valuenow={value}
@@ -46,7 +46,10 @@ const Progress: React.FC<ProgressProps> = ({
       {...props}
     >
       <div
-        className={cn("h-full transition-all duration-300 ease-out rounded-full", fillVariants[variant])}
+        className={cn(
+          "h-full transition-all duration-300 ease-out rounded-full",
+          fillVariants[variant],
+        )}
         style={{ width: `${percentage}%` }}
       />
     </div>

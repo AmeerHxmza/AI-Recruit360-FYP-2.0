@@ -17,7 +17,6 @@ import {
 } from "@/lib/services/job-service";
 import { AppError } from "@/lib/utils/errors";
 import { JobStatus } from "@/types/database.types";
-import { getCachedData, invalidateCachePrefix } from "@/lib/redis/cache";
 
 export interface ActionResult<T> {
   success: boolean;
@@ -25,7 +24,9 @@ export interface ActionResult<T> {
   error?: string;
 }
 
-export async function getJobsAction(filters?: JobFilters): Promise<ActionResult<Job[]>> {
+export async function getJobsAction(
+  filters?: JobFilters,
+): Promise<ActionResult<Job[]>> {
   try {
     const org = await getCurrentOrganization();
     const jobs = await getJobsForOrg(org.id, filters);
@@ -38,7 +39,9 @@ export async function getJobsAction(filters?: JobFilters): Promise<ActionResult<
   }
 }
 
-export async function getJobByIdAction(jobId: string): Promise<ActionResult<Job>> {
+export async function getJobByIdAction(
+  jobId: string,
+): Promise<ActionResult<Job>> {
   try {
     const org = await getCurrentOrganization();
     const job = await getJobById(org.id, jobId);
@@ -53,15 +56,20 @@ export async function getJobByIdAction(jobId: string): Promise<ActionResult<Job>
 
 import { withPerfProfile } from "@/lib/performance/logger";
 
-export async function getPublicJobBySlugAction(slug: string): Promise<ActionResult<Job>> {
+export async function getPublicJobBySlugAction(
+  slug: string,
+): Promise<ActionResult<Job>> {
   return withPerfProfile(`getPublicJobBySlugAction(${slug})`, async () => {
     try {
-      const job = await getCachedData(`public:job:slug:${slug}`, async () => {
+      const job = await (async () => {
         return await getPublicJobBySlug(slug);
-      }, 300); // 5 min cache
-      
+      })();
+
       if (!job) {
-        return { success: false, error: "Job position not found or no longer active." };
+        return {
+          success: false,
+          error: "Job position not found or no longer active.",
+        };
       }
       return { success: true, data: job };
     } catch (err: unknown) {
@@ -73,14 +81,13 @@ export async function getPublicJobBySlugAction(slug: string): Promise<ActionResu
   });
 }
 
-export async function createJobAction(input: CreateJobInput): Promise<ActionResult<Job>> {
+export async function createJobAction(
+  input: CreateJobInput,
+): Promise<ActionResult<Job>> {
   try {
     const org = await getCurrentOrganization();
     const job = await createJob(org.id, input);
 
-    await invalidateCachePrefix(`public:job:slug:${job.slug}`);
-    await invalidateCachePrefix(`org:${org.id}:jobCounts`);
-    
     revalidatePath("/jobs");
     revalidatePath("/dashboard");
 
@@ -89,20 +96,20 @@ export async function createJobAction(input: CreateJobInput): Promise<ActionResu
     if (err instanceof AppError) {
       return { success: false, error: err.message };
     }
-    return { success: false, error: "Failed to create job position. Please try again." };
+    return {
+      success: false,
+      error: "Failed to create job position. Please try again.",
+    };
   }
 }
 
 export async function updateJobAction(
   jobId: string,
-  input: UpdateJobInput
+  input: UpdateJobInput,
 ): Promise<ActionResult<Job>> {
   try {
     const org = await getCurrentOrganization();
     const job = await updateJob(org.id, jobId, input);
-
-    await invalidateCachePrefix(`public:job:slug:${job.slug}`);
-    await invalidateCachePrefix(`org:${org.id}:jobCounts`);
 
     revalidatePath("/jobs");
     revalidatePath(`/jobs/${jobId}`);
@@ -119,14 +126,11 @@ export async function updateJobAction(
 
 export async function updateJobStatusAction(
   jobId: string,
-  status: JobStatus
+  status: JobStatus,
 ): Promise<ActionResult<Job>> {
   try {
     const org = await getCurrentOrganization();
     const job = await updateJobStatus(org.id, jobId, status);
-
-    await invalidateCachePrefix(`public:job:slug:${job.slug}`);
-    await invalidateCachePrefix(`org:${org.id}:jobCounts`);
 
     revalidatePath("/jobs");
     revalidatePath(`/jobs/${jobId}`);
@@ -142,13 +146,19 @@ export async function updateJobStatusAction(
 }
 
 export async function getJobCountsAction(): Promise<
-  ActionResult<{ total: number; active: number; draft: number; paused: number; closed: number }>
+  ActionResult<{
+    total: number;
+    active: number;
+    draft: number;
+    paused: number;
+    closed: number;
+  }>
 > {
   try {
     const org = await getCurrentOrganization();
-    const counts = await getCachedData(`org:${org.id}:jobCounts`, async () => {
+    const counts = await (async () => {
       return await getJobCounts(org.id);
-    }, 60); // 1 minute cache
+    })();
     return { success: true, data: counts };
   } catch (err: unknown) {
     if (err instanceof AppError) {

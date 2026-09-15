@@ -28,18 +28,18 @@ const Avatar: React.FC<AvatarProps> = ({
   }[size];
 
   const statusColor = {
-    online: "bg-[#35D07F]",
-    offline: "bg-[#68717E]",
-    busy: "bg-[#FF5C67]",
-    ai: "bg-[#39D9FF] shadow-[0_0_8px_rgba(57,217,255,0.6)]",
+    online: "bg-success",
+    offline: "bg-text-muted",
+    busy: "bg-danger",
+    ai: "bg-action-blue shadow-[0_0_8px_rgba(47,123,255,0.6)]",
   };
 
   return (
     <div
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center rounded-full border border-[#242932] bg-[#171B21] text-[#F5F7FA] font-medium overflow-hidden select-none",
+        "relative inline-flex shrink-0 items-center justify-center rounded-full border border-border bg-hover text-text-primary font-medium overflow-hidden select-none",
         sizeClasses,
-        className
+        className,
       )}
       {...props}
     >
@@ -52,15 +52,15 @@ const Avatar: React.FC<AvatarProps> = ({
           className="h-full w-full object-cover"
         />
       ) : (
-        <span className="uppercase tracking-wider font-semibold text-[#39D9FF]">
+        <span className="uppercase tracking-wider font-semibold text-action-blue">
           {fallback.substring(0, 2)}
         </span>
       )}
       {status && (
         <span
           className={cn(
-            "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#08090B]",
-            statusColor[status]
+            "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
+            statusColor[status],
           )}
         />
       )}

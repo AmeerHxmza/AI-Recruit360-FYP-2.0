@@ -1,298 +1,240 @@
 "use client";
+import Link from "next/link";
+import { ArrowUpRight, Plus } from "lucide-react";
+import type { DashboardData } from "@/lib/services/dashboard-service";
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { MetricCard } from "@/components/dashboard/metric-card";
-import { InsightsPanel } from "@/components/dashboard/insights-panel";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import { DashboardData } from "@/lib/services/dashboard-service";
-import {
-  Users,
-  Briefcase,
-  Sparkles,
-  UserCheck,
-  ChevronRight,
-  Plus,
-  FileText,
-  CheckCircle2,
-  Video,
-  ExternalLink,
-  Target,
-} from "lucide-react";
-
-interface DashboardClientViewProps {
+export function DashboardClientView({
+  initialData: data,
+  userName,
+}: {
   initialData: DashboardData;
   userName: string;
-}
-
-export function DashboardClientView({ initialData, userName }: DashboardClientViewProps) {
-  const router = useRouter();
-  const [data] = React.useState<DashboardData>(initialData);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "shortlisted":
-        return <Badge variant="success" className="text-[10px] px-2 py-0.5 uppercase font-mono">Shortlisted</Badge>;
-      case "interview":
-        return <Badge variant="ai" className="text-[10px] px-2 py-0.5 uppercase font-mono">Interview</Badge>;
-      case "screening":
-        return <Badge variant="warning" className="text-[10px] px-2 py-0.5 uppercase font-mono">Screening</Badge>;
-      case "assessment":
-        return <Badge variant="outline" className="text-[10px] px-2 py-0.5 uppercase font-mono border-[#F5B942]/40 text-[#F5B942]">Assessment</Badge>;
-      case "evaluation":
-        return <Badge variant="ai" className="text-[10px] px-2 py-0.5 uppercase font-mono">Evaluation</Badge>;
-      case "knocked_out":
-      case "rejected":
-        return <Badge variant="danger" className="text-[10px] px-2 py-0.5 uppercase font-mono">{status.replace("_", " ")}</Badge>;
-      default:
-        return <Badge variant="default" className="text-[10px] px-2 py-0.5 uppercase font-mono">{status}</Badge>;
-    }
-  };
-
-  const getScoreBadge = (score: number | null, suffix = "%") => {
-    if (score === null || score === undefined) return <span className="text-[#68717E] text-xs font-mono">—</span>;
-    if (score >= 80) {
-      return <span className="font-mono text-xs font-bold text-[#35D07F]">{score}{suffix}</span>;
-    }
-    if (score >= 60) {
-      return <span className="font-mono text-xs font-bold text-[#39D9FF]">{score}{suffix}</span>;
-    }
-    return <span className="font-mono text-xs font-bold text-[#FF5C67]">{score}{suffix}</span>;
-  };
-
+}) {
+  const metrics = [
+    {
+      label: "Active jobs",
+      value: data.metrics.activeJobs,
+      detail: "Open for applications",
+      href: "/jobs",
+    },
+    {
+      label: "Applications",
+      value: data.metrics.totalApplications,
+      detail: "Across your workspace",
+      href: "/applications",
+    },
+    {
+      label: "Passed screening",
+      value: data.aiSummary.qualifiedCount,
+      detail: "Ready for the next stage",
+      href: "/applications",
+    },
+    {
+      label: "Interview sessions",
+      value: data.metrics.aiInterviews,
+      detail: "Active and completed",
+      href: "/interviews",
+    },
+  ];
+  const stages = [
+    { label: "Applications received", value: data.funnel.applied },
+    { label: "Resumes screened", value: data.funnel.screening },
+    { label: "Assessments started", value: data.funnel.assessment },
+    { label: "Interviews started", value: data.funnel.interview },
+    { label: "Evaluations ready", value: data.funnel.evaluation },
+  ];
+  const score = (value: number | null) =>
+    value === null ? (
+      <span className="text-text-muted">—</span>
+    ) : (
+      <span className="tabular-nums font-medium">
+        {Math.round(value)}
+        <span className="text-text-muted text-xs"> / 100</span>
+      </span>
+    );
+  const status = (value: string) =>
+    ({
+      knocked_out: "Not advanced",
+      assessment_failed: "Assessment not passed",
+      extraction_failed: "Resume needs review",
+      evaluation: "Ready for review",
+    })[value] || value.replaceAll("_", " ");
   return (
-    <div className="animate-in fade-in duration-500 space-y-6 relative z-0">
-      {/* Ambient background glow for elite UI feel */}
-      <div className="bg-ambient-glow" />
-
-      {/* Dashboard Header */}
-      <DashboardHeader
-        userName={userName}
-        onCreateJob={() => router.push("/jobs/new")}
-      />
-
-      {/* Primary Metrics Editorial Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-stagger-1">
-        <MetricCard
-          label="Active Jobs"
-          value={data.metrics.activeJobs}
-          description="Open recruitment positions"
-          icon={<Briefcase className="h-4 w-4" />}
-        />
-        <MetricCard
-          label="Total Applications"
-          value={data.metrics.totalApplications}
-          description="Candidates received"
-          icon={<Users className="h-4 w-4" />}
-        />
-        <MetricCard
-          label="Qualified Pipeline"
-          value={data.metrics.qualifiedCandidates}
-          description="Passed initial screening"
-          icon={<UserCheck className="h-4 w-4" />}
-          highlight={true}
-        />
-        <MetricCard
-          label="AI Voice Interviews"
-          value={data.metrics.aiInterviews}
-          description="Active / completed sessions"
-          icon={<Video className="h-4 w-4" />}
-        />
-      </div>
-
-      {/* Main Command Center Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
-        {/* Left Column: AI Intelligence & Recent Applications */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Candidate Screening Funnel Card */}
-          <Card glass interactive className="p-6 space-y-5 animate-stagger-2">
-            <div className="flex items-center justify-between border-b border-[#242932] pb-3">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#39D9FF]" />
-                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                  Recruitment Intelligence Pipeline Flow
-                </h3>
-              </div>
-              <span className="text-xs font-mono text-[#A7AFBC]">
-                {data.metrics.totalApplications} Total Candidates Ingested
-              </span>
+    <div className="space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="eyebrow">Your recruitment workspace</p>
+          <h1 className="page-title">Overview</h1>
+          <p className="mt-2 text-sm text-text-secondary">
+            Welcome back, {userName.split(" ")[0]}. Here’s where your hiring
+            stands.
+          </p>
+        </div>
+        <Link className="primary-link" href="/jobs/new">
+          <Plus className="size-4" />
+          Create a job
+        </Link>
+      </header>
+      <section
+        aria-label="Workspace metrics"
+        className="grid grid-cols-2 lg:grid-cols-4 border border-border rounded-xl bg-surface divide-x divide-border"
+      >
+        {metrics.map((metric) => (
+          <Link
+            href={metric.href}
+            key={metric.label}
+            className="p-5 sm:p-6 hover:bg-hover"
+          >
+            <p className="text-sm text-text-secondary">{metric.label}</p>
+            <p className="my-3 text-3xl font-semibold tracking-tight tabular-nums">
+              {metric.value}
+            </p>
+            <p className="text-xs text-text-muted">{metric.detail}</p>
+          </Link>
+        ))}
+      </section>
+      <div className="grid lg:grid-cols-[1fr_300px] gap-6 items-start">
+        <section className="panel min-w-0">
+          <div className="p-5 sm:p-6 border-b border-border flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold">Recent applications</h2>
+              <p className="mt-1 text-xs text-text-secondary">
+                Saved evidence, from resume to interview.
+              </p>
             </div>
-
-            {data.metrics.totalApplications > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-[#0D0F12] border border-[#242932] p-4 rounded-xl text-center space-y-1">
-                    <span className="text-xs font-mono text-[#A7AFBC] uppercase block">1. Ingested</span>
-                    <span className="text-2xl font-bold text-[#F5F7FA] font-display block">
-                      {data.metrics.totalApplications}
-                    </span>
-                    <span className="text-[10px] text-[#68717E]">Applications</span>
-                  </div>
-
-                  <div className="bg-[#0D0F12] border border-[#242932] p-4 rounded-xl text-center space-y-1">
-                    <span className="text-xs font-mono text-[#39D9FF] uppercase block">2. CV Screened</span>
-                    <span className="text-2xl font-bold text-[#39D9FF] font-display block">
-                      {data.aiSummary.totalScreened}
-                    </span>
-                    <span className="text-[10px] text-[#A7AFBC]">Avg {data.aiSummary.averageMatchScore}% Match</span>
-                  </div>
-
-                  <div className="bg-[#0D0F12] border border-[#35D07F]/30 bg-[#35D07F]/5 p-4 rounded-xl text-center space-y-1">
-                    <span className="text-xs font-mono text-[#35D07F] uppercase block">3. Qualified</span>
-                    <span className="text-2xl font-bold text-[#35D07F] font-display block">
-                      {data.aiSummary.qualifiedCount || data.metrics.qualifiedCandidates}
-                    </span>
-                    <span className="text-[10px] text-[#35D07F]/80">Passed Baseline</span>
-                  </div>
-
-                  <div className="bg-[#0D0F12] border border-[#FF5C67]/30 bg-[#FF5C67]/5 p-4 rounded-xl text-center space-y-1">
-                    <span className="text-xs font-mono text-[#FF5C67] uppercase block">4. Knocked Out</span>
-                    <span className="text-2xl font-bold text-[#FF5C67] font-display block">
-                      {data.aiSummary.knockedOutCount}
-                    </span>
-                    <span className="text-[10px] text-[#FF5C67]/80">Filter Criteria</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-[#0D0F12] border border-[#242932] flex flex-wrap items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-[#39D9FF]" />
-                    <span className="text-[#A7AFBC]">Quick Actions:</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => router.push("/applications")} className="text-xs h-7">
-                      View Pipeline →
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => router.push("/interviews")} className="text-xs h-7 text-[#39D9FF]">
-                      Live Interview Rooms →
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Empty State for AI Screening */
-              <div className="p-8 text-center space-y-3 bg-[#0D0F12] rounded-xl border border-[#242932]">
-                <p className="text-xs text-[#A7AFBC] leading-relaxed">
-                  No candidate applications recorded yet.
-                </p>
-                <p className="text-[11px] text-[#68717E]">
-                  Create your first job position and share the application link with candidates to begin automated evaluation.
-                </p>
-                <div className="pt-2">
-                  <Button
-                    variant="ai"
-                    size="sm"
-                    onClick={() => router.push("/jobs/new")}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Create Job Position
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/* Recent Candidate Applications Table */}
-          <div className="space-y-3 animate-stagger-3">
-            <div className="flex items-center justify-between pb-1">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-[#39D9FF]" />
-                <h3 className="text-xs font-bold text-[#F5F7FA] uppercase tracking-wider font-display">
-                  Recent Candidate Submissions
-                </h3>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/candidates")}
-                className="text-xs text-[#39D9FF] hover:text-[#63E3FF]"
-              >
-                View Full Directory <ChevronRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </div>
-
-            {data.recentApplications && data.recentApplications.length > 0 ? (
-              <div className="overflow-hidden rounded-xl border border-[#242932] bg-[#12151A]">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-[#242932] bg-[#0D0F12]">
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Candidate</TableHead>
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Target Position</TableHead>
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">CV Match</TableHead>
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Assessment</TableHead>
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Interview</TableHead>
-                      <TableHead className="text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Stage</TableHead>
-                      <TableHead className="text-right text-[11px] font-bold text-[#A7AFBC] uppercase tracking-wider">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.recentApplications.map((app) => (
-                      <TableRow
-                        key={app.id}
-                        onClick={() => router.push(`/candidates/${app.candidateId}`)}
-                        className="cursor-pointer border-b border-[#1C2027] hover:bg-[#171B21]/80 transition-colors"
-                      >
-                        <TableCell className="py-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar fallback={app.candidateName.slice(0, 2).toUpperCase()} size="sm" />
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-[#F5F7FA] text-xs hover:text-[#39D9FF]">
-                                {app.candidateName}
-                              </span>
-                              <span className="text-[10px] text-[#A7AFBC]">{app.candidateEmail}</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs text-[#F5F7FA] font-medium">{app.jobTitle}</TableCell>
-                        <TableCell>{getScoreBadge(app.cvMatch)}</TableCell>
-                        <TableCell>{getScoreBadge(app.assessmentScore)}</TableCell>
-                        <TableCell>{getScoreBadge(app.interviewScore)}</TableCell>
-                        <TableCell>{getStatusBadge(app.status)}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-[#A7AFBC] hover:text-[#39D9FF]"
-                            title="Open Candidate Scorecard"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              /* Empty State for Recent Submissions */
-              <div className="p-8 text-center rounded-xl border border-[#242932] bg-[#12151A] space-y-3">
-                <FileText className="h-8 w-8 text-[#68717E] mx-auto" />
-                <h4 className="text-xs font-bold text-[#F5F7FA]">No Submissions Yet</h4>
-                <p className="text-xs text-[#A7AFBC]">
-                  No candidate applications have been submitted to your organization.
-                </p>
-              </div>
-            )}
+            <Link
+              className="text-sm text-action-blue inline-flex gap-1 items-center shrink-0"
+              href="/applications"
+            >
+              View all
+              <ArrowUpRight className="size-4" />
+            </Link>
           </div>
-        </div>
-
-        {/* Right Column: AI Insights & Activity */}
-        <div className="lg:col-span-4 space-y-6 animate-stagger-4">
-          <InsightsPanel recentApplications={data.recentApplications} />
-        </div>
+          {data.recentApplications.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-background text-text-secondary text-xs">
+                  <tr>
+                    {[
+                      "Candidate",
+                      "CV match",
+                      "Assessment",
+                      "Interview",
+                      "Stage",
+                    ].map((label) => (
+                      <th
+                        className="px-5 py-3 font-medium whitespace-nowrap"
+                        key={label}
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.recentApplications.map((application) => (
+                    <tr
+                      key={application.id}
+                      className="border-t border-border hover:bg-hover"
+                    >
+                      <td className="px-5 py-4">
+                        <Link
+                          className="font-medium hover:text-action-blue whitespace-nowrap"
+                          href={`/candidates/${application.candidateId}?application=${application.id}`}
+                        >
+                          {application.candidateName}
+                        </Link>
+                        <p className="text-xs text-text-secondary mt-1">
+                          {application.jobTitle}
+                        </p>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {score(application.cvMatch)}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {score(application.assessmentScore)}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {score(application.interviewScore)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-block rounded-md px-2 py-1 text-xs capitalize whitespace-nowrap ${application.status === "evaluation" ? "bg-action-blue/10 text-action-blue" : "bg-background text-text-secondary"}`}
+                        >
+                          {status(application.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="px-6 py-16 text-center">
+              <h3 className="font-semibold">
+                Your first application starts with a job.
+              </h3>
+              <p className="mx-auto mt-2 mb-5 max-w-sm text-sm text-text-secondary">
+                Publish a role, share its link, and candidate applications will
+                appear here.
+              </p>
+              <Link
+                className="text-sm text-action-blue underline"
+                href="/jobs/new"
+              >
+                Create your first job
+              </Link>
+            </div>
+          )}
+          <p className="border-t border-border px-5 py-3 text-xs text-text-muted">
+            A dash means that a stage has not been completed.
+          </p>
+        </section>
+        <aside className="space-y-5">
+          <section className="panel p-5">
+            <h2 className="font-semibold">Pipeline progress</h2>
+            <p className="text-xs text-text-secondary mt-1 mb-6">
+              Applications reaching each stage.
+            </p>
+            <ol className="space-y-5">
+              {stages.map((stage, index) => (
+                <li key={stage.label}>
+                  <div className="flex justify-between gap-2 text-xs mb-2">
+                    <span className="text-text-secondary">
+                      {index + 1}. {stage.label}
+                    </span>
+                    <span className="font-semibold tabular-nums">
+                      {stage.value}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-background overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-action-blue"
+                      style={{
+                        width: `${data.funnel.total ? Math.min(100, (stage.value / data.funnel.total) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+          <section className="rounded-xl border border-border p-5">
+            <h2 className="text-sm font-semibold">Review before deciding</h2>
+            <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+              AI scores summarize the evidence. Read the candidate’s answers and
+              supporting details before making a hiring decision.
+            </p>
+            <Link
+              className="mt-4 inline-flex gap-1 items-center text-sm text-action-blue"
+              href="/evaluations"
+            >
+              Open evaluations
+              <ArrowUpRight className="size-4" />
+            </Link>
+          </section>
+        </aside>
       </div>
     </div>
   );
 }
-

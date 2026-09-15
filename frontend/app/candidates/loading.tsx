@@ -16,7 +16,7 @@ export default function CandidatesLoading() {
       </div>
 
       {/* Tabs Skeleton */}
-      <div className="flex items-center gap-6 border-b border-[#242932] pb-1">
+      <div className="flex items-center gap-6 border-b border-border pb-1">
         <Skeleton className="h-6 w-20" />
         <Skeleton className="h-6 w-24" />
         <Skeleton className="h-6 w-16" />
@@ -25,7 +25,10 @@ export default function CandidatesLoading() {
       {/* List / Table Skeleton */}
       <div className="space-y-3 pt-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-[#242932] bg-[#12151A]">
+          <div
+            key={i}
+            className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface"
+          >
             <div className="flex items-center gap-4">
               <Skeleton className="h-10 w-10 rounded-full" />
               <div className="space-y-2">

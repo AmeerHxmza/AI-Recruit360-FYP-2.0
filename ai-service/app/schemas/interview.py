@@ -14,10 +14,7 @@ class InterviewResponseEvaluation(BaseModel):
     technical_score: float = Field(ge=0.0, le=100.0)
     communication_score: float = Field(ge=0.0, le=100.0)
     relevance_score: float = Field(ge=0.0, le=100.0)
-    overall_score: float = Field(ge=0.0, le=100.0)
     feedback: str
-    strengths: List[str]
-    areas_for_improvement: List[str]
 
 class NextInterviewQuestionResponse(BaseModel):
     interview_id: str

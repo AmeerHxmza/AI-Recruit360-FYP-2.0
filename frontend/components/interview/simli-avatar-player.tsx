@@ -1,96 +1,353 @@
 "use client";
 
-import * as React from "react";
-import { Sparkles, Volume2, VolumeX, Bot } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { SimliClient } from "simli-client";
+import {
+  createAvatarSessionAction,
+  getInterviewSpeechAction,
+} from "@/app/actions/interview-avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Loader2,
+  Volume2,
+  VolumeX,
+  Video,
+  Square,
+  PhoneOff,
+} from "lucide-react";
 
-interface SimliAvatarPlayerProps {
-  isSpeaking: boolean;
-  currentText?: string;
-  onAudioEnded?: () => void;
-}
+type Props = {
+  interviewId: string;
+  questionId: string;
+  paused: boolean;
+  recording?: boolean;
+};
 
 export function SimliAvatarPlayer({
-  isSpeaking,
-  currentText,
-}: SimliAvatarPlayerProps) {
-  const [isMuted, setIsMuted] = React.useState(false);
+  interviewId,
+  questionId,
+  paused,
+  recording = false,
+}: Props) {
+  const video = useRef<HTMLVideoElement>(null);
+  const audio = useRef<HTMLAudioElement>(null);
+  const client = useRef<SimliClient | null>(null);
+  const mounted = useRef(true);
+  const connecting = useRef(false);
+  const generation = useRef(0);
+  const played = useRef("");
+  const cache = useRef(new Map<string, Uint8Array>());
+  const [status, setStatus] = useState<"off" | "connecting" | "ready">("off");
+  const [preparing, setPreparing] = useState(false);
+  const [error, setError] = useState("");
+  const [speaking, setSpeaking] = useState(false);
+  const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      void client.current?.stop();
+      client.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    generation.current++;
+    client.current?.ClearBuffer();
+  }, [paused, questionId]);
+
+  const speak = useCallback(async () => {
+    const active = client.current;
+    if (!active || paused) return;
+    const version = ++generation.current;
+    active.ClearBuffer();
+    setPreparing(true);
+    setError("");
+    try {
+      let pcm = cache.current.get(questionId);
+      if (!pcm) {
+        const result = await getInterviewSpeechAction(interviewId, questionId);
+        if (!result.success) throw new Error(result.error);
+        const bytes = Uint8Array.from(atob(result.data.audio), (c) =>
+          c.charCodeAt(0),
+        );
+        // Decode the provider WAV, then resample to Simli's mono 16 kHz PCM16.
+        const decoder = new OfflineAudioContext(1, 1, 16000);
+        const decoded = await decoder.decodeAudioData(bytes.buffer);
+        const render = new OfflineAudioContext(
+          1,
+          Math.ceil(decoded.duration * 16000),
+          16000,
+        );
+        const source = render.createBufferSource();
+        source.buffer = decoded;
+        source.connect(render.destination);
+        source.start();
+        const samples = (await render.startRendering()).getChannelData(0);
+        pcm = new Uint8Array(samples.length * 2);
+        const view = new DataView(pcm.buffer);
+        samples.forEach((sample, i) =>
+          view.setInt16(
+            i * 2,
+            Math.round(Math.max(-1, Math.min(1, sample)) * 32767),
+            true,
+          ),
+        );
+        cache.current.set(questionId, pcm);
+      }
+      if (
+        !mounted.current ||
+        generation.current !== version ||
+        client.current !== active
+      )
+        return;
+      for (let offset = 0; offset < pcm.length; offset += 6000)
+        active.sendAudioData(pcm.subarray(offset, offset + 6000));
+      await audio.current?.play();
+    } catch (e) {
+      if (mounted.current && generation.current === version)
+        setError(
+          e instanceof Error
+            ? e.message
+            : "Interviewer audio could not play. Try again.",
+        );
+    } finally {
+      if (mounted.current) setPreparing(false);
+    }
+  }, [interviewId, questionId, paused]);
+
+  useEffect(() => {
+    if (status === "ready" && !paused && played.current !== questionId) {
+      played.current = questionId;
+      void speak();
+    }
+  }, [status, paused, questionId, speak]);
+
+  async function connect() {
+    if (connecting.current) return;
+    connecting.current = true;
+    setStatus("connecting");
+    setError("");
+    try {
+      await client.current?.stop();
+      client.current = null;
+      const token = await createAvatarSessionAction(interviewId);
+      if (!token.success) throw new Error(token.error);
+      if (!mounted.current || !video.current || !audio.current) return;
+      const { SimliClient, LogLevel } = await import("simli-client");
+      if (!mounted.current) return;
+      const next = new SimliClient(
+        token.token,
+        video.current!,
+        audio.current!,
+        null,
+        LogLevel.ERROR,
+        "livekit",
+      );
+      client.current = next;
+      const failed = () => {
+        if (!mounted.current || client.current !== next) return;
+        generation.current++;
+        setStatus("off");
+        setSpeaking(false);
+        setError(
+          "The avatar disconnected. Reconnect, or continue answering below.",
+        );
+      };
+      next.on("error", failed);
+      next.on("startup_error", failed);
+      next.on("stop", failed);
+      next.on("speaking", () => {
+        if (mounted.current && client.current === next) setSpeaking(true);
+      });
+      next.on("silent", () => {
+        if (mounted.current && client.current === next) setSpeaking(false);
+      });
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          next.start(),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(
+              () =>
+                reject(
+                  new Error("Avatar connection timed out. Please reconnect."),
+                ),
+              30000,
+            );
+          }),
+        ]);
+      } finally {
+        if (timeout) clearTimeout(timeout);
+      }
+      if (!mounted.current || client.current !== next) {
+        await next.stop();
+        return;
+      }
+      played.current = "";
+      setStatus("ready");
+    } catch (e) {
+      const current = client.current;
+      client.current = null;
+      void current?.stop();
+      if (mounted.current) {
+        setStatus("off");
+        setError(
+          e instanceof Error
+            ? e.message
+            : "Avatar could not connect. Please retry.",
+        );
+      }
+    } finally {
+      connecting.current = false;
+    }
+  }
+
+  const talking = status === "ready" && speaking && !paused;
+  const activity =
+    status === "connecting"
+      ? "Connecting"
+      : status !== "ready"
+        ? "Not connected"
+        : recording
+          ? "Recording your answer"
+          : paused
+            ? "Updating interview"
+            : preparing
+              ? "Preparing audio"
+              : talking
+                ? "Speaking"
+                : "Ready";
 
   return (
-    <div className="relative w-full aspect-video max-h-[380px] rounded-2xl border border-[#39D9FF]/30 bg-[#0D0F12] overflow-hidden shadow-[0_0_30px_rgba(57,217,255,0.15)] flex flex-col justify-between p-4 selection:bg-transparent">
-      {/* Top Status Bar */}
-      <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#12151A]/90 border border-[#242932] backdrop-blur-md">
-          <span className="relative flex h-2 w-2">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isSpeaking ? "bg-[#35D07F]" : "bg-[#39D9FF]"} opacity-75`} />
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${isSpeaking ? "bg-[#35D07F]" : "bg-[#39D9FF]"}`} />
-          </span>
-          <span className="text-[11px] font-mono font-bold text-[#F5F7FA] tracking-wide flex items-center gap-1.5">
-            <Bot className="h-3.5 w-3.5 text-[#39D9FF]" />
-            AI Recruiter Avatar
-          </span>
-        </div>
-
-        <button
-          onClick={() => setIsMuted(!isMuted)}
-          className="p-2 rounded-full bg-[#12151A]/80 border border-[#242932] text-[#A7AFBC] hover:text-[#F5F7FA] transition-colors"
-          title={isMuted ? "Unmute AI Voice" : "Mute AI Voice"}
-        >
-          {isMuted ? <VolumeX className="h-4 w-4 text-[#FF5C67]" /> : <Volume2 className="h-4 w-4 text-[#39D9FF]" />}
-        </button>
+    <div className="interviewer-avatar overflow-hidden rounded-xl border border-border">
+      <div className="interviewer-call-header">
+        <span className="font-semibold">AI interviewer</span>
+        <span className="interviewer-connection" role="status">
+          <span
+            className={
+              status === "ready" ? "connection-dot connected" : "connection-dot"
+            }
+          />
+          {status === "ready"
+            ? "Connected"
+            : status === "connecting"
+              ? "Connecting"
+              : "Offline"}
+        </span>
       </div>
-
-      {/* Main Avatar Renderer (Interactive Animated AI Avatar Portrait) */}
-      <div className="relative flex-1 flex flex-col items-center justify-center py-2">
-        <div className="relative flex flex-col items-center justify-center space-y-3">
-          {/* Glowing Animated Avatar Aura */}
-          <div className="relative group">
-            <div className={`absolute -inset-2 rounded-full bg-gradient-to-r from-[#39D9FF] via-[#63E3FF] to-[#00E5A3] opacity-50 blur-lg transition-all ${isSpeaking ? "animate-pulse scale-105" : "opacity-30"}`} />
-            <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-b from-[#1E232D] to-[#0D0F12] border-2 border-[#39D9FF]/60 p-1 flex items-center justify-center shadow-2xl">
-              <div className="w-full h-full rounded-full bg-[#12151A] overflow-hidden flex items-center justify-center relative border border-[#242932]">
-                
-                {/* Generated High-Quality AI 3D Avatar */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src="/images/ai_recruiter_avatar.jpg" 
-                  alt="AI Recruiter Avatar" 
-                  className={`w-full h-full object-cover transition-all duration-700 ${isSpeaking ? 'scale-105' : 'scale-100 grayscale-[20%]'}`}
-                />
-
-                {/* Lip-Sync Animated Equalizer Waves when speaking */}
-                {isSpeaking && (
-                  <div className="absolute bottom-3 flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-[#08090B]/90 backdrop-blur-sm border border-[#39D9FF]/40 shadow-lg">
-                    <span className="w-1 h-3 bg-[#39D9FF] rounded-full animate-pulse" />
-                    <span className="w-1 h-5 bg-[#35D07F] rounded-full animate-bounce" />
-                    <span className="w-1 h-2.5 bg-[#F5B942] rounded-full animate-pulse" />
-                    <span className="w-1 h-5 bg-[#39D9FF] rounded-full animate-bounce" />
-                    <span className="w-1 h-3 bg-[#35D07F] rounded-full animate-pulse" />
-                  </div>
-                )}
-              </div>
+      <div
+        className={`interviewer-video relative bg-[#172b4d] ${talking ? "is-speaking" : ""}`}
+      >
+        <video
+          ref={video}
+          autoPlay
+          playsInline
+          muted
+          aria-label="AI interviewer avatar"
+          className="block h-full w-full object-contain"
+        />
+        <audio ref={audio} autoPlay muted={muted} />
+        {status === "ready" && (
+          <div className="interviewer-nameplate">
+            <span
+              className="interviewer-wave"
+              data-speaking={talking}
+              aria-hidden="true"
+            >
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <span role="status">{activity}</span>
+            {muted && (
+              <VolumeX aria-label="Interviewer muted" className="size-4" />
+            )}
+          </div>
+        )}
+        {status !== "ready" && (
+          <div className="absolute inset-0 grid place-items-center bg-[#172b4d] text-white">
+            <div className="text-center">
+              <Video className="mx-auto mb-3 size-8" />
+              <p>
+                {status === "connecting"
+                  ? "Connecting your interviewer…"
+                  : "Meet your AI interviewer"}
+              </p>
             </div>
           </div>
-
-          {/* Speaking Status Sub-Header */}
-          <div className="text-center space-y-0.5">
-            <h4 className="text-xs font-mono font-bold text-[#F5F7FA] flex items-center justify-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-[#39D9FF]" />
-              AI Technical Interviewer
-            </h4>
-            <p className="text-[11px] text-[#A7AFBC] font-mono">
-              {isSpeaking ? "🔊 Speaking Question Aloud..." : "🎙️ Listening to Candidate Response..."}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Caption Overlay */}
-      {currentText && (
-        <div className="relative z-10 p-3 rounded-xl bg-[#08090B]/90 backdrop-blur-md border border-[#242932] text-xs text-[#F5F7FA] font-sans leading-relaxed text-center shadow-lg">
-          <p className="line-clamp-2 italic text-[#63E3FF] font-medium">
-            &ldquo;{currentText}&rdquo;
+      <div className="interviewer-controls space-y-3 bg-surface p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-text-secondary">
+            AI-generated video &amp; voice
           </p>
+          {status !== "ready" ? (
+            <Button
+              variant="secondary"
+              disabled={status === "connecting" || paused}
+              onClick={() => void connect()}
+            >
+              {status === "connecting" && <Loader2 className="animate-spin" />}{" "}
+              Connect interviewer
+            </Button>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              <Button
+                variant="ghost"
+                disabled={paused || preparing}
+                onClick={() => void speak()}
+              >
+                {preparing ? <Loader2 className="animate-spin" /> : <Volume2 />}{" "}
+                Repeat question
+              </Button>
+              <Button
+                variant="ghost"
+                aria-label="Stop interviewer audio"
+                onClick={() => {
+                  generation.current++;
+                  client.current?.ClearBuffer();
+                  setSpeaking(false);
+                }}
+              >
+                <Square />
+              </Button>
+              <Button
+                variant="ghost"
+                aria-label={muted ? "Unmute interviewer" : "Mute interviewer"}
+                aria-pressed={muted}
+                onClick={() => setMuted(!muted)}
+              >
+                {muted ? <VolumeX /> : <Volume2 />}
+              </Button>
+              <Button
+                variant="ghost"
+                aria-label="Disconnect avatar"
+                className="text-danger"
+                onClick={() => {
+                  generation.current++;
+                  const current = client.current;
+                  client.current = null;
+                  setStatus("off");
+                  setSpeaking(false);
+                  setError("");
+                  void current?.stop();
+                }}
+              >
+                <PhoneOff />
+              </Button>
+            </div>
+          )}
         </div>
-      )}
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

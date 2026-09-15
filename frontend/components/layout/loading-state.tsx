@@ -32,20 +32,20 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
     <div
       className={cn(
         "flex flex-col items-center justify-center p-12 text-center space-y-3",
-        className
+        className,
       )}
     >
       {variant === "ai" ? (
         <div className="relative flex items-center justify-center">
-          <div className="absolute h-10 w-10 animate-ping rounded-full bg-[#39D9FF]/20" />
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#171B21] border border-[#39D9FF]/40 text-[#39D9FF]">
+          <div className="absolute h-10 w-10 animate-ping rounded-full bg-action-blue/20" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-hover border border-action-blue/40 text-action-blue">
             <Sparkles className="h-5 w-5 animate-spin duration-1000" />
           </div>
         </div>
       ) : (
-        <Loader2 className="h-6 w-6 animate-spin text-[#39D9FF]" />
+        <Loader2 className="h-6 w-6 animate-spin text-action-blue" />
       )}
-      <span className="text-xs font-medium text-[#A7AFBC] tracking-wide">
+      <span className="text-xs font-medium text-text-secondary tracking-wide">
         {label}
       </span>
     </div>

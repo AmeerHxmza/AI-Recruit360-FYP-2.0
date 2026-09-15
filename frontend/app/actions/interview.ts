@@ -3,23 +3,37 @@
 import { revalidatePath } from "next/cache";
 import { aiServiceClient } from "@/lib/api/ai-service-client";
 import { ActionResult } from "@/app/actions/jobs";
+import {
+  requireCandidateSession,
+  requireInterviewAccess,
+} from "@/lib/auth/candidate-session";
 
-export async function initializeInterviewAction(applicationId: string): Promise<ActionResult<Record<string, unknown>>> {
+export async function initializeInterviewAction(
+  applicationId: string,
+): Promise<ActionResult<Record<string, unknown>>> {
   try {
+    await requireCandidateSession(applicationId);
     const data = await aiServiceClient.initializeInterview(applicationId);
     return { success: true, data: data as Record<string, unknown> };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to initialize interview.";
+    const errorMsg =
+      err instanceof Error ? err.message : "Failed to initialize interview.";
     return { success: false, error: errorMsg };
   }
 }
 
-export async function getNextInterviewQuestionAction(interviewId: string): Promise<ActionResult<Record<string, unknown>>> {
+export async function getNextInterviewQuestionAction(
+  interviewId: string,
+): Promise<ActionResult<Record<string, unknown>>> {
   try {
+    await requireInterviewAccess(interviewId);
     const data = await aiServiceClient.getNextInterviewQuestion(interviewId);
     return { success: true, data: data as Record<string, unknown> };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to fetch next interview question.";
+    const errorMsg =
+      err instanceof Error
+        ? err.message
+        : "Failed to fetch next interview question.";
     return { success: false, error: errorMsg };
   }
 }
@@ -27,19 +41,28 @@ export async function getNextInterviewQuestionAction(interviewId: string): Promi
 export async function submitInterviewResponseAction(
   interviewId: string,
   questionId: string,
-  responseText: string
+  responseText: string,
 ): Promise<ActionResult<Record<string, unknown>>> {
   try {
-    const data = await aiServiceClient.evaluateInterviewResponse(interviewId, questionId, responseText);
+    await requireInterviewAccess(interviewId);
+    const data = await aiServiceClient.evaluateInterviewResponse(
+      interviewId,
+      questionId,
+      responseText,
+    );
     return { success: true, data: data as Record<string, unknown> };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to record response.";
+    const errorMsg =
+      err instanceof Error ? err.message : "Failed to record response.";
     return { success: false, error: errorMsg };
   }
 }
 
-export async function finalizeEvaluationAction(applicationId: string): Promise<ActionResult<Record<string, unknown>>> {
+export async function finalizeEvaluationAction(
+  applicationId: string,
+): Promise<ActionResult<Record<string, unknown>>> {
   try {
+    await requireCandidateSession(applicationId);
     const data = await aiServiceClient.generateFinalEvaluation(applicationId);
 
     revalidatePath("/candidates");
@@ -48,36 +71,24 @@ export async function finalizeEvaluationAction(applicationId: string): Promise<A
 
     return { success: true, data: data as Record<string, unknown> };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to generate evaluation scorecard.";
+    const errorMsg =
+      err instanceof Error
+        ? err.message
+        : "Failed to generate evaluation scorecard.";
     return { success: false, error: errorMsg };
   }
 }
 
-export async function transcribeAudioAction(formData: FormData): Promise<ActionResult<{ transcript: string }>> {
+export async function transcribeAudioAction(
+  formData: FormData,
+): Promise<ActionResult<{ transcript: string }>> {
   try {
+    await requireCandidateSession(String(formData.get("applicationId") || ""));
     const data = await aiServiceClient.transcribeAudioFile(formData);
     return { success: true, data };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to transcribe audio.";
-    return { success: false, error: errorMsg };
-  }
-}
-export async function getSimliTokenAction(): Promise<ActionResult<{ session_token: string }>> {
-  try {
-    const data = await aiServiceClient.getSimliToken();
-    return { success: true, data };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to fetch simli token.";
-    return { success: false, error: errorMsg };
-  }
-}
-
-export async function degradeAvatarAction(interviewId: string): Promise<ActionResult<{ status: string }>> {
-  try {
-    const data = await aiServiceClient.degradeAvatar(interviewId);
-    return { success: true, data };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to degrade avatar.";
+    const errorMsg =
+      err instanceof Error ? err.message : "Failed to transcribe audio.";
     return { success: false, error: errorMsg };
   }
 }

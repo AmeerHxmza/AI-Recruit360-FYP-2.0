@@ -1,7 +1,7 @@
+"use client";
 import * as React from "react";
-import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-
+import { cn } from "@/lib/utils";
 export interface DialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,8 +11,7 @@ export interface DialogProps {
   footer?: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl";
 }
-
-const Dialog: React.FC<DialogProps> = ({
+export function Dialog({
   isOpen,
   onClose,
   title,
@@ -20,82 +19,57 @@ const Dialog: React.FC<DialogProps> = ({
   children,
   footer,
   maxWidth = "md",
-}) => {
+}: DialogProps) {
+  const ref = React.useRef<HTMLDialogElement>(null);
+  const id = React.useId();
   React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const maxWidthClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-  }[maxWidth];
-
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (isOpen && !dialog.open) dialog.showModal();
+    else if (!isOpen && dialog.open) dialog.close();
+  }, [isOpen]);
   return (
-    <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-[#08090B]/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
-      />
-
-      {/* Modal Container */}
-      <div
-        className={cn(
-          "relative z-[1400] w-full rounded-xl border border-[#242932] bg-[#171B21] p-6 shadow-2xl transition-all animate-in zoom-in-95 duration-200 text-[#F5F7FA]",
-          maxWidthClasses
-        )}
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-[#242932]">
-          <div>
-            {title && (
-              <h2 className="text-lg font-semibold text-[#F5F7FA]">
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className="text-xs text-[#A7AFBC] mt-1">{description}</p>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1.5 text-[#A7AFBC] hover:bg-[#242932] hover:text-[#F5F7FA] transition-micro focus:outline-none focus:ring-1 focus:ring-[#39D9FF]"
-            aria-label="Close dialog"
-          >
-            <X className="h-4 w-4" />
-          </button>
+    <dialog
+      ref={ref}
+      onCancel={onClose}
+      onClose={onClose}
+      aria-labelledby={`${id}-title`}
+      aria-describedby={description ? `${id}-description` : undefined}
+      className={cn(
+        "w-[calc(100%_-_2rem)] p-6",
+        { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg", xl: "max-w-xl" }[
+          maxWidth
+        ],
+      )}
+    >
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <h2 id={`${id}-title`} className="text-lg font-semibold">
+            {title || "Details"}
+          </h2>
+          {description && (
+            <p
+              id={`${id}-description`}
+              className="mt-2 text-sm text-text-secondary"
+            >
+              {description}
+            </p>
+          )}
         </div>
-
-        {/* Content Body */}
-        <div className="py-4 text-sm text-[#A7AFBC]">{children}</div>
-
-        {/* Footer */}
-        {footer && (
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#242932]">
-            {footer}
-          </div>
-        )}
+        <button
+          aria-label="Close dialog"
+          onClick={onClose}
+          className="rounded p-1 hover:bg-hover"
+        >
+          <X className="size-5" />
+        </button>
       </div>
-    </div>
+      {children}
+      {footer && (
+        <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-border pt-4">
+          {footer}
+        </div>
+      )}
+    </dialog>
   );
-};
-
-export { Dialog };
+}

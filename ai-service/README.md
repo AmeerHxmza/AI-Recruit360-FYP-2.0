@@ -1,77 +1,11 @@
-# AI-Recruit360 — Python AI Service (FastAPI Engine)
+# Recruit360 AI service
 
-The **AI-Recruit360 Python AI Service** is a high-performance FastAPI microservice responsible for the core artificial intelligence intelligence layer of AI-Recruit360.
+See the [root setup guide](../README.md) for environment and database preparation.
 
----
+Run `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000` from this directory using the virtual environment. Run one worker. The private routes are under `/api/v1`; they require `Authorization: Bearer <AI_SERVICE_SHARED_SECRET>` even in development.
 
-## 1. Core Architecture
+The active screening route calls `services/screening/orchestrator.py`. Assessment generation returns validated questions; scoring is enforced by PostgreSQL. Interview responses and final evaluations are persisted using transactional functions. AI failures raise retryable errors and never create substitute scores or transcripts.
 
-```text
-                  Next.js Frontend (Port 3000)
-                             │
-                             │ HTTPS / REST
-                             ▼
-                 FastAPI AI Engine (Port 8000)
-                             │
-       ┌─────────────────────┼─────────────────────┐
-       ▼                     ▼                     ▼
-Document Extractor     Multi-Agent CV       Personalized MCQ
-(PDF/DOCX/TXT)           Screening               Engine
-       │                     │                     │
-       └─────────────────────┼─────────────────────┘
-                             ▼
-                     Supabase PostgreSQL
-```
+`GET /api/v1/health/live` checks the process. `/health` and `/health/ready` check database connectivity. Provider access and workflow migrations need the separate acceptance test described in the root guide.
 
----
-
-## 2. API Endpoints
-
-### Health Check
-- `GET /api/v1/health`
-
-### CV Screening & Document Processing
-- `POST /api/v1/screening/analyze-job`
-- `POST /api/v1/screening/screen-application`
-- `POST /api/v1/screening/extract-cv`
-
-### Personalized MCQ Engine
-- `POST /api/v1/assessments/generate`
-- `POST /api/v1/assessments/submit-answer`
-- `POST /api/v1/assessments/finalize`
-
-### Adaptive AI Interview
-- `POST /api/v1/interviews/initialize`
-- `POST /api/v1/interviews/next-question`
-- `POST /api/v1/interviews/evaluate-response`
-
-### Final Candidate Evaluation
-- `POST /api/v1/evaluations/generate`
-
----
-
-## 3. Quick Start (Independent Execution)
-
-```bash
-cd ai-service
-
-# 1. Create Python virtual environment
-python -m venv .venv
-
-# 2. Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# Linux/macOS:
-# source .venv/bin/activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Copy environment settings
-cp .env.example .env
-
-# 5. Launch FastAPI development server
-uvicorn app.main:app --reload --port 8000
-```
-
-FastAPI interactive documentation will be available at [http://localhost:8000/docs](http://localhost:8000/docs).
+Run `python -m pytest -q` here. The tests do not contact the configured Supabase or AI accounts.

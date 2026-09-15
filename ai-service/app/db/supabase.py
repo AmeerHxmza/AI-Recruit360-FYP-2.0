@@ -42,9 +42,7 @@ def get_supabase_client() -> Client:
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
     if not url or not key:
-        logger.warning("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not configured.")
-        url = url or "https://placeholder.supabase.co"
-        key = key or "placeholder-key"
+        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured.")
 
     _supabase_client = create_client(url, key)
     logger.info("Supabase client initialised.")
@@ -65,4 +63,3 @@ async def run_sync(fn: Callable[[], T]) -> T:
         )
     """
     return await asyncio.to_thread(fn)
-

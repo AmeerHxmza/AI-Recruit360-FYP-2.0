@@ -30,20 +30,20 @@ export const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
       {/* Static Non-Interactive Organization Header Badge (No Dropdown Arrow or Popup) */}
       <div
         className={cn(
-          "flex items-center gap-2.5 rounded-xl border border-[#242932] bg-[#12151A] px-3 py-2 text-xs text-[#F5F7FA] shadow-xs",
-          isCollapsed ? "w-10 h-10 p-0 justify-center" : "w-full min-w-[180px]"
+          "flex items-center gap-2.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-text-primary shadow-xs",
+          isCollapsed ? "w-10 h-10 p-0 justify-center" : "w-full min-w-[180px]",
         )}
         title={organization.name}
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0D0F12] border border-[#242932] text-[#39D9FF]">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-hover border border-border text-action-blue">
           <Building2 className="h-4 w-4" />
         </div>
         {!isCollapsed && (
           <div className="flex flex-col text-left overflow-hidden">
-            <span className="font-bold font-display text-[#F5F7FA] truncate text-xs leading-none mb-1">
+            <span className="font-semibold text-text-primary truncate text-xs leading-none mb-1">
               {organization.name}
             </span>
-            <span className="text-[10px] text-[#A7AFBC] font-mono truncate leading-none">
+            <span className="text-xs text-text-secondary font-mono truncate leading-none">
               {formatRole(role)} • {organization.slug}
             </span>
           </div>

@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import { getOrganizationContext } from "@/lib/auth/session";
-import { getCandidatesForOrg, getCandidateCounts } from "@/lib/services/candidate-service";
+import {
+  getCandidatesForOrg,
+  getCandidateCounts,
+} from "@/lib/services/candidate-service";
 import { CandidatesClientView } from "@/components/candidates/candidates-client-view";
 import { Loader2 } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -13,12 +16,15 @@ function CandidatesSkeleton() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 rounded-xl bg-[#131B2A] border border-[#1E293B] animate-pulse" />
+          <div
+            key={i}
+            className="h-24 rounded-xl bg-surface border border-border animate-pulse"
+          />
         ))}
       </div>
-      <div className="h-96 rounded-xl bg-[#131B2A] border border-[#1E293B] animate-pulse flex items-center justify-center">
-        <div className="flex items-center gap-2 text-xs text-[#94A3B8] font-mono">
-          <Loader2 className="h-4 w-4 text-[#38BDF8] animate-spin" />
+      <div className="h-96 rounded-xl bg-surface border border-border animate-pulse flex items-center justify-center">
+        <div className="flex items-center gap-2 text-xs text-text-secondary font-mono">
+          <Loader2 className="h-4 w-4 text-action-blue animate-spin" />
           <span>Streaming Candidate Directory...</span>
         </div>
       </div>
@@ -28,7 +34,13 @@ function CandidatesSkeleton() {
 
 import { OrganizationRole } from "@/types/database.types";
 
-async function CandidatesServerData({ role, orgId }: { role: OrganizationRole, orgId: string }) {
+async function CandidatesServerData({
+  role,
+  orgId,
+}: {
+  role: OrganizationRole;
+  orgId: string;
+}) {
   const [candidatesResult, counts] = await Promise.all([
     getCandidatesForOrg(orgId, { page: 1, pageSize: 20 }),
     getCandidateCounts(orgId),

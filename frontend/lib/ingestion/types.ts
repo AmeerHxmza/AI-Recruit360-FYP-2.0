@@ -1,11 +1,16 @@
 import { Database } from "@/types/database.types";
 
-export type ProcessingStatus = "uploaded" | "processing" | "processed" | "failed";
-export type DocumentType = "resume" | "cover_letter" | "portfolio" | "assessment" | "other";
+export type ProcessingStatus =
+  "uploaded" | "processing" | "processed" | "failed";
+export type DocumentType =
+  "resume" | "cover_letter" | "portfolio" | "assessment" | "other";
 
-export type CandidateDocumentRow = Database["public"]["Tables"]["candidate_documents"]["Row"];
-export type CandidateDocumentInsert = Database["public"]["Tables"]["candidate_documents"]["Insert"];
-export type CandidateDocumentUpdate = Database["public"]["Tables"]["candidate_documents"]["Update"];
+export type CandidateDocumentRow =
+  Database["public"]["Tables"]["candidate_documents"]["Row"];
+export type CandidateDocumentInsert =
+  Database["public"]["Tables"]["candidate_documents"]["Insert"];
+export type CandidateDocumentUpdate =
+  Database["public"]["Tables"]["candidate_documents"]["Update"];
 
 export interface ParsedDocumentResult {
   text: string;

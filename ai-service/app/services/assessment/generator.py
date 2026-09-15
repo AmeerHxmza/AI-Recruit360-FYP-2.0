@@ -1,11 +1,11 @@
+from app.core.operation_lock import serialized
 import logging
 from typing import List
 
 from app.providers.factory import get_ai_provider
-from app.schemas.assessment import GeneratedAssessmentPayload, GeneratedMCQItem, CandidatePublicMCQItem
+from app.schemas.assessment import GeneratedAssessmentPayload, CandidatePublicMCQItem
 from app.db.supabase import get_supabase_client, run_sync
 from app.core.exceptions import AssessmentGenerationError
-from app.services.ai_activity import log_ai_activity
 
 logger = logging.getLogger("ai_service.services.assessment.generator")
 
@@ -20,14 +20,12 @@ Rules:
 5. Provide skill_category and difficulty ('easy', 'medium', 'hard').
 6. CRITICAL: Analyze the candidate's profile summary for specific projects. Generate meaningful technical questions that evaluate the candidate's understanding of the technologies used in those specific projects, mapping them to the job requirements."""
 
-async def _generate_mcqs_background_task(
-    application_id: str,
+async def _generate_questions(
     assessment_id: str,
     job_title: str,
     job_description: str,
     cv_summary: str,
-    matched_skills: List[str],
-    organization_id: str = None
+    matched_skills: List[str]
 ):
     supabase = get_supabase_client()
     provider = get_ai_provider()
@@ -46,11 +44,13 @@ async def _generate_mcqs_background_task(
             system_prompt=SYSTEM_PROMPT
         )
     except Exception as e:
-        logger.error(f"MCQ Generation AI call failed, generating fallback standard MCQs: {str(e)}")
-        # Fallback question generation if LLM fails
-        raw_result = generate_fallback_mcqs(job_title, matched_skills)
+        logger.error(f"MCQ generation unavailable: {str(e)}")
+        raise AssessmentGenerationError("Question generation is unavailable. Please retry; no assessment score has been assigned.") from e
 
-    # Insert all 10 questions in a SINGLE BATCH DATABASE INSERT (< 40ms)
+    if sorted(q.question_number for q in raw_result.questions) != list(range(1, 11)):
+        raise AssessmentGenerationError("Generated questions were incomplete. Please retry.")
+
+    # Persist the complete validated question set in one statement.
     batch_rows = []
     for item in raw_result.questions:
         batch_rows.append({
@@ -61,14 +61,14 @@ async def _generate_mcqs_background_task(
             "option_b": item.option_b,
             "option_c": item.option_c,
             "option_d": item.option_d,
-            "correct_option": item.correct_option.strip().upper()[:1] if item.correct_option.strip().upper()[:1] in ("A", "B", "C", "D") else "A",
+            "correct_option": item.correct_option,
             "explanation": item.explanation,
             "skill_category": item.skill_category,
             "difficulty": item.difficulty
         })
 
     await run_sync(
-        lambda: supabase.table("assessment_questions").insert(batch_rows).execute()
+        lambda: supabase.table("assessment_questions").upsert(batch_rows, on_conflict="assessment_id,question_number").execute()
     )
 
     # Update assessment status to ready/in_progress
@@ -76,19 +76,10 @@ async def _generate_mcqs_background_task(
         lambda: supabase.table("assessments").update({"status": "in_progress"}).eq("id", assessment_id).execute()
     )
 
-    # Log AI Activity
-    await log_ai_activity(
-        application_id=application_id,
-        event_type="assessment_generated",
-        organization_id=organization_id,
-        metadata={
-            "assessment_id": assessment_id,
-            "total_questions": len(raw_result.questions)
-        }
-    )
 
 
-async def generate_personalized_mcqs(application_id: str, background_tasks = None) -> dict:
+@serialized("assessment")
+async def generate_personalized_mcqs(application_id: str) -> dict:
     supabase = get_supabase_client()
 
     # Check if assessment already exists for this application (Idempotency)
@@ -106,6 +97,8 @@ async def generate_personalized_mcqs(application_id: str, background_tasks = Non
             .execute()
         )
         if q_res.data and len(q_res.data) >= 10:
+            if existing_assessment.data[0].get("status") in ("pending", "failed"):
+                await run_sync(lambda: supabase.table("assessments").update({"status":"in_progress"}).eq("id",assessment_id).execute())
             logger.info(f"Returning existing {len(q_res.data)} assessment questions for application {application_id}")
             return {
                 "status": "ready",
@@ -125,8 +118,6 @@ async def generate_personalized_mcqs(application_id: str, background_tasks = Non
                     for q in q_res.data
                 ]
             }
-        elif existing_assessment.data[0].get("status") == "pending":
-            return {"status": "generating", "message": "Assessment generation is already in progress."}
 
     # Fetch required data (Application, Job, and CV Screening)
     app_res = await run_sync(
@@ -138,7 +129,7 @@ async def generate_personalized_mcqs(application_id: str, background_tasks = Non
     app_record = app_res.data[0]
     
     current_status = app_record.get("status")
-    if current_status not in ["assessment", "screening", "applied"]:
+    if current_status not in ["assessment"]:
         raise AssessmentGenerationError(f"Application {application_id} is in status '{current_status}'. Not eligible for assessment.")
         
     org_id = app_record.get("organization_id")
@@ -171,92 +162,32 @@ async def generate_personalized_mcqs(application_id: str, background_tasks = Non
     else:
         assessment_id = existing_assessment.data[0]["id"]
 
-    if background_tasks:
-        background_tasks.add_task(
-            _generate_mcqs_background_task,
-            application_id, assessment_id, job_title, job_description, cv_summary, matched_skills, org_id
-        )
-        return {"status": "generating", "message": "Assessment generation started in background."}
-    else:
-        # Fallback to synchronous generation if no background tasks provided
-        await _generate_mcqs_background_task(application_id, assessment_id, job_title, job_description, cv_summary, matched_skills, org_id)
-        
-        # Fetch the newly generated questions
-        q_res = await run_sync(
-            lambda: supabase.table("assessment_questions")
-            .select("id, assessment_id, question_number, question, option_a, option_b, option_c, option_d, skill_category, difficulty")
-            .eq("assessment_id", assessment_id)
-            .order("question_number")
-            .execute()
-        )
-        return {
-            "status": "ready",
-            "questions": [
-                CandidatePublicMCQItem(
-                    id=q["id"],
-                    assessment_id=q["assessment_id"],
-                    question_number=q["question_number"],
-                    question=q.get("question") or q.get("question_text", "Technical Question"),
-                    option_a=q.get("option_a", ""),
-                    option_b=q.get("option_b", ""),
-                    option_c=q.get("option_c", ""),
-                    option_d=q.get("option_d", ""),
-                    skill_category=q.get("skill_category", "General"),
-                    difficulty=q.get("difficulty", "medium")
-                ).model_dump()
-                for q in (q_res.data or [])
-            ]
-        }
-
-def generate_fallback_mcqs(job_title: str, skills: List[str]) -> GeneratedAssessmentPayload:
-    """Generate deterministic fallback MCQs when LLM fails. Correct answers are randomized across positions."""
-    import random
-    primary_skill = skills[0] if skills else "Software Engineering"
-    correct_options = ["A", "B", "C", "D"]
-    questions = []
-
-    templates = [
-        ("What is a core best practice when working with {skill} in production for {job}?",
-         "Ensure modular code separation and comprehensive automated testing",
-         "Avoid error handling to improve execution speed",
-         "Hardcode environment variables directly inside component code",
-         "Disable database indexing to conserve storage"),
-        ("Which approach is recommended for scaling {skill} systems in a {job} context?",
-         "Implement horizontal scaling with load balancing and caching",
-         "Store all data in a single monolithic table",
-         "Disable logging in production to improve performance",
-         "Use synchronous blocking calls for all network operations"),
-        ("What is the primary benefit of automated testing in {skill} development?",
-         "Early detection of regressions and reliable deployments",
-         "Eliminates the need for code documentation",
-         "Guarantees zero runtime bugs in production",
-         "Reduces the need for version control"),
-    ]
-
-    for idx in range(1, 11):
-        template = templates[idx % len(templates)]
-        correct_pos = correct_options[(idx - 1) % 4]
-        
-        # Build options list with correct answer rotated to the right position
-        options = list(template[1:])
-        correct_answer = options[0]
-        random.shuffle(options)
-        # Ensure correct answer is at the designated position
-        correct_idx = correct_options.index(correct_pos)
-        options.remove(correct_answer)
-        options.insert(correct_idx, correct_answer)
-        
-        skill_for_q = skills[idx % len(skills)] if skills else primary_skill
-        questions.append(GeneratedMCQItem(
-            question_number=idx,
-            question=template[0].format(skill=skill_for_q, job=job_title),
-            option_a=options[0],
-            option_b=options[1],
-            option_c=options[2],
-            option_d=options[3],
-            correct_option=correct_pos,
-            explanation=f"{correct_answer} — this ensures reliability and maintainability.",
-            skill_category=skill_for_q,
-            difficulty=["easy", "medium", "hard"][idx % 3]
-        ))
-    return GeneratedAssessmentPayload(questions=questions)
+    # Generate and persist before responding; failed requests can be retried.
+    await _generate_questions(assessment_id, job_title, job_description, cv_summary, matched_skills)
+    
+    # Fetch the newly generated questions
+    q_res = await run_sync(
+        lambda: supabase.table("assessment_questions")
+        .select("id, assessment_id, question_number, question, option_a, option_b, option_c, option_d, skill_category, difficulty")
+        .eq("assessment_id", assessment_id)
+        .order("question_number")
+        .execute()
+    )
+    return {
+        "status": "ready",
+        "questions": [
+            CandidatePublicMCQItem(
+                id=q["id"],
+                assessment_id=q["assessment_id"],
+                question_number=q["question_number"],
+                question=q.get("question") or q.get("question_text", "Technical Question"),
+                option_a=q.get("option_a", ""),
+                option_b=q.get("option_b", ""),
+                option_c=q.get("option_c", ""),
+                option_d=q.get("option_d", ""),
+                skill_category=q.get("skill_category", "General"),
+                difficulty=q.get("difficulty", "medium")
+            ).model_dump()
+            for q in (q_res.data or [])
+        ]
+    }

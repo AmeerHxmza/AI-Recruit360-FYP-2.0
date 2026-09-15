@@ -20,8 +20,10 @@ export interface PerfMetric {
 export async function measurePerformance<T>(
   label: string,
   fn: () => Promise<T>,
-  _category: string = "db"
+  _category: string = "db",
 ): Promise<{ result: T; durationMs: number }> {
+  void label;
+  void _category;
   const start = performance.now();
   const result = await fn();
   const durationMs = Math.round(performance.now() - start);
@@ -30,11 +32,11 @@ export async function measurePerformance<T>(
 
 export async function withPerfProfile<T>(
   _route: string,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T> {
   return await fn();
 }
 
 export function logPerfSummary(_metric: PerfMetric): void {
-  // Silent in production and local dev
+  void _metric;
 }

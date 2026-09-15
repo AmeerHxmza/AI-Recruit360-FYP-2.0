@@ -12,6 +12,7 @@ This prevents unauthorized public access to the AI backend.
 """
 
 import logging
+import secrets
 from typing import Optional
 
 from fastapi import HTTPException, Security
@@ -39,25 +40,9 @@ async def verify_service_secret(
     Or apply globally to a router:
         router = APIRouter(dependencies=[Depends(verify_service_secret)])
     """
-    # In development without a configured secret, allow all requests
-    if not settings.AI_SERVICE_SHARED_SECRET:
-        if settings.ENVIRONMENT == "production":
-            logger.error("AI_SERVICE_SHARED_SECRET is not configured in production!")
-            raise HTTPException(
-                status_code=503,
-                detail="Service misconfigured: authentication secret not set.",
-            )
-        return  # Development mode — skip auth
-
+    if len(settings.AI_SERVICE_SHARED_SECRET or "") < 32:
+        raise HTTPException(status_code=503, detail="Service authentication is not configured.")
     if not credentials:
-        raise HTTPException(
-            status_code=401,
-            detail="Missing Authorization header. Expected: Bearer <service_secret>",
-        )
-
-    if credentials.credentials != settings.AI_SERVICE_SHARED_SECRET:
-        logger.warning("Invalid service secret received — rejecting request.")
-        raise HTTPException(
-            status_code=403,
-            detail="Invalid service credentials.",
-        )
+        raise HTTPException(status_code=401, detail="Service authentication required.")
+    if not secrets.compare_digest(credentials.credentials, settings.AI_SERVICE_SHARED_SECRET):
+        raise HTTPException(status_code=403, detail="Invalid service credentials.")

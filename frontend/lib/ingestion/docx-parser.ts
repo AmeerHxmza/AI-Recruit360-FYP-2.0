@@ -12,7 +12,8 @@ export class DocxDocumentParser implements DocumentParser {
     const lowerName = filename.toLowerCase();
 
     const isDocxMime =
-      lowerMime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      lowerMime ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       lowerMime === "application/msword";
     const isDocxExt = lowerName.endsWith(".docx") || lowerName.endsWith(".doc");
 
@@ -27,7 +28,7 @@ export class DocxDocumentParser implements DocumentParser {
       if (!text || text.length === 0) {
         throw new DocumentExtractionError(
           "No readable text found in Word document. Corrupted or image-only documents cannot be processed.",
-          "DOCUMENT_TEXT_EXTRACTION_FAILED"
+          "DOCUMENT_TEXT_EXTRACTION_FAILED",
         );
       }
 
@@ -44,7 +45,7 @@ export class DocxDocumentParser implements DocumentParser {
       }
       throw new DocumentExtractionError(
         `Failed to parse Word document: ${error instanceof Error ? error.message : "Invalid or corrupt DOC/DOCX file"}`,
-        "DOCUMENT_TEXT_EXTRACTION_FAILED"
+        "DOCUMENT_TEXT_EXTRACTION_FAILED",
       );
     }
   }

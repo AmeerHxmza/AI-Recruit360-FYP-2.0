@@ -11,9 +11,9 @@ export const revalidate = 0; // Dynamic server component
 function ApplicationsSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-96 rounded-xl bg-[#12151A] border border-[#242932] animate-pulse flex items-center justify-center">
-        <div className="flex items-center gap-2 text-xs text-[#A7AFBC] font-mono">
-          <Loader2 className="h-4 w-4 text-[#39D9FF] animate-spin" />
+      <div className="h-96 rounded-xl bg-surface border border-border animate-pulse flex items-center justify-center">
+        <div className="flex items-center gap-2 text-xs text-text-secondary font-mono">
+          <Loader2 className="h-4 w-4 text-action-blue animate-spin" />
           <span>Streaming Pipeline Applications...</span>
         </div>
       </div>
@@ -23,14 +23,17 @@ function ApplicationsSkeleton() {
 
 import { OrganizationRole } from "@/types/database.types";
 
-async function ApplicationsServerData({ role, orgId }: { role: OrganizationRole, orgId: string }) {
+async function ApplicationsServerData({
+  role,
+  orgId,
+}: {
+  role: OrganizationRole;
+  orgId: string;
+}) {
   const applications = await getApplicationsForOrgWithDetails(orgId);
 
   return (
-    <ApplicationsClientView
-      initialApplications={applications}
-      role={role}
-    />
+    <ApplicationsClientView initialApplications={applications} role={role} />
   );
 }
 

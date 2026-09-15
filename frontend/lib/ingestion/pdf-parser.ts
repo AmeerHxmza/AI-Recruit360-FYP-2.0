@@ -52,14 +52,14 @@ export class PdfDocumentParser implements DocumentParser {
       } else {
         throw new DocumentExtractionError(
           "PDF parser library binding unavailable.",
-          "DOCUMENT_TEXT_EXTRACTION_FAILED"
+          "DOCUMENT_TEXT_EXTRACTION_FAILED",
         );
       }
 
       if (!text || text.length === 0) {
         throw new DocumentExtractionError(
           "No readable text found in PDF document (scanned/image-only PDFs require OCR).",
-          "DOCUMENT_TEXT_EXTRACTION_FAILED"
+          "DOCUMENT_TEXT_EXTRACTION_FAILED",
         );
       }
 
@@ -74,7 +74,7 @@ export class PdfDocumentParser implements DocumentParser {
       }
       throw new DocumentExtractionError(
         `Failed to parse PDF document: ${error instanceof Error ? error.message : "Invalid or corrupt PDF"}`,
-        "DOCUMENT_TEXT_EXTRACTION_FAILED"
+        "DOCUMENT_TEXT_EXTRACTION_FAILED",
       );
     }
   }

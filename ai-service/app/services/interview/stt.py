@@ -12,8 +12,7 @@ async def transcribe_audio_file(file_content: bytes, filename: str) -> str:
     """
     api_key = settings.OPENAI_API_KEY
     if not api_key or "your-openai-api-key" in api_key:
-        logger.warning("OPENAI_API_KEY is not configured in Python environment. Returning mock transcript.")
-        return "I have extensive experience working with those technologies in a production environment."
+        raise AIProviderError("Voice transcription is not configured. Please type your answer instead.")
 
     client = AsyncOpenAI(api_key=api_key)
 

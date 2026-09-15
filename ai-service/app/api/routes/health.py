@@ -53,27 +53,6 @@ async def liveness() -> dict:
     return {"status": "alive"}
 
 
-@router.get("/ready", summary="Kubernetes readiness probe")
+@router.get("/ready")
 async def readiness() -> JSONResponse:
-    """Returns 200 only when all dependencies are ready to serve traffic."""
-    redis_ok = await redis_ping()
-    supabase_ok = False
-    try:
-        supabase = get_supabase_client()
-        await run_sync(lambda: supabase.table("organizations").select("id").limit(1).execute())
-        supabase_ok = True
-    except Exception:
-        pass
-
-    if not redis_ok or not supabase_ok:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "not_ready", 
-                "reason": "Dependencies unavailable",
-                "redis": redis_ok,
-                "supabase": supabase_ok
-            },
-        )
-    return JSONResponse(status_code=200, content={"status": "ready"})
-
+    return await health_check()

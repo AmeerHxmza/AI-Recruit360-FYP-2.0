@@ -2,16 +2,21 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { AuthIntroduction } from "@/components/layout/auth-introduction";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowRight, AlertCircle, Loader2, Sparkles } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextUrl = searchParams.get("next") || "/dashboard";
+  const nextUrl =
+    searchParams.get("next")?.startsWith("/") &&
+    !searchParams.get("next")?.startsWith("//") &&
+    !searchParams.get("next")?.includes("\\")
+      ? searchParams.get("next")!
+      : "/dashboard";
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -43,7 +48,9 @@ function LoginForm() {
         ) {
           setErrorMsg("Email or password is incorrect.");
         } else {
-          setErrorMsg(error.message || "Unable to sign in right now. Please try again.");
+          setErrorMsg(
+            error.message || "Unable to sign in right now. Please try again.",
+          );
         }
         setLoading(false);
         return;
@@ -58,7 +65,9 @@ function LoginForm() {
       }
     } catch (err: unknown) {
       console.error("Login submission exception:", err);
-      setErrorMsg("Unable to connect to sign in service. Please check your connection.");
+      setErrorMsg(
+        "Unable to connect to sign in service. Please check your connection.",
+      );
       setLoading(false);
     }
   };
@@ -66,26 +75,31 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-6">
       <div className="space-y-2 text-left">
-        <h1 className="text-3xl font-bold font-display text-[#F5F7FA]">
-          Welcome back.
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-medium text-action-blue">
+          <Sparkles className="h-3 w-3" />
+          <span>Recruiter Workspace</span>
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-text-primary">
+          Welcome back
         </h1>
-        <p className="text-sm text-[#A7AFBC] leading-relaxed">
-          Continue managing your AI-powered recruitment pipeline.
+        <p className="text-sm text-text-secondary leading-relaxed">
+          Sign in to access your recruitment pipeline and candidate
+          intelligence.
         </p>
       </div>
 
       {/* Error Banner */}
       {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-[#FF5C67]/10 border border-[#FF5C67]/30 flex items-start gap-3 text-xs text-[#FF5C67]">
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3 text-xs text-danger animate-in fade-in duration-200">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>{errorMsg}</span>
+          <span className="font-medium leading-relaxed">{errorMsg}</span>
         </div>
       )}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5 text-left">
-          <label className="text-xs font-mono text-[#A7AFBC] uppercase tracking-wider block">
-            Work Email *
+          <label className="text-xs font-medium text-text-secondary uppercase tracking-wider block">
+            Work Email
           </label>
           <input
             type="email"
@@ -94,16 +108,19 @@ function LoginForm() {
             placeholder="recruiter@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-[#12151A] border border-[#242932] text-sm text-[#F5F7FA] placeholder-[#68717E] focus:outline-none focus:border-[#39D9FF] transition-all"
+            className="w-full px-3.5 py-2.5 rounded-lg bg-surface border border-border text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-action-blue focus:ring-1 focus:ring-action-blue/40 transition-colors"
           />
         </div>
 
         <div className="space-y-1.5 text-left">
           <div className="flex justify-between items-center">
-            <label className="text-xs font-mono text-[#A7AFBC] uppercase tracking-wider block">
-              Password *
+            <label className="text-xs font-medium text-text-secondary uppercase tracking-wider block">
+              Password
             </label>
-            <Link href="/forgot-password" className="text-xs font-mono text-[#39D9FF] hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-action-blue hover:text-text-secondary transition-colors"
+            >
               Forgot password?
             </Link>
           </div>
@@ -114,14 +131,14 @@ function LoginForm() {
             placeholder="••••••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-[#12151A] border border-[#242932] text-sm text-[#F5F7FA] placeholder-[#68717E] focus:outline-none focus:border-[#39D9FF] transition-all"
+            className="w-full px-3.5 py-2.5 rounded-lg bg-surface border border-border text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-action-blue focus:ring-1 focus:ring-action-blue/40 transition-colors"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 px-4 rounded-xl bg-[#39D9FF] hover:bg-[#63E3FF] text-[#08090B] text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#39D9FF]/20 mt-2 disabled:opacity-50"
+          className="w-full py-2.5 px-4 rounded-lg bg-action-blue hover:bg-action-blue active:bg-action-blue text-primary-foreground text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 mt-3 disabled:opacity-50 cursor-pointer"
         >
           {loading ? (
             <>
@@ -130,17 +147,20 @@ function LoginForm() {
             </>
           ) : (
             <>
-              Sign In
+              Sign In to Workspace
               <ArrowRight className="h-4 w-4" />
             </>
           )}
         </button>
       </form>
 
-      <div className="pt-4 border-t border-[#242932] text-center text-xs text-[#A7AFBC]">
-        Don&apos;t have a workspace?{" "}
-        <Link href="/signup" className="text-[#39D9FF] font-semibold hover:underline">
-          Build your hiring workspace
+      <div className="pt-5 border-t border-border text-center text-xs text-text-secondary">
+        Don&apos;t have an organization workspace?{" "}
+        <Link
+          href="/signup"
+          className="text-action-blue font-medium hover:underline"
+        >
+          Create a workspace
         </Link>
       </div>
     </div>
@@ -149,42 +169,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-[#08090B] text-[#F5F7FA] flex flex-col lg:flex-row selection:bg-[#39D9FF]/20 selection:text-[#39D9FF]">
-      {/* Left Column: Visual Brand Panel (Desktop) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#0D0F12] border-r border-[#242932] p-12 flex-col justify-between relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[350px] bg-[#39D9FF]/[0.06] blur-[120px] rounded-full" />
-        </div>
-
-        <div className="relative z-10">
-          <BrandLogo variant="full" size="lg" href="/" />
-        </div>
-
-        <div className="relative z-10 my-auto space-y-6 max-w-lg">
-          <div className="relative aspect-[16/10] rounded-2xl border border-[#242932] overflow-hidden bg-[#12151A] shadow-2xl ai-glow-subtle">
-            <Image
-              src="/images/auth-login.png"
-              alt="AI-Recruit360 Workspace Visual"
-              fill
-              priority
-              className="object-cover"
-              sizes="50vw"
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold font-display text-[#F5F7FA]">
-              Automated 360° Candidate Intelligence
-            </h2>
-            <p className="text-xs text-[#A7AFBC] leading-relaxed">
-              Screen CVs, schedule timed assessments, conduct AI video interviews, and access data-backed hiring recommendations in one workspace.
-            </p>
-          </div>
-        </div>
-
-        <div className="relative z-10 text-xs font-mono text-[#68717E]">
-          © 2026 AI-Recruit360 • Enterprise Hiring Intelligence
-        </div>
-      </div>
+    <div className="min-h-screen bg-background text-text-primary flex flex-col lg:flex-row selection:bg-action-blue/20 selection:text-action-blue">
+      <AuthIntroduction />
 
       {/* Right Column: Form Panel */}
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-12">
@@ -192,7 +178,10 @@ export default function LoginPage() {
           <div className="lg:hidden">
             <BrandLogo variant="full" size="sm" href="/" />
           </div>
-          <Link href="/" className="text-xs font-mono text-[#A7AFBC] hover:text-[#39D9FF]">
+          <Link
+            href="/"
+            className="text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+          >
             ← Back to Overview
           </Link>
         </div>
@@ -201,7 +190,7 @@ export default function LoginPage() {
           <React.Suspense
             fallback={
               <div className="text-center p-8">
-                <Loader2 className="h-6 w-6 text-[#39D9FF] animate-spin mx-auto" />
+                <Loader2 className="h-6 w-6 text-action-blue animate-spin mx-auto" />
               </div>
             }
           >
@@ -209,11 +198,11 @@ export default function LoginPage() {
           </React.Suspense>
         </main>
 
-        <footer className="text-center text-xs font-mono text-[#68717E]">
-          Protected by enterprise multi-tenant RLS &amp; Supabase Auth
+        <footer className="text-center text-xs text-text-muted">
+          Protected by enterprise multi-tenant Row Level Security &amp; Supabase
+          Auth
         </footer>
       </div>
     </div>
   );
 }
-

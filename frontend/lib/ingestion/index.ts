@@ -1,6 +1,8 @@
 // Server-Only Execution Boundary Guard
 if (typeof window !== "undefined") {
-  throw new Error("Candidate document ingestion modules can only be executed on the server.");
+  throw new Error(
+    "Candidate document ingestion modules can only be executed on the server.",
+  );
 }
 
 export * from "./types";

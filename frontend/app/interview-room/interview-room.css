@@ -1,0 +1,305 @@
+/* Interview-only layout: preserve the application/assessment page widths. */
+.interview-shell > header > div {
+  max-width: 1120px;
+  padding-block: 12px;
+}
+.interview-shell > main {
+  width: 100%;
+  max-width: 1120px;
+  padding-block: 20px;
+}
+.interview-shell ol[aria-label="Application progress"] {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+}
+.interview-intro {
+  margin-bottom: 20px;
+}
+.interview-intro .page-title {
+  font-size: clamp(24px, 2.2vw, 32px);
+  margin-top: 6px;
+}
+.interview-description {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.interview-workspace {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.interview-prompt,
+.interview-answer {
+  min-width: 0;
+  padding: 20px;
+}
+.interview-prompt.panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.interviewer-avatar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.interviewer-video {
+  background: #dce2e2;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+.interviewer-video video {
+  object-fit: contain;
+  object-position: center;
+}
+.interviewer-call-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.interviewer-connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.connection-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+.connection-dot.connected {
+  background: var(--success);
+}
+.interviewer-nameplate {
+  position: absolute;
+  z-index: 1;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: white;
+  background: rgb(15 23 42 / 78%);
+  font-size: 13px;
+}
+.interviewer-video.is-speaking::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--success);
+  pointer-events: none;
+}
+.interviewer-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+}
+.interviewer-wave i {
+  width: 3px;
+  height: 4px;
+  border-radius: 2px;
+  background: #86efac;
+}
+.interviewer-wave[data-speaking="true"] i {
+  animation: interviewer-speaking 750ms ease-in-out infinite alternate;
+}
+.interviewer-wave i:nth-child(2) {
+  animation-delay: -250ms;
+}
+.interviewer-wave i:nth-child(3) {
+  animation-delay: -500ms;
+}
+.interviewer-wave i:nth-child(4) {
+  animation-delay: -125ms;
+}
+@keyframes interviewer-speaking {
+  to {
+    height: 17px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .interviewer-wave[data-speaking="true"] i {
+    animation: none;
+    height: 12px;
+  }
+}
+.interview-question {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.interview-answer {
+  display: flex;
+  flex-direction: column;
+}
+.interview-response {
+  flex: 1;
+  min-height: 220px;
+  resize: vertical;
+}
+.interview-answer-actions {
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+.interview-answer-help {
+  margin-top: 12px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.interviewer-controls {
+  flex-shrink: 0;
+}
+.interviewer-controls [role="alert"] {
+  max-height: 64px;
+  overflow: auto;
+}
+.interview-error {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  max-height: 120px;
+  overflow: auto;
+}
+.interview-shell footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  line-height: 1.5;
+}
+
+@media (min-width: 1024px) {
+  .interview-workspace {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+}
+
+@media (min-width: 1024px) and (min-height: 600px) {
+  .interview-shell {
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .interview-shell > header {
+    flex-shrink: 0;
+  }
+  .interview-shell > main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-block: 16px;
+  }
+  .interview-shell ol[aria-label="Application progress"],
+  .interview-shell footer,
+  .interview-intro {
+    flex-shrink: 0;
+  }
+  .interview-content {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .interview-intro {
+    margin-bottom: 16px;
+  }
+  .interview-workspace {
+    flex: 1;
+    min-height: 0;
+    max-height: 620px;
+    width: 100%;
+    margin-block: auto;
+  }
+  .interview-prompt {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .interviewer-avatar {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+  }
+  .interviewer-video {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: auto;
+    overflow: hidden;
+  }
+  .interviewer-video video {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+  }
+  .interview-question {
+    flex-shrink: 0;
+    max-height: 38%;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .interview-question h2 {
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  .interview-answer {
+    min-height: 0;
+  }
+  .interview-response {
+    min-height: 64px;
+    resize: none;
+  }
+}
+
+@media (min-width: 1024px) and (min-height: 600px) and (max-height: 720px) {
+  .interview-intro > .eyebrow {
+    display: none;
+  }
+  .interview-intro .page-title {
+    margin-top: 0;
+    font-size: 24px;
+  }
+  .interview-shell > main {
+    padding-block: 12px;
+  }
+  .interview-prompt,
+  .interview-answer {
+    padding: 16px;
+  }
+  .interview-shell ol[aria-label="Application progress"] {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+}
+
+/* Short desktop windows and zoomed/mobile views retain natural scrolling. */
+@media (max-width: 639px) {
+  .interview-prompt,
+  .interview-answer {
+    padding: 16px;
+  }
+  .interview-workspace {
+    gap: 16px;
+  }
+  .interview-shell > main {
+    padding-inline: 16px;
+  }
+}

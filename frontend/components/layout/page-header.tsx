@@ -21,22 +21,22 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 pb-6 border-b border-[#242932] mb-6 md:flex-row md:items-center md:justify-between",
-        className
+        "flex flex-col gap-3 pb-6 border-b border-border mb-6 md:flex-row md:items-center md:justify-between",
+        className,
       )}
     >
       <div className="space-y-1">
         {breadcrumbs && (
-          <div className="text-xs text-[#A7AFBC] mb-1">{breadcrumbs}</div>
+          <div className="text-xs text-text-secondary mb-1">{breadcrumbs}</div>
         )}
         <div className="flex items-center gap-3">
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#F5F7FA] font-display">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-text-primary font-display">
             {title}
           </h1>
           {badge}
         </div>
         {description && (
-          <p className="text-xs md:text-sm text-[#A7AFBC] max-w-3xl">
+          <p className="text-xs md:text-sm text-text-secondary max-w-3xl">
             {description}
           </p>
         )}

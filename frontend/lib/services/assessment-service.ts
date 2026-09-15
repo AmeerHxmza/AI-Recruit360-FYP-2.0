@@ -2,19 +2,26 @@ import { createClient } from "@/lib/supabase/server";
 import { Database, AssessmentStatus } from "@/types/database.types";
 
 export type Assessment = Database["public"]["Tables"]["assessments"]["Row"];
-export type AssessmentQuestion = Database["public"]["Tables"]["assessment_questions"]["Row"];
-export type AssessmentAnswer = Database["public"]["Tables"]["assessment_answers"]["Row"];
+export type AssessmentQuestion =
+  Database["public"]["Tables"]["assessment_questions"]["Row"];
+export type AssessmentAnswer =
+  Database["public"]["Tables"]["assessment_answers"]["Row"];
 
-export type CandidateAssessmentQuestion = Omit<AssessmentQuestion, "correct_option" | "explanation">;
+export type CandidateAssessmentQuestion = Omit<
+  AssessmentQuestion,
+  "correct_option" | "explanation"
+>;
 
 export async function getAssessmentQuestionsForCandidate(
-  assessmentId: string
+  assessmentId: string,
 ): Promise<CandidateAssessmentQuestion[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("assessment_questions")
-    .select("id, assessment_id, question_number, question, option_a, option_b, option_c, option_d, skill_category, difficulty, created_at")
+    .select(
+      "id, assessment_id, question_number, question, option_a, option_b, option_c, option_d, skill_category, difficulty, created_at",
+    )
     .eq("assessment_id", assessmentId)
     .order("question_number", { ascending: true });
 
@@ -28,7 +35,7 @@ export async function getAssessmentQuestionsForCandidate(
 export async function submitAssessmentAnswers(
   assessmentId: string,
   answers: Record<number, string>,
-  timeTakenMap?: Record<number, number>
+  timeTakenMap?: Record<number, number>,
 ): Promise<{ score: number; percentage: number; passed: boolean }> {
   const supabase = await createClient();
 

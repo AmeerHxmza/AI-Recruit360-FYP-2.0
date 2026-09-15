@@ -19,7 +19,7 @@ export interface DocumentParser {
 export function getParserForDocument(
   mimeType: string,
   filename: string,
-  parsers: DocumentParser[]
+  parsers: DocumentParser[],
 ): DocumentParser {
   const lowerMime = mimeType.toLowerCase();
   const lowerName = filename.toLowerCase();
@@ -33,7 +33,7 @@ export function getParserForDocument(
     lowerName.endsWith(".jpeg")
   ) {
     throw new UnsupportedDocumentError(
-      "Image formats (PNG/JPEG) are preserved in storage, but OCR text extraction is not implemented yet."
+      "Image formats (PNG/JPEG) are preserved in storage, but OCR text extraction is not implemented yet.",
     );
   }
 
@@ -44,6 +44,6 @@ export function getParserForDocument(
   }
 
   throw new UnsupportedDocumentError(
-    `No supported document parser found for file format: '${mimeType || filename}'. Supported formats are PDF, DOC, and DOCX.`
+    `No supported document parser found for file format: '${mimeType || filename}'. Supported formats are PDF, DOC, and DOCX.`,
   );
 }

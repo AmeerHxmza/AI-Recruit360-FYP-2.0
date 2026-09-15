@@ -14,7 +14,7 @@ async def get_application_context(application_id: str) -> Tuple[Dict[str, Any], 
     # 1. Fetch Application
     app_res = await run_sync(
         lambda: supabase.table("applications")
-        .select("id, job_id, organization_id, candidate_id")
+        .select("id, job_id, organization_id, candidate_id, status")
         .eq("id", application_id)
         .limit(1)
         .execute()
@@ -30,7 +30,7 @@ async def get_application_context(application_id: str) -> Tuple[Dict[str, Any], 
     job_res = await run_sync(
         lambda: supabase.table("jobs")
         .select("id, title, description, requirements")
-        .eq("id", job_id)
+        .eq("id", job_id).eq("organization_id", app_data["organization_id"])
         .limit(1)
         .execute()
     )
@@ -42,7 +42,7 @@ async def get_application_context(application_id: str) -> Tuple[Dict[str, Any], 
     candidate_res = await run_sync(
         lambda: supabase.table("candidates")
         .select("id, full_name, email")
-        .eq("id", candidate_id)
+        .eq("id", candidate_id).eq("organization_id", app_data["organization_id"])
         .limit(1)
         .execute()
     )

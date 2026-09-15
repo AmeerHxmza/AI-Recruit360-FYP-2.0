@@ -13,19 +13,21 @@ export interface IngestActionResult {
 }
 
 export async function uploadAndIngestCandidateDocumentAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<IngestActionResult> {
   try {
     const organizationId = formData.get("organizationId") as string;
     const candidateId = formData.get("candidateId") as string;
-    const documentType = (formData.get("documentType") as DocumentType) || "resume";
+    const documentType =
+      (formData.get("documentType") as DocumentType) || "resume";
     const applicationId = (formData.get("applicationId") as string) || null;
     const file = formData.get("file") as File;
 
     if (!organizationId || !candidateId || !file) {
       return {
         success: false,
-        error: "Missing required parameters: organizationId, candidateId, or file.",
+        error:
+          "Missing required parameters: organizationId, candidateId, or file.",
         code: "VALIDATION_ERROR",
       };
     }
