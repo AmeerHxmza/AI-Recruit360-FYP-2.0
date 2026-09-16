@@ -52,13 +52,13 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary flex flex-col justify-between p-4 sm:p-6 selection:bg-action-blue/20 selection:text-action-blue">
+    <div className="min-h-screen bg-[#FAFAF7] text-[#121212] flex flex-col justify-between p-4 sm:p-6 selection:bg-[#FF4F62] selection:text-white">
       {/* Top Header Logo */}
       <header className="max-w-6xl mx-auto w-full flex items-center justify-between py-4">
         <BrandLogo variant="full" size="md" href="/" />
         <Link
           href="/login"
-          className="text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+          className="text-xs font-medium text-[#60605D] hover:text-[#121212] transition-colors"
         >
           ← Back to Sign In
         </Link>
@@ -66,55 +66,54 @@ export default function ForgotPasswordPage() {
 
       {/* Main Auth Form Container */}
       <main className="max-w-md w-full mx-auto my-auto py-8">
-        <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="bg-white rounded-[18px] border border-[#E7E7E2] p-6 sm:p-8 shadow-sm space-y-6">
           {success ? (
             <div className="text-center space-y-4 py-4 animate-in fade-in duration-300">
-              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-success mx-auto flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6" />
+              <div className="size-12 rounded-xl bg-[#ECF9F3] border border-[#35C88A]/30 text-[#167348] mx-auto flex items-center justify-center">
+                <CheckCircle2 className="size-6 text-[#35C88A]" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
+              <h2 className="text-xl sm:text-2xl font-[550] tracking-tight text-[#121212]">
                 Check your inbox
               </h2>
-              <p className="text-xs text-text-secondary leading-relaxed">
+              <p className="text-xs text-[#60605D] leading-relaxed">
                 If an account exists for{" "}
-                <strong className="text-text-primary font-mono">{email}</strong>
+                <strong className="text-[#121212] font-mono">{email}</strong>
                 , password reset instructions have been dispatched.
               </p>
               <Link
                 href="/login"
-                className="w-full py-2.5 px-4 rounded-lg bg-action-blue hover:bg-action-blue text-primary-foreground text-sm font-medium transition-colors flex items-center justify-center gap-2 mt-4 cursor-pointer"
+                className="w-full h-11 px-4 rounded-[9px] bg-[#111111] hover:bg-[#202020] text-white text-sm font-medium transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer shadow-xs hover:-translate-y-0.5"
               >
-                Return to Sign In
-                <ArrowRight className="h-4 w-4" />
+                <span>Return to Sign In</span>
+                <ArrowRight className="size-4" />
               </Link>
             </div>
           ) : (
             <>
               <div className="text-center space-y-2">
-                <div className="h-11 w-11 rounded-xl bg-blue-500/10 border border-blue-500/20 text-action-blue mx-auto flex items-center justify-center mb-1">
-                  <KeyRound className="h-5 w-5" />
+                <div className="size-11 rounded-xl bg-[#111111]/5 border border-[#E7E7E2] text-[#121212] mx-auto flex items-center justify-center mb-1">
+                  <KeyRound className="size-5" />
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+                <h1 className="text-2xl font-[550] tracking-tight text-[#121212]">
                   Reset password
                 </h1>
-                <p className="text-xs text-text-secondary">
-                  Enter your work email address to receive password recovery
-                  instructions.
+                <p className="text-xs text-[#60605D]">
+                  Enter your verified work email address to receive password reset instructions.
                 </p>
               </div>
 
               {errorMsg && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3 animate-in fade-in duration-200">
-                  <AlertCircle className="h-4 w-4 text-danger shrink-0 mt-0.5" />
-                  <p className="text-xs text-danger font-medium leading-relaxed">
+                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-xs text-red-600 animate-in fade-in duration-200">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                  <span className="font-medium leading-relaxed">
                     {errorMsg}
-                  </p>
+                  </span>
                 </div>
               )}
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-1.5 text-left">
-                  <label className="text-xs font-medium text-text-secondary uppercase tracking-wider block">
+                  <label className="text-xs font-semibold text-[#60605D] uppercase tracking-wider block">
                     Work Email
                   </label>
                   <input
@@ -124,36 +123,38 @@ export default function ForgotPasswordPage() {
                     placeholder="recruiter@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-background border border-border text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-action-blue focus:ring-1 focus:ring-action-blue/40 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-[9px] bg-white border border-[#D8D8D2] text-sm text-[#121212] placeholder-[#8C8C87] focus:outline-none focus:border-[#8D8D87] focus:ring-2 focus:ring-[#111111]/5 transition-colors"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 px-4 rounded-lg bg-action-blue hover:bg-action-blue text-primary-foreground text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 mt-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full h-11 px-4 rounded-[9px] bg-[#111111] hover:bg-[#202020] text-white text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-xs hover:-translate-y-0.5 mt-2 disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Sending Link...
+                      <Loader2 className="size-4 animate-spin" />
+                      <span>Sending instructions...</span>
                     </>
                   ) : (
                     <>
-                      Send Reset Instructions
-                      <ArrowRight className="h-4 w-4" />
+                      <span>Send Password Reset Link</span>
+                      <ArrowRight className="size-4" />
                     </>
                   )}
                 </button>
               </form>
 
-              <div className="pt-4 border-t border-border text-center text-xs text-text-secondary">
-                Remembered your password?{" "}
+              <div className="text-center pt-2">
                 <Link
                   href="/login"
-                  className="text-action-blue font-medium hover:underline"
+                  className="text-xs text-[#60605D] hover:text-[#121212] transition-colors"
                 >
-                  Sign In
+                  Remember your password?{" "}
+                  <span className="font-semibold text-[#121212] underline">
+                    Sign in
+                  </span>
                 </Link>
               </div>
             </>

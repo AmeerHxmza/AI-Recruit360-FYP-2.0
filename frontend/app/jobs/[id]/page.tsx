@@ -1,7 +1,6 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { ApplicationShell } from "@/components/layout/application-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getOrganizationContext } from "@/lib/auth/session";
 import { getJobByIdAction } from "@/app/actions/jobs";
@@ -13,6 +12,8 @@ import { JobApplicationLinkCard } from "@/components/jobs/job-application-link-c
 import { ArrowLeft, AlertCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { canManageJobs } from "@/lib/auth/permissions";
+import { JobStatusControl } from "@/components/jobs/job-status-control";
 
 export const revalidate = 0; // Dynamic server component
 
@@ -153,9 +154,11 @@ export default async function JobDetailPage({
         title={job.title}
         description={`${job.department} · ${job.location} · ${formatWorkplaceType(job.workplace_type)} · ${formatEmploymentType(job.employment_type)}`}
         badge={
-          <Badge variant="outline" className="text-xs font-mono">
-            {job.status}
-          </Badge>
+          <JobStatusControl
+            jobId={job.id}
+            initialStatus={job.status}
+            canManage={canManageJobs(ctx.role)}
+          />
         }
         breadcrumbs={
           <Link

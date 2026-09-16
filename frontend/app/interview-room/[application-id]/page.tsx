@@ -181,16 +181,31 @@ export default function InterviewPage() {
       </div>
       {error && (
         <div role="alert" className="interview-error notice-error">
-          {error}
-          <div className="mt-3">
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => void start()}
-            >
-              Reload saved progress
-            </Button>
-          </div>
+          <p className="font-semibold">{error}</p>
+          {error.toLowerCase().includes("session has expired") ||
+          error.toLowerCase().includes("invalid application session") ? (
+            <div className="mt-3 space-y-2 text-xs leading-relaxed text-text-secondary">
+              <p>
+                Candidate interview sessions expire after 24 hours for security and candidate privacy. If you were disconnected or need an extension, please contact your recruitment team and share your reference ID:
+              </p>
+              <div className="flex items-center gap-2 pt-1 font-mono text-xs">
+                <span className="text-text-muted">Application Ref:</span>
+                <code className="rounded border border-border bg-surface px-2 py-0.5 font-semibold text-text-primary">
+                  {applicationId}
+                </code>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void start()}
+              >
+                Reload saved progress
+              </Button>
+            </div>
+          )}
         </div>
       )}
       {complete ? (

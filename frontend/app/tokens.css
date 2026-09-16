@@ -1,47 +1,91 @@
-/* Hallmark · modern-minimal · recruitment workbench · design-system: design.md
-   Pre-emit critique: Philosophy 4, Hierarchy 5, Execution 4, Specificity 5, Restraint 5, Variety 4. */
+/* BeatView-inspired Minimal Editorial AI SaaS Design System
+   90% Neutrals + 10% Warm AI Color Accent
+   Canvas: #FAFAF7 · Surface: #FFFFFF · Text: #121212 · Main CTA: #111111 · Accent: Coral/Rose/Peach */
+
 :root {
-  --background: #f5f7fa;
-  --foreground: #172b4d;
-  --sidebar-bg: #172b4d;
-  --surface: #ffffff;
-  --surface-secondary: #f5f7fa;
-  --elevated: #ffffff;
-  --hover: #edf2f8;
-  --border: #dee5ee;
-  --border-subtle: #e9edf3;
-  --border-strong: #b6c3d5;
-  --text-primary: #172b4d;
-  --text-secondary: #52637a;
-  --text-muted: #62718a;
-  --action-blue: #2459c4;
-  --accent-ai: #2459c4;
-  --success: #167348;
-  --warning: #8a5700;
-  --danger: #b42335;
+  /* Canvas & Base Surfaces */
+  --background: #FAFAF7;
+  --foreground: #121212;
+
+  /* Surfaces */
+  --surface: #FFFFFF;
+  --surface-secondary: #F6F6F2;
+  --surface-muted: #F7F7F4;
+  --elevated: #FFFFFF;
+  --hover: #F1F1ED;
+
+  /* Subtle Warm Borders */
+  --border: #E7E7E2;
+  --border-subtle: #F0F0EB;
+  --border-strong: #D8D8D2;
+
+  /* Editorial Typography Hierarchy */
+  --text-primary: #121212;
+  --text-secondary: #60605D;
+  --text-muted: #8C8C87;
+
+  /* Solid Black Primary CTA (BeatView Signature) */
+  --action-black: #111111;
+  --action-black-hover: #202020;
+  --action-blue: #111111; /* Maps primary links and action buttons to BeatView solid black */
+
+  /* BeatView Warm AI Accents (10% strictly for AI insights, scores, badges) */
+  --accent-coral: #FF4F62;
+  --accent-rose: #ED3F74;
+  --accent-peach: #FF9272;
+  --accent-orange: #FFC278;
+  --accent-ai: #FF4F62;
+
+  /* Status Colors */
+  --success: #35C88A;
+  --success-bg: #ECF9F3;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --danger-bg: #FEF2F2;
+
+  /* Theme Tokens for shadcn & utility mappings */
   --card: var(--surface);
   --card-foreground: var(--text-primary);
   --popover: var(--surface);
   --popover-foreground: var(--text-primary);
-  --primary: var(--action-blue);
-  --primary-foreground: #ffffff;
-  --secondary: var(--hover);
+  --primary: var(--action-black);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--surface-secondary);
   --secondary-foreground: var(--text-primary);
-  --muted: var(--surface-secondary);
+  --muted: var(--surface-muted);
   --muted-foreground: var(--text-secondary);
   --accent: var(--hover);
-  --accent-foreground: var(--action-blue);
+  --accent-foreground: var(--text-primary);
   --destructive: var(--danger);
   --input: var(--surface);
-  --ring: var(--action-blue);
-  --radius: 0.5rem;
-  --rail-ink: #f5f8ff;
-  --rail-muted: #bdcce2;
-  --rail-hover: #263e60;
-  --font-body: "Segoe UI", system-ui, sans-serif;
-  --font-heading: "Segoe UI", system-ui, sans-serif;
-  --space-page: 2rem;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur-short: 150ms;
-  --panel-shadow: 0 2px 5px rgb(23 43 77 / 0.025);
+  --ring: #111111;
+
+  /* Clean White Dashboard Sidebar */
+  --sidebar-bg: #FFFFFF;
+  --rail-ink: #121212;
+  --rail-muted: #60605D;
+  --rail-hover: #F1F1ED;
+  --rail-active: #F0F0EC;
+
+  /* Typography Scales */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Rounded Corner Hierarchy */
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius: 0.55rem;
+
+  /* Soft Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.025);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.035);
+  --shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.07);
+  --panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.02), 0 8px 30px rgba(0, 0, 0, 0.025);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-short: 180ms;
 }

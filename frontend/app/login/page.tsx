@@ -6,7 +6,7 @@ import { AuthIntroduction } from "@/components/layout/auth-introduction";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowRight, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -75,22 +75,21 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-6">
       <div className="space-y-2 text-left">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-medium text-action-blue">
-          <Sparkles className="h-3 w-3" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#E7E7E2] bg-white px-3 py-1 text-xs font-medium text-[#121212] shadow-2xs">
+          <span className="size-1.5 rounded-full bg-[#35C88A]" />
           <span>Recruiter Workspace</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-text-primary">
+        <h1 className="text-3xl font-[550] tracking-[-0.035em] text-[#121212]">
           Welcome back
         </h1>
-        <p className="text-sm text-text-secondary leading-relaxed">
-          Sign in to access your recruitment pipeline and candidate
-          intelligence.
+        <p className="text-sm text-[#60605D] leading-relaxed">
+          Sign in to access your recruitment pipeline and candidate intelligence.
         </p>
       </div>
 
       {/* Error Banner */}
       {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3 text-xs text-danger animate-in fade-in duration-200">
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-xs text-red-600 animate-in fade-in duration-200">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span className="font-medium leading-relaxed">{errorMsg}</span>
         </div>
@@ -98,7 +97,7 @@ function LoginForm() {
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5 text-left">
-          <label className="text-xs font-medium text-text-secondary uppercase tracking-wider block">
+          <label className="text-xs font-semibold text-[#60605D] uppercase tracking-wider block">
             Work Email
           </label>
           <input
@@ -108,18 +107,18 @@ function LoginForm() {
             placeholder="recruiter@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-lg bg-surface border border-border text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-action-blue focus:ring-1 focus:ring-action-blue/40 transition-colors"
+            className="w-full px-3.5 py-2.5 rounded-[9px] bg-white border border-[#D8D8D2] text-sm text-[#121212] placeholder-[#8C8C87] focus:outline-none focus:border-[#8D8D87] focus:ring-2 focus:ring-[#111111]/5 transition-colors"
           />
         </div>
 
         <div className="space-y-1.5 text-left">
           <div className="flex justify-between items-center">
-            <label className="text-xs font-medium text-text-secondary uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-[#60605D] uppercase tracking-wider block">
               Password
             </label>
             <Link
               href="/forgot-password"
-              className="text-xs font-medium text-action-blue hover:text-text-secondary transition-colors"
+              className="text-xs font-medium text-[#60605D] hover:text-[#121212] transition-colors"
             >
               Forgot password?
             </Link>
@@ -131,34 +130,34 @@ function LoginForm() {
             placeholder="••••••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-lg bg-surface border border-border text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-action-blue focus:ring-1 focus:ring-action-blue/40 transition-colors"
+            className="w-full px-3.5 py-2.5 rounded-[9px] bg-white border border-[#D8D8D2] text-sm text-[#121212] placeholder-[#8C8C87] focus:outline-none focus:border-[#8D8D87] focus:ring-2 focus:ring-[#111111]/5 transition-colors"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 px-4 rounded-lg bg-action-blue hover:bg-action-blue active:bg-action-blue text-primary-foreground text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 mt-3 disabled:opacity-50 cursor-pointer"
+          className="w-full h-11 px-4 rounded-[9px] bg-[#111111] hover:bg-[#202020] text-white text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-xs hover:-translate-y-0.5 mt-4 disabled:opacity-50 cursor-pointer"
         >
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Signing In...
+              <span>Signing In...</span>
             </>
           ) : (
             <>
-              Sign In to Workspace
+              <span>Sign In to Workspace</span>
               <ArrowRight className="h-4 w-4" />
             </>
           )}
         </button>
       </form>
 
-      <div className="pt-5 border-t border-border text-center text-xs text-text-secondary">
+      <div className="pt-5 border-t border-[#E7E7E2] text-center text-xs text-[#60605D]">
         Don&apos;t have an organization workspace?{" "}
         <Link
           href="/signup"
-          className="text-action-blue font-medium hover:underline"
+          className="text-[#121212] font-semibold hover:underline"
         >
           Create a workspace
         </Link>
@@ -169,11 +168,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-background text-text-primary flex flex-col lg:flex-row selection:bg-action-blue/20 selection:text-action-blue">
+    <div className="min-h-screen bg-[#FAFAF7] text-[#121212] flex flex-col lg:flex-row selection:bg-[#FF4F62] selection:text-white">
       <AuthIntroduction />
 
       {/* Right Column: Form Panel */}
-      <div className="flex-1 flex flex-col justify-between p-6 sm:p-12">
+      <div className="flex-1 flex flex-col justify-between p-6 sm:p-12 bg-[#FAFAF7]">
         <div className="flex items-center justify-between lg:justify-end">
           <div className="lg:hidden">
             <BrandLogo variant="full" size="sm" href="/" />

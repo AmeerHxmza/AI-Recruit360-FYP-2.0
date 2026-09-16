@@ -9,7 +9,13 @@ export const metadata: Metadata = {
   title: "AI-Recruit360 — Recruitment workspace",
   description:
     "Screen candidates, assess skills, conduct AI interviews, and turn every application into actionable hiring intelligence.",
-  icons: { icon: "/icon.svg" },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/brand/logo-icon.png",
+  },
 };
 
 export default function RootLayout({

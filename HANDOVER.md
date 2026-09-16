@@ -1,6 +1,66 @@
 # Recruit360 continuation handover
 
-## Latest change: Activity feature removed (2026-09-15)
+## Latest change: BeatView-Inspired Brand Logo, Favicon & Complete Minimal Editorial System (2026-09-16)
+
+1. **Brand Identity & Logo Redesign (`frontend/components/brand/brand-logo.tsx` & `frontend/app/icon.svg`)**:
+   - **Graphic Design Direction (Hybrid Precision Symbol + Geometric Wordmark)**: Rather than an unbranded text-only string or an isolated symbol without recognition, implemented an understated **28px-32px Precision Emblem paired with a crisp Editorial Wordmark**.
+   - **Color Harmony with Theme**: Completely removed discordant bright electric blues (`#2563EB`). The orbital 360 ring is now rendered in crisp `#121212` near-black with a warm neutral inner arc (`#D8D8D2`), while the focal AI intelligence core node pulses with the signature warm coral-to-rose gradient (`#FF4F62` to `#ED3F74`).
+   - **Wordmark Typography**: `AI-Recruit` is set in geometric `font-display` with tight letter spacing (`-0.035em`), followed by a solid near-black `#111111` capsule badge (`360`) accented by a warm coral micro-dot.
+   - **Favicon & Browser Tab (`icon.svg`)**: Updated with matching solid near-black `#111111` card background, white orbital track, and warm glowing coral AI spark.
+2. **Design Token System (`frontend/app/tokens.css` & `frontend/app/globals.css`)**:
+   - **90% Neutrals + 10% Warm AI Accent Philosophy**: Eliminated dark-purple/navy clichés. Adopted warm off-white canvas (`#FAFAF7`), pure white cards/surfaces (`#FFFFFF`), subtle warm gray borders (`#E7E7E2`), near-black typography (`#121212`), and muted paragraphs (`#60605D`).
+   - **Solid Black Primary CTA**: Mapped primary actions to solid black (`#111111`, hover `#202020`, 9px radius, `-translate-y-0.5` micro-interaction).
+   - **Warm AI Accents**: Configured coral (`#FF4F62`), rose (`#ED3F74`), peach (`#FF9272`), and soft orange (`#FFC278`) exclusively for AI score pills, match chips, and live status badges.
+   - **Signature Atmospheric Warm Glow (`.hero-glow`)**: Implemented overlapping radial gradients (coral/peach/orange) with soft blur (28px) for background illumination behind product mockups.
+3. **Landing Page Overhaul (`frontend/app/page.tsx`)**:
+   - Sticky minimal glass navbar (`72px`, `#FAFAF7` at 86% opacity with `blur(14px)`).
+   - Centered, restrained hero layout with `Inter Tight` typography scale (`72px` H1, letter-spacing `-0.045em`, line-height `1.01`).
+   - Announcement pill: `● New — AI-Powered Hiring from Resume to Interview` with `#35C88A` green status dot.
+   - Browser-framed product preview with titlebar and atmospheric `.hero-glow` embed, featuring the real Recruit360 interactive workbench.
+   - Connected 6-step horizontal workflow: `CV Upload → Grounded AI Screening (40%) → Dynamic MCQs (25%) → Avatar Interview (35%) → Composite Score → Human Recruiter Decision`.
+   - BeatView asymmetric feature grid (large 2-column feature + two smaller features) with 90% neutral surfaces and 10% coral accents.
+   - Transparent pricing plans ($99 Starter, $299 Pro, $999 Enterprise) and minimal editorial footer.
+4. **Interactive Showcase (`frontend/components/landing/interactive-showcase.tsx`)**:
+   - Re-styled tabs, candidate cards, verified evidence quotes, Redis question prompt, and simulated Simli avatar player to inherit the warm off-white/coral design tokens.
+5. **Authentication Experience (`/login`, `/signup`, `/forgot-password`, `/reset-password`, `auth-introduction.tsx`)**:
+   - Clean, elegant `#F6F6F2` left intro panel with subtle warm glow, dark typography, and 3-step feature checklist.
+   - Right form panels redesigned on warm `#FAFAF7` canvas with solid `#111111` submit buttons, clean `#D8D8D2` inputs, and soft focus states.
+6. **Dashboard Sidebar & TopBar (`frontend/components/layout/sidebar.tsx` & `top-bar.tsx`)**:
+   - Clean white `#FFFFFF` sidebar with `#E7E7E2` right border.
+   - 40px menu items with 8px radius, `#60605D` text, hover `#F1F1ED`, and `#F0F0EC` active selection state.
+   - User profile section with name, role, and prominent red-accent Log Out button.
+7. **Validation**: All checks in `scripts/check.ps1` passed (ESLint 0 errors, TypeScript `tsc --noEmit` 0 errors, all 20 FastAPI tests passed, and all PGlite database integrity/isolation tests passed).
+
+## Previous change: UI Polish, Dedicated LogOut, Persistent Tabs & Performance Optimization (2026-09-16)
+
+Resolved key UI, user flow, and performance issues across the platform:
+1. **Settings Page Polish (`frontend/app/settings/page.tsx`)**:
+   - Replaced cramped form inputs with structured, clean SaaS cards (`Personal Profile`, `Organization Workspace`, `Password & Authentication`).
+   - Fixed the Save button positioning by adding a dedicated, well-spaced action footer bar with clear top divider (`border-t border-border mt-8 pt-5`) and loading spinners.
+2. **Hero Section Modernization (`frontend/app/page.tsx`)**:
+   - Overhauled the Hero into a high-impact, ambient tech AI SaaS experience with glowing cyan/indigo mesh lighting, tech gridline backdrop, and a live pulse indicator (`● Live Multi-Modal Evaluation Engine`).
+   - Upgraded copy to authoritative, non-generic messaging (`The Autonomous AI Recruiter That Evaluates Like Your Best Senior Engineer. Zero Keyword Fluff. 100% Verifiable Evidence.`).
+   - Embedded the interactive 3-tier recruitment pipeline cockpit directly in the hero fold (`#interactive-demo`) with a glassmorphic container.
+3. **Sidebar Dedicated Log Out Button (`frontend/components/layout/sidebar.tsx`)**:
+   - Added a prominent, full-width `Log Out` button directly below the user's name (`AMEER HAMZA`) and role (`owner`) with `LogOut` icon, red danger styling, and responsive tooltip when collapsed.
+4. **Persistent Shell on Tab Switching (No More Full-Screen Loading)**:
+   - Wrapped route loading boundaries (`dashboard/loading.tsx`, `jobs/loading.tsx`, `candidates/loading.tsx`, `applications/loading.tsx`, `interviews/loading.tsx`, `evaluations/loading.tsx`, `analytics/loading.tsx`, `settings/loading.tsx`) inside `<ApplicationShell>`.
+   - Now, when switching between sidebar tabs, the Sidebar and TopBar remain 100% persistent with zero layout shift; only the inner content region displays its clean skeleton loading state.
+5. **Data Load Time & Performance Optimization (`frontend/lib/auth/session.ts`)**:
+   - Collapsed 4 sequential Supabase network waterfalls down to 2 parallel requests by joining `organizations(...)` directly into the `organization_members` query and parallelizing profile retrieval.
+   - Cached user memberships and workspace context at the request level, so subsequent calls to `getCurrentOrganization`, `getCurrentRole`, and `getCurrentMembership` in service queries resolve instantly from memory with 0 extra database round-trips.
+6. **Official Brand Logo Integration**:
+   - Integrated the user's official uploaded AI-Recruit360 brand logo across the entire platform.
+   - Extracted high-resolution assets: `frontend/public/brand/logo.png` (full horizontal logo: 955x212, transparent background) and `frontend/public/brand/logo-icon.png` (circular orbital emblem: 260x260 square).
+   - Updated `BrandLogo` component (`frontend/components/brand/brand-logo.tsx`) to render the official logo across the Landing navbar, footer, dashboard sidebar (both expanded and collapsed states), login, signup, and candidate apply screens.
+   - Replaced browser favicons (`frontend/app/icon.svg`, `frontend/app/icon.png`, `frontend/app/favicon.ico`) and apple touch icons with the official emblem.
+7. **Validation**: All checks in `scripts/check.ps1` passed (ESLint 0 errors, TypeScript `tsc --noEmit` 0 errors, all 20 FastAPI tests passed, and all PGlite database integrity/isolation tests passed).
+
+## Previous change: Competitor Research & Thesis/Defense Guide Added (2026-09-16)
+
+Added `COMPETITIVE_ANALYSIS_AND_DEFENSE.md` at the repository root. It provides a comprehensive, research-backed market breakdown of competitors (Beatview.ai, iMocha, HireVue, Apriora, Vervoe, TestGorilla), architectural differentiation matrices, business and SaaS monetization models, and detailed model answers for external FYP examiners and judges (problem motivation, dynamic MCQ anti-cheating, avatar rationale, hallucination defense, and anti-bias compliance). No code or runtime configuration was modified.
+
+## Previous change: Activity feature removed (2026-09-15)
 
 The user asked whether Activity is necessary and authorized removing it if unnecessary. It was a developer event viewer, not a recruitment workflow requirement. Removed /ai-activity page and directory, its client component and directory, server action, frontend activity service, sidebar item, and obsolete protected-route entry. Also removed the unreferenced dashboard insights-panel component that presented application snapshots as a live AI audit.
 

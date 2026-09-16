@@ -106,8 +106,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (orgs.length > 0) {
             setOrganizations(orgs);
 
-            // Determine active organization
-            const activeMember = memberRows[0];
+            // Determine active organization (respect preferred cookie if set)
+            const matchCookie = typeof document !== "undefined"
+              ? document.cookie.match(/(?:^|;\s*)air360_org_id=([^;]+)/)?.[1]
+              : null;
+            const activeMember =
+              (matchCookie && memberRows.find((m: Record<string, unknown>) => m.organization_id === matchCookie)) ||
+              memberRows[0];
             const activeOrg =
               orgs.find((o) => o.id === activeMember.organization_id) ||
               orgs[0];

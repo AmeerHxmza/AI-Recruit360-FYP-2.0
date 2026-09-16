@@ -121,18 +121,33 @@ export default function AssessmentPage() {
       </div>
       {error && (
         <div role="alert" className="notice-error mb-5">
-          <p>{error}</p>
-          <Button
-            variant="secondary"
-            className="mt-3"
-            onClick={() => {
-              setBusy(true);
-              setError("");
-              void load();
-            }}
-          >
-            Retry
-          </Button>
+          <p className="font-semibold">{error}</p>
+          {error.toLowerCase().includes("session has expired") ||
+          error.toLowerCase().includes("invalid application session") ? (
+            <div className="mt-3 space-y-2 text-xs leading-relaxed text-text-secondary">
+              <p>
+                Candidate assessment links expire after 24 hours to protect test integrity and ensure fair, timed evaluations. If you need your session re-activated, please reach out to your recruitment contact and provide your reference ID:
+              </p>
+              <div className="flex items-center gap-2 pt-1 font-mono text-xs">
+                <span className="text-text-muted">Application Ref:</span>
+                <code className="rounded border border-border bg-surface px-2 py-0.5 font-semibold text-text-primary">
+                  {applicationId}
+                </code>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="secondary"
+              className="mt-3"
+              onClick={() => {
+                setBusy(true);
+                setError("");
+                void load();
+              }}
+            >
+              Retry
+            </Button>
+          )}
         </div>
       )}
       {result ? (

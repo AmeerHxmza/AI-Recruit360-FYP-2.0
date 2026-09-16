@@ -67,13 +67,13 @@ export function Sidebar({
         )}
       </div>
       {!isCollapsed && (
-        <div className="my-7">
-          <label htmlFor="workspace" className="rail-muted mb-2 block text-xs">
+        <div className="my-5">
+          <label htmlFor="workspace" className="mb-1.5 block text-xs font-medium text-text-muted">
             Workspace
           </label>
           <select
             id="workspace"
-            className="w-full rounded-lg border border-current bg-sidebar px-2 py-2 text-sm"
+            className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-text-primary focus:border-border-strong focus:outline-none"
             value={organization?.id || ""}
             onChange={(e) => void switchOrganization(e.target.value)}
           >
@@ -108,32 +108,53 @@ export function Sidebar({
           </Link>
         ))}
       </nav>
-      <div className="mt-5 border-t border-current/20 pt-4">
-        {!isCollapsed && (
-          <div className="mb-3">
-            <p className="truncate text-sm font-medium">
-              {userMetadata.fullName}
-            </p>
-            <p className="rail-muted text-xs capitalize">
-              {userMetadata.role || "Team member"}
-            </p>
+      <div className="mt-auto border-t border-border pt-4 space-y-3">
+        {!isCollapsed ? (
+          <div className="space-y-3">
+            <div className="space-y-0.5 px-1">
+              <p className="truncate text-sm font-semibold tracking-tight text-text-primary">
+                {userMetadata.fullName}
+              </p>
+              <p className="text-xs text-text-secondary capitalize font-medium">
+                {userMetadata.role || "Owner"}
+              </p>
+            </div>
+
+            {/* Prominent LogOut Button below name and role */}
+            <button
+              type="button"
+              aria-label="Log Out"
+              onClick={() => void signOut()}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50/80 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 transition-all cursor-pointer shadow-2xs"
+            >
+              <LogOut className="size-3.5 shrink-0" />
+              <span>Log Out</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              title="Log Out"
+              aria-label="Log Out"
+              onClick={() => void signOut()}
+              className="flex size-9 items-center justify-center rounded-lg border border-red-200 bg-red-50/80 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all cursor-pointer"
+            >
+              <LogOut className="size-4" />
+            </button>
           </div>
         )}
-        <div className="flex items-center justify-between">
-          <button
-            aria-label="Sign out"
-            onClick={() => void signOut()}
-            className="rounded p-2 hover:bg-[var(--rail-hover)]"
-          >
-            <LogOut className="size-4" />
-          </button>
-          {onToggleCollapse && (
+
+        {onToggleCollapse && (
+          <div className="flex items-center justify-end pt-1">
             <button
+              type="button"
               aria-label={
                 isCollapsed ? "Expand navigation" : "Collapse navigation"
               }
+              title={isCollapsed ? "Expand navigation" : "Collapse navigation"}
               onClick={onToggleCollapse}
-              className="rounded p-2 hover:bg-[var(--rail-hover)]"
+              className="rounded-md p-1.5 text-text-muted hover:text-text-primary hover:bg-hover transition-colors"
             >
               {isCollapsed ? (
                 <ChevronRight className="size-4" />
@@ -141,8 +162,8 @@ export function Sidebar({
                 <ChevronLeft className="size-4" />
               )}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </aside>
   );

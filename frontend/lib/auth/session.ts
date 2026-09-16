@@ -19,6 +19,10 @@ export interface OrganizationContext {
   role: OrganizationRole;
 }
 
+interface JoinedMembershipRow extends OrganizationMemberRow {
+  organizations: OrganizationRow | null;
+}
+
 export const getCurrentUser = cache(async (): Promise<User> => {
   const supabase = await createClient();
   const {
@@ -60,91 +64,92 @@ export const getCurrentProfile = cache(async (): Promise<ProfileRow> => {
   return profile;
 });
 
-export const getUserOrganizations = cache(
-  async (): Promise<OrganizationRow[]> => {
+// Single-request cached loader for all user memberships + joined organizations + profile
+interface UserWorkspaceBundle {
+  user: User;
+  profile: ProfileRow;
+  memberships: JoinedMembershipRow[];
+  cookieOrgId: string | null;
+}
+
+const loadUserWorkspaceBundle = cache(async (): Promise<UserWorkspaceBundle | null> => {
+  try {
     const user = await getCurrentUser();
     const supabase = await createClient();
 
-    const { data: memberOrgs, error } = await supabase
-      .from("organization_members")
-      .select("organization_id")
-      .eq("user_id", user.id);
+    // Parallel fetch: cookieStore + memberships with joined organizations + profile
+    const [cookieStore, { data: membershipsData }, profile] = await Promise.all([
+      cookies().catch(() => null),
+      supabase
+        .from("organization_members")
+        .select(
+          "id, organization_id, user_id, role, created_at, organizations(id, name, slug, created_by, created_at, updated_at)",
+        )
+        .eq("user_id", user.id),
+      getCurrentProfile(),
+    ]);
 
-    if (error || !memberOrgs || memberOrgs.length === 0) {
-      return [];
-    }
+    const memberships = (membershipsData || []) as unknown as JoinedMembershipRow[];
+    const cookieOrgId = cookieStore?.get("air360_org_id")?.value || null;
 
-    const orgIds = memberOrgs.map((m) => m.organization_id);
-    const { data: orgs, error: orgsError } = await supabase
-      .from("organizations")
-      .select("id, name, slug, created_by, created_at, updated_at")
-      .in("id", orgIds);
+    return {
+      user,
+      profile,
+      memberships,
+      cookieOrgId,
+    };
+  } catch {
+    return null;
+  }
+});
 
-    if (orgsError || !orgs) {
-      return [];
-    }
-
-    return orgs;
+export const getUserOrganizations = cache(
+  async (): Promise<OrganizationRow[]> => {
+    const bundle = await loadUserWorkspaceBundle();
+    if (!bundle) return [];
+    return bundle.memberships
+      .map((m) => m.organizations)
+      .filter((o): o is OrganizationRow => Boolean(o));
   },
 );
 
 export const getOrganizationContext = cache(
   async (requestedOrgId?: string): Promise<OrganizationContext | null> => {
-    try {
-      const user = await getCurrentUser();
-      const supabase = await createClient();
-
-      let targetOrgId = requestedOrgId;
-
-      if (!targetOrgId) {
-        try {
-          const cookieStore = await cookies();
-          targetOrgId = cookieStore.get("air360_org_id")?.value;
-        } catch {
-          // cookies() call might fail in non-request contexts
-        }
-      }
-
-      const { data: memberships } = await supabase
-        .from("organization_members")
-        .select("id, organization_id, user_id, role, created_at")
-        .eq("user_id", user.id);
-
-      if (!memberships || memberships.length === 0) {
-        return null;
-      }
-
-      let activeMembership = targetOrgId
-        ? memberships.find((m) => m.organization_id === targetOrgId)
-        : undefined;
-
-      if (!activeMembership) {
-        if (requestedOrgId) return null;
-        activeMembership = memberships[0];
-      }
-
-      const { data: org } = await supabase
-        .from("organizations")
-        .select("id, name, slug, created_by, created_at, updated_at")
-        .eq("id", activeMembership.organization_id)
-        .single();
-
-      if (!org) {
-        return null;
-      }
-
-      const profile = await getCurrentProfile();
-
-      return {
-        user,
-        profile,
-        organization: org,
-        membership: activeMembership as OrganizationMemberRow,
-        role: activeMembership.role as OrganizationRole,
-      };
-    } catch {
+    const bundle = await loadUserWorkspaceBundle();
+    if (!bundle || bundle.memberships.length === 0) {
       return null;
     }
+
+    const { user, profile, memberships, cookieOrgId } = bundle;
+    const targetOrgId = requestedOrgId || cookieOrgId;
+
+    let activeMembership = targetOrgId
+      ? memberships.find((m) => m.organization_id === targetOrgId)
+      : undefined;
+
+    if (!activeMembership) {
+      if (requestedOrgId) return null;
+      activeMembership = memberships[0];
+    }
+
+    const org = activeMembership.organizations;
+    if (!org) {
+      return null;
+    }
+
+    return {
+      user,
+      profile,
+      organization: org,
+      membership: {
+        id: activeMembership.id,
+        organization_id: activeMembership.organization_id,
+        user_id: activeMembership.user_id,
+        role: activeMembership.role,
+        created_at: activeMembership.created_at,
+      },
+      role: activeMembership.role as OrganizationRole,
+    };
   },
 );
 
