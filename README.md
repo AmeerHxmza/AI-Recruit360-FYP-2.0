@@ -90,46 +90,45 @@ graph TD
 ## 🔄 3-Stage Candidate Evaluation Pipeline
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Applied: Candidate uploads Resume & Profile
+flowchart TD
+    Start([Candidate Applies]) --> Upload[Upload Resume & Profile]
     
-    state "Stage 1: CV Screening" as Stage1 {
-        Applied --> Parsing: Extract Text (PyMuPDF)
-        Parsing --> Embedding: Semantic Match Score
-        Embedding --> ScreenDecision: Compare vs Job Criteria
-    }
-
-    ScreenDecision --> KnockedOut: Match Score < 70%
-    ScreenDecision --> Stage2: Match Score >= 70%
-
-    state "Stage 2: Timed Assessment" as Stage2 {
-        Stage2 --> QuestionStreaming: 10 Tailored Questions
-        QuestionStreaming --> TimeEnforced: 60s per question (DB lock)
-        TimeEnforced --> AssessmentScore: Calculate Score
-    }
-
-    AssessmentScore --> KnockedOut: Assessment Score < 60%
-    AssessmentScore --> Stage3: Assessment Score >= 60%
-
-    state "Stage 3: AI Interview" as Stage3 {
-        Stage3 --> AvatarSession: WebRTC Live Avatar (Simli)
-        AvatarSession --> QuestionPrompt: 5 Behavioral & Tech Questions
-        QuestionPrompt --> SpeechToText: Voice Input / Whisper STT
-        SpeechToText --> InterviewScore: Evaluate Responses
-    }
-
-    Stage3 --> EvaluationSynthesis: Synthesize Multi-Stage Evidence
-
-    state "Stage 4: Autonomous Scorecard" as EvaluationSynthesis {
-        EvaluationSynthesis --> FinalScore: 40% CV + 25% Assessment + 35% Interview
-        FinalScore --> RecruiterReview: Strengths, Weaknesses, Recommendation
-    }
-
-    RecruiterReview --> Shortlisted: Recruiter Accepts
-    RecruiterReview --> Rejected: Recruiter Rejects
-    KnockedOut --> [*]
-    Shortlisted --> [*]
-    Rejected --> [*]
+    subgraph Stage1 ["Stage 1: CV Screening"]
+        P1[Extract Resume Text via PyMuPDF] --> P2[Generate OpenAI Embeddings]
+        P2 --> P3[Semantic Match vs Job Criteria]
+    end
+    
+    Upload --> Stage1
+    
+    P3 -->|< 70% Match| KO1[Knocked Out]
+    P3 -->|>= 70% Match| Stage2
+    
+    subgraph Stage2 ["Stage 2: Timed Skills Assessment"]
+        A1[10 Dynamic Technical Questions] --> A2[Strict 60s Countdown via DB Lock]
+        A2 --> A3[Compute Objective Assessment Score]
+    end
+    
+    A3 -->|< 60% Score| KO2[Knocked Out]
+    A3 -->|>= 60% Score| Stage3
+    
+    subgraph Stage3 ["Stage 3: Live AI Avatar Interview"]
+        I1[WebRTC Live Video Avatar - Simli] --> I2[5 Dynamic Behavioral & Tech Prompts]
+        I2 --> I3[Voice Input & Whisper Transcription]
+        I3 --> I4[Multi-Dimensional Response Scoring]
+    end
+    
+    Stage3 --> Synthesis
+    
+    subgraph Synthesis ["Stage 4: Multi-Factor Hiring Scorecard"]
+        S1["Weighted Formula: 40% CV + 25% Assessment + 35% Interview"]
+        S1 --> S2[Synthesize Strengths, Gaps & Evidence]
+    end
+    
+    S2 --> Review{Recruiter Review}
+    Review -->|Approve| Shortlisted([Shortlisted for Hire])
+    Review -->|Reject| Rejected([Rejected])
+    KO1 --> KnockedOut([Application Closed])
+    KO2 --> KnockedOut
 ```
 
 ---
