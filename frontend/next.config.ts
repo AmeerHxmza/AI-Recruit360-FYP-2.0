@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   experimental: { serverActions: { bodySizeLimit: "11mb" } },
@@ -57,6 +58,11 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     // Suppress PDF.js canvas peer-dep warning
     config.resolve.alias.canvas = false;
+    // Fix case-sensitivity bug in simli-client@3.0.2 on Linux/Vercel (index.js requires "./Client", but file is "client.js")
+    config.resolve.alias["simli-client$"] = path.resolve(
+      process.cwd(),
+      "node_modules/simli-client/dist/client.js",
+    );
     return config;
   },
 

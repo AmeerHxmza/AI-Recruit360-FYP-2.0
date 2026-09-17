@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --incremental false",
+    "postinstall": "node -e \"const fs = require('fs'); const p = 'node_modules/simli-client/dist/index.js'; if(fs.existsSync(p)){ const c = fs.readFileSync(p, 'utf8'); if(c.includes('./Client')) fs.writeFileSync(p, c.replace('./Client', './client')); }\"",
     "format": "prettier --write app components lib providers hooks config types proxy.ts next.config.ts"
   },
   "dependencies": {
