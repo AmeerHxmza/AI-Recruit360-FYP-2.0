@@ -16,10 +16,15 @@ import {
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { InteractiveShowcase } from "@/components/landing/interactive-showcase";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#121212] selection:bg-[#FF4F62] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAF8] text-[#121212] selection:bg-[#FF4F62] selection:text-white relative">
+      {/* Scroll Depth Progress Bar across the top of the browser */}
+      <ScrollProgress />
+
       {/* High-Performance Sticky Frosted Glass Navbar */}
       <header className="sticky top-0 z-40 border-b border-[rgba(20,20,20,0.06)] bg-[rgba(250,250,248,0.85)] backdrop-blur-xl transition-all">
         <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between gap-4 px-6 sm:px-8">
@@ -83,7 +88,7 @@ export default function Home() {
       </header>
 
       <main>
-        {/* Hero Section with Ambient Dot Pattern and Floating Telemetry Chips */}
+        {/* Hero Section with Ambient Dot Pattern and Sequenced Entrance */}
         <section className="relative overflow-hidden pt-16 pb-20 sm:pt-24 sm:pb-28 dot-pattern">
           {/* Subtle Radial Gradient Vignette over the dot pattern */}
           <div
@@ -96,126 +101,114 @@ export default function Home() {
 
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
             <div className="mx-auto max-w-[940px] text-center">
-              {/* Telemetry Status Pill */}
-              <ScrollReveal direction="down" distance={16} durationMs={600}>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#E4E4DF] bg-white/95 px-3.5 py-1 text-xs font-medium text-[#121212] shadow-2xs backdrop-blur-md">
-                  <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
-                  <span className="font-mono text-[11px] text-text-muted">ENGINE 2.0</span>
-                  <span className="h-3 w-px bg-border" />
-                  <span>Zero-Hallucination Evidence Grounding Active</span>
-                </div>
-              </ScrollReveal>
+              {/* Telemetry Status Pill (Enters first) */}
+              <div className="hero-enter-1 inline-flex items-center gap-2 rounded-full border border-[#E4E4DF] bg-white/95 px-3.5 py-1 text-xs font-medium text-[#121212] shadow-2xs backdrop-blur-md">
+                <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
+                <span className="font-mono text-[11px] text-text-muted">ENGINE 2.0</span>
+                <span className="h-3 w-px bg-border" />
+                <span>Zero-Hallucination Evidence Grounding Active</span>
+              </div>
 
-              {/* High-Impact Headline */}
-              <ScrollReveal delayMs={100} distance={24} durationMs={700}>
-                <h1 className="mx-auto mt-6 text-4xl font-[540] tracking-[-0.045em] text-[#121212] sm:text-6xl lg:text-[72px] lg:leading-[1.01]">
-                  Precision hiring.
-                  <br />
-                  <span className="bg-gradient-to-r from-[#111111] via-[#2a2a2a] to-[#555555] bg-clip-text text-transparent">
-                    Verified at every stage.
-                  </span>
-                </h1>
-              </ScrollReveal>
+              {/* High-Impact Headline (Enters second) */}
+              <h1 className="hero-enter-2 mx-auto mt-6 text-4xl font-[540] tracking-[-0.045em] text-[#121212] sm:text-6xl lg:text-[72px] lg:leading-[1.01]">
+                Precision hiring.
+                <br />
+                <span className="bg-gradient-to-r from-[#111111] via-[#2a2a2a] to-[#555555] bg-clip-text text-transparent">
+                  Verified at every stage.
+                </span>
+              </h1>
 
-              {/* Subtitle with High-Conviction Value Proposition */}
-              <ScrollReveal delayMs={180} distance={20} durationMs={700}>
-                <p className="mx-auto mt-6 max-w-[680px] text-base leading-[1.6] text-[#555552] sm:text-lg">
-                  Cross-reference resume claims against grounded text citations, generate leak-proof dynamic assessments, and conduct structured conversational interviews. Zero hallucinations. Complete audit trails.
-                </p>
-              </ScrollReveal>
+              {/* Subtitle with High-Conviction Value Proposition (Enters third) */}
+              <p className="hero-enter-3 mx-auto mt-6 max-w-[680px] text-base leading-[1.6] text-[#555552] sm:text-lg">
+                Cross-reference resume claims against grounded text citations, generate leak-proof dynamic assessments, and conduct structured conversational interviews. Zero hallucinations. Complete audit trails.
+              </p>
 
-              {/* Action Buttons with Spring Hover Physics */}
-              <ScrollReveal delayMs={240} distance={18} durationMs={700}>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
-                  <Link
-                    href="/signup"
-                    className="group flex items-center gap-2 rounded-[9px] bg-[#111111] px-6 py-3 text-[14px] font-medium text-white shadow-sm transition-all hover:bg-[#222222] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
-                  >
-                    <span>Launch Recruiter Workspace</span>
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                  <a
-                    href="#pipeline"
-                    className="flex items-center gap-2 rounded-[9px] border border-[#D5D5CF] bg-white px-6 py-3 text-[14px] font-medium text-[#161616] shadow-2xs transition-all hover:bg-[#F4F4F0] hover:-translate-y-0.5 hover:border-black/25 active:scale-[0.98]"
-                  >
-                    <span>Explore Evaluation Pipeline</span>
-                  </a>
-                </div>
-              </ScrollReveal>
+              {/* Action Buttons with Spring Hover Physics (Enters fourth) */}
+              <div className="hero-enter-4 mt-8 flex flex-wrap items-center justify-center gap-3.5">
+                <Link
+                  href="/signup"
+                  className="group flex items-center gap-2 rounded-[9px] bg-[#111111] px-6 py-3 text-[14px] font-medium text-white shadow-sm transition-all hover:bg-[#222222] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                >
+                  <span>Launch Recruiter Workspace</span>
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <a
+                  href="#pipeline"
+                  className="flex items-center gap-2 rounded-[9px] border border-[#D5D5CF] bg-white px-6 py-3 text-[14px] font-medium text-[#161616] shadow-2xs transition-all hover:bg-[#F4F4F0] hover:-translate-y-0.5 hover:border-black/25 active:scale-[0.98]"
+                >
+                  <span>Explore Evaluation Pipeline</span>
+                </a>
+              </div>
 
-              {/* Key Verification Guarantees Bar */}
-              <ScrollReveal delayMs={300} distance={16} durationMs={700}>
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-6 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
-                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                    <CheckCircle2 className="size-4 text-[#35C88A]" />
-                    40% Weight: Verified Resume Citations
-                  </span>
-                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                    <CheckCircle2 className="size-4 text-[#35C88A]" />
-                    25% Weight: Server-Timed Dynamic MCQs
-                  </span>
-                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                    <CheckCircle2 className="size-4 text-[#35C88A]" />
-                    35% Weight: Conversational Avatar Interview
-                  </span>
-                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                    <ShieldCheck className="size-4 text-[#111111]" />
-                    NYC LL144 &amp; EU AI Act Auditable
-                  </span>
-                </div>
-              </ScrollReveal>
+              {/* Key Verification Guarantees Bar (Enters fifth) */}
+              <div className="hero-enter-5 mt-10 flex flex-wrap items-center justify-center gap-6 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
+                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                  <CheckCircle2 className="size-4 text-[#35C88A]" />
+                  40% Weight: Verified Resume Citations
+                </span>
+                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                  <CheckCircle2 className="size-4 text-[#35C88A]" />
+                  25% Weight: Server-Timed Dynamic MCQs
+                </span>
+                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                  <CheckCircle2 className="size-4 text-[#35C88A]" />
+                  35% Weight: Conversational Avatar Interview
+                </span>
+                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                  <ShieldCheck className="size-4 text-[#111111]" />
+                  NYC LL144 &amp; EU AI Act Auditable
+                </span>
+              </div>
             </div>
 
             {/* Interactive Product Cockpit Frame with Ambient Glow and Floating Telemetry Chips */}
-            <ScrollReveal delayMs={350} distance={36} durationMs={850}>
-              <div id="interactive-demo" className="relative mt-14 scroll-mt-24 sm:mt-18">
-                {/* Atmospheric Glow */}
-                <div className="hero-glow pointer-events-none absolute -inset-6 -z-10 rounded-[32px] opacity-75" />
+            <div id="interactive-demo" className="hero-enter-5 relative mt-14 scroll-mt-24 sm:mt-18">
+              {/* Atmospheric Glow */}
+              <div className="hero-glow pointer-events-none absolute -inset-6 -z-10 rounded-[32px] opacity-75" />
 
-                {/* Floating Telemetry Chip (Top Left) */}
-                <div className="animate-float-slow hidden lg:flex absolute -top-5 -left-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
-                  <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
-                  <span className="font-mono text-[11px] text-text-muted">CITATION ENGINE</span>
-                  <span className="h-3 w-px bg-border" />
-                  <span>0% Hallucination Isolation Verified</span>
-                </div>
-
-                {/* Floating Telemetry Chip (Bottom Right) */}
-                <div className="animate-float-delayed hidden lg:flex absolute -bottom-5 -right-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
-                  <Clock className="size-3.5 text-[#FF4F62]" />
-                  <span className="font-mono text-[11px] text-text-muted">ANTI-CHEAT LOCK</span>
-                  <span className="h-3 w-px bg-border" />
-                  <span>60s PostgreSQL Mutex Enforced</span>
-                </div>
-
-                {/* Cockpit Window Container */}
-                <div className="overflow-hidden rounded-[18px] border border-black/[0.08] bg-white shadow-[0_24px_70px_rgba(0,0,0,0.07)]">
-                  {/* Browser-style Titlebar */}
-                  <div className="flex h-11 items-center justify-between border-b border-[#E7E7E2] bg-[#F7F7F4] px-4">
-                    <div className="flex items-center gap-2">
-                      <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
-                      <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
-                      <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
-                    </div>
-                    <div className="flex items-center gap-2 rounded-md border border-[#E2E2DC] bg-white px-3 py-1 text-[11px] font-mono text-[#7A7A75]">
-                      <Lock className="size-3 text-[#7A7A75]" />
-                      <span>ai-recruit360.workspace / evaluation-cockpit</span>
-                    </div>
-                    <div className="w-14" />
-                  </div>
-
-                  {/* Embedded Interactive Product Cockpit */}
-                  <InteractiveShowcase />
-                </div>
+              {/* Floating Telemetry Chip (Top Left) */}
+              <div className="animate-float-slow hidden lg:flex absolute -top-5 -left-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
+                <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
+                <span className="font-mono text-[11px] text-text-muted">CITATION ENGINE</span>
+                <span className="h-3 w-px bg-border" />
+                <span>0% Hallucination Isolation Verified</span>
               </div>
-            </ScrollReveal>
+
+              {/* Floating Telemetry Chip (Bottom Right) */}
+              <div className="animate-float-delayed hidden lg:flex absolute -bottom-5 -right-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
+                <Clock className="size-3.5 text-[#FF4F62]" />
+                <span className="font-mono text-[11px] text-text-muted">ANTI-CHEAT LOCK</span>
+                <span className="h-3 w-px bg-border" />
+                <span>60s PostgreSQL Mutex Enforced</span>
+              </div>
+
+              {/* Cockpit Window Container */}
+              <div className="overflow-hidden rounded-[18px] border border-black/[0.08] bg-white shadow-[0_24px_70px_rgba(0,0,0,0.07)]">
+                {/* Browser-style Titlebar */}
+                <div className="flex h-11 items-center justify-between border-b border-[#E7E7E2] bg-[#F7F7F4] px-4">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
+                    <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
+                    <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-md border border-[#E2E2DC] bg-white px-3 py-1 text-[11px] font-mono text-[#7A7A75]">
+                    <Lock className="size-3 text-[#7A7A75]" />
+                    <span>ai-recruit360.workspace / evaluation-cockpit</span>
+                  </div>
+                  <div className="w-14" />
+                </div>
+
+                {/* Embedded Interactive Product Cockpit */}
+                <InteractiveShowcase />
+              </div>
+            </div>
           </div>
         </section>
 
         {/* Connected Evaluation Pipeline Section */}
         <section id="pipeline" className="scroll-mt-20 border-t border-[#E7E7E2] bg-[#F6F6F2] py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <ScrollReveal distance={24} durationMs={700}>
+            <ScrollReveal distance={44} durationMs={750}>
               <div className="text-center">
                 <p className="eyebrow">AUDITABLE HIRING PIPELINE</p>
                 <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
@@ -269,7 +262,7 @@ export default function Home() {
                   badge: "Final Decision",
                 },
               ].map((item, idx) => (
-                <ScrollReveal key={idx} delayMs={idx * 75} distance={20} durationMs={650}>
+                <ScrollReveal key={idx} delayMs={idx * 80} distance={44} durationMs={700}>
                   <div
                     className={`interactive-card card-sheen group relative h-full rounded-[14px] border bg-white p-5 shadow-2xs transition-all ${
                       item.highlight ? "border-[#FF4F62]/35 bg-white ring-1 ring-[#FF4F62]/10" : "border-[#E4E4DF]"
@@ -299,7 +292,7 @@ export default function Home() {
         {/* 3-Tier Architecture Section */}
         <section id="architecture" className="scroll-mt-20 border-t border-[#E7E7E2] bg-white py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <ScrollReveal distance={24} durationMs={700}>
+            <ScrollReveal distance={44} durationMs={750}>
               <div className="text-center">
                 <p className="eyebrow">SYSTEM ARCHITECTURE</p>
                 <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
@@ -313,7 +306,7 @@ export default function Home() {
 
             <div className="mt-14 grid gap-6 lg:grid-cols-3">
               {/* Feature 1 (Spans 2 columns) */}
-              <ScrollReveal delayMs={0} distance={26} durationMs={700} className="lg:col-span-2">
+              <ScrollReveal delayMs={0} distance={44} durationMs={750} className="lg:col-span-2">
                 <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
                   <div>
                     <div className="flex items-center justify-between">
@@ -349,7 +342,7 @@ export default function Home() {
               </ScrollReveal>
 
               {/* Feature 2 */}
-              <ScrollReveal delayMs={100} distance={26} durationMs={700}>
+              <ScrollReveal delayMs={100} distance={44} durationMs={750}>
                 <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
                   <div>
                     <div className="flex items-center justify-between">
@@ -385,7 +378,7 @@ export default function Home() {
               </ScrollReveal>
 
               {/* Feature 3 */}
-              <ScrollReveal delayMs={150} distance={26} durationMs={700}>
+              <ScrollReveal delayMs={160} distance={44} durationMs={750}>
                 <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
                   <div>
                     <div className="flex items-center justify-between">
@@ -421,7 +414,7 @@ export default function Home() {
               </ScrollReveal>
 
               {/* Feature 4 (Spans 2 columns) */}
-              <ScrollReveal delayMs={200} distance={26} durationMs={700} className="lg:col-span-2">
+              <ScrollReveal delayMs={200} distance={44} durationMs={750} className="lg:col-span-2">
                 <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
                   <div>
                     <div className="flex items-center justify-between">
@@ -459,10 +452,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Deterministic Scoring Model Breakdown */}
+        {/* Deterministic Scoring Model Breakdown with Rolling Animated Numbers */}
         <section id="scoring" className="scroll-mt-20 border-t border-[#E7E7E2] bg-[#FAFAF8] py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <ScrollReveal distance={24} durationMs={700}>
+            <ScrollReveal distance={44} durationMs={750}>
               <div className="text-center">
                 <p className="eyebrow">DETERMINISTIC FORMULATION</p>
                 <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
@@ -475,7 +468,7 @@ export default function Home() {
             </ScrollReveal>
 
             {/* Formula Pill */}
-            <ScrollReveal delayMs={100} distance={20} durationMs={700}>
+            <ScrollReveal delayMs={100} distance={30} durationMs={700}>
               <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-[#E4E4DF] bg-white p-5 text-center shadow-xs">
                 <span className="text-xs font-mono font-medium text-[#8C8C87]">Composite Score Equation</span>
                 <div className="mt-2 text-lg sm:text-xl font-bold font-mono tracking-tight text-[#121212]">
@@ -487,24 +480,26 @@ export default function Home() {
             <div className="mt-10 grid gap-6 sm:grid-cols-3">
               {[
                 {
-                  weight: "40%",
+                  value: 40,
                   title: "CV Evidence Match",
                   desc: "Measures alignment between verified resume experience and hard job requirements.",
                 },
                 {
-                  weight: "25%",
+                  value: 25,
                   title: "Adaptive Project MCQs",
                   desc: "Validates core domain competence with server-timed technical scenario questions.",
                 },
                 {
-                  weight: "35%",
+                  value: 35,
                   title: "Interactive Avatar Interview",
                   desc: "Assesses technical depth, problem-solving reasoning, and professional communication.",
                 },
               ].map((card, idx) => (
-                <ScrollReveal key={idx} delayMs={idx * 100} distance={24} durationMs={700}>
+                <ScrollReveal key={idx} delayMs={idx * 100} distance={44} durationMs={750}>
                   <div className="interactive-card panel p-6 text-center h-full">
-                    <span className="text-3xl font-bold font-mono text-[#121212]">{card.weight}</span>
+                    <div className="text-3xl font-bold font-mono text-[#121212]">
+                      <AnimatedCounter value={card.value} suffix="%" />
+                    </div>
                     <h3 className="mt-2 text-sm font-semibold text-[#121212]">{card.title}</h3>
                     <p className="mt-2 text-xs text-[#555552] leading-relaxed">
                       {card.desc}
@@ -519,7 +514,7 @@ export default function Home() {
         {/* Competitive Matrix */}
         <section id="comparison" className="scroll-mt-20 border-t border-[#E7E7E2] bg-white py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <ScrollReveal distance={24} durationMs={700}>
+            <ScrollReveal distance={44} durationMs={750}>
               <div className="text-center">
                 <p className="eyebrow">MARKET COMPARISON</p>
                 <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
@@ -531,7 +526,7 @@ export default function Home() {
               </div>
             </ScrollReveal>
 
-            <ScrollReveal delayMs={150} distance={28} durationMs={750}>
+            <ScrollReveal delayMs={150} distance={44} durationMs={800}>
               <div className="mt-12 overflow-x-auto rounded-[16px] border border-[#E7E7E2] bg-white shadow-xs">
                 <table className="w-full text-left text-xs">
                   <thead>
@@ -613,10 +608,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Transparent Pricing Plans */}
+        {/* Transparent Pricing Plans with Counting Prices */}
         <section id="pricing" className="scroll-mt-20 border-t border-[#E7E7E2] bg-[#F6F6F2] py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <ScrollReveal distance={24} durationMs={700}>
+            <ScrollReveal distance={44} durationMs={750}>
               <div className="text-center">
                 <p className="eyebrow">SIMPLE RECRUITMENT TIERS</p>
                 <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
@@ -630,13 +625,13 @@ export default function Home() {
 
             <div className="mt-14 grid gap-6 sm:grid-cols-3">
               {/* Starter */}
-              <ScrollReveal delayMs={0} distance={26} durationMs={700}>
+              <ScrollReveal delayMs={0} distance={44} durationMs={750}>
                 <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 bg-white h-full">
                   <div>
                     <h3 className="text-base font-semibold text-[#121212]">Starter Workspace</h3>
                     <p className="mt-1 text-xs text-[#60605D]">For boutique teams &amp; startups hiring monthly</p>
                     <div className="mt-5 flex items-baseline gap-1">
-                      <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$99</span>
+                      <AnimatedCounter value={99} prefix="$" className="text-4xl font-bold font-mono tracking-tight text-[#121212]" />
                       <span className="text-xs text-[#8C8C87]">/ month</span>
                     </div>
 
@@ -670,7 +665,7 @@ export default function Home() {
               </ScrollReveal>
 
               {/* Growth (Most Popular) */}
-              <ScrollReveal delayMs={100} distance={26} durationMs={700}>
+              <ScrollReveal delayMs={100} distance={44} durationMs={750}>
                 <div className="interactive-card card-sheen panel relative flex flex-col justify-between p-8 bg-white border-[#111111] shadow-lg ring-1 ring-[#111111]/10 h-full">
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#111111] px-3.5 py-0.5 text-[10px] font-semibold text-white shadow-xs">
                     Most Popular
@@ -680,7 +675,7 @@ export default function Home() {
                     <h3 className="text-base font-semibold text-[#121212]">Growth Recruiter</h3>
                     <p className="mt-1 text-xs text-[#60605D]">For scaling tech teams and active agencies</p>
                     <div className="mt-5 flex items-baseline gap-1">
-                      <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$299</span>
+                      <AnimatedCounter value={299} prefix="$" className="text-4xl font-bold font-mono tracking-tight text-[#121212]" />
                       <span className="text-xs text-[#8C8C87]">/ month</span>
                     </div>
 
@@ -718,13 +713,13 @@ export default function Home() {
               </ScrollReveal>
 
               {/* Enterprise */}
-              <ScrollReveal delayMs={200} distance={26} durationMs={700}>
+              <ScrollReveal delayMs={200} distance={44} durationMs={750}>
                 <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 bg-white h-full">
                   <div>
                     <h3 className="text-base font-semibold text-[#121212]">Enterprise Custom</h3>
                     <p className="mt-1 text-xs text-[#60605D]">For enterprise talent teams &amp; custom pipelines</p>
                     <div className="mt-5 flex items-baseline gap-1">
-                      <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$999</span>
+                      <AnimatedCounter value={999} prefix="$" className="text-4xl font-bold font-mono tracking-tight text-[#121212]" />
                       <span className="text-xs text-[#8C8C87]">/ month</span>
                     </div>
 
@@ -764,7 +759,7 @@ export default function Home() {
         <section className="relative overflow-hidden border-t border-[#E7E7E2] bg-white py-20 sm:py-28">
           <div className="hero-glow pointer-events-none absolute -inset-6 -z-10 opacity-70" />
 
-          <ScrollReveal distance={28} durationMs={750}>
+          <ScrollReveal distance={44} durationMs={750}>
             <div className="mx-auto max-w-[820px] px-6 text-center">
               <h2 className="text-3xl font-[540] tracking-[-0.04em] text-[#121212] sm:text-5xl">
                 Ready to Upgrade to Grounded, Auditable Hiring?

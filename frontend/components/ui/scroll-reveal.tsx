@@ -17,8 +17,8 @@ export function ScrollReveal({
   children,
   delayMs = 0,
   direction = "up",
-  distance = 28,
-  durationMs = 750,
+  distance = 44,
+  durationMs = 800,
   className,
   as: Component = "div",
   style,
@@ -44,8 +44,8 @@ export function ScrollReveal({
         }
       },
       {
-        rootMargin: "0px 0px -40px 0px",
-        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px",
+        threshold: 0.15,
       }
     );
 
@@ -57,15 +57,15 @@ export function ScrollReveal({
     if (isVisible) return "translate3d(0, 0, 0) scale(1)";
     switch (direction) {
       case "up":
-        return `translate3d(0, ${distance}px, 0) scale(0.985)`;
+        return `translate3d(0, ${distance}px, 0) scale(0.97)`;
       case "down":
-        return `translate3d(0, -${distance}px, 0) scale(0.985)`;
+        return `translate3d(0, -${distance}px, 0) scale(0.97)`;
       case "left":
         return `translate3d(${distance}px, 0, 0)`;
       case "right":
         return `translate3d(-${distance}px, 0, 0)`;
       default:
-        return "scale(0.985)";
+        return "scale(0.97)";
     }
   };
 

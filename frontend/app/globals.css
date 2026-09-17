@@ -366,15 +366,16 @@
 }
 
 .interactive-card {
-  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
 }
 
 .interactive-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
-  border-color: rgba(18, 18, 18, 0.22);
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  border-color: rgba(18, 18, 18, 0.35);
 }
 
 .card-sheen {
@@ -392,7 +393,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.45),
     transparent
   );
   transform: skewX(-20deg);
@@ -404,6 +405,24 @@
   left: 150%;
   transition: left 750ms ease-in-out;
 }
+
+/* ── Hero Load Entrance Keyframes ── */
+@keyframes hero-fade-up {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 36px, 0) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.hero-enter-1 { animation: hero-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both; }
+.hero-enter-2 { animation: hero-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both; }
+.hero-enter-3 { animation: hero-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.30s both; }
+.hero-enter-4 { animation: hero-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.44s both; }
+.hero-enter-5 { animation: hero-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.58s both; }
 
 @keyframes pulse-subtle {
   0%, 100% {
@@ -425,7 +444,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-8px);
   }
 }
 
@@ -438,7 +457,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(5px);
+    transform: translateY(8px);
   }
 }
 
@@ -480,13 +499,3 @@
   animation: scan-sweep 3s ease-in-out infinite alternate;
 }
 
-/* Reduced motion respect */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
-}
