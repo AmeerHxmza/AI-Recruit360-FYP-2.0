@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ApplicationShell } from "@/components/layout/application-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { Card } from "@/components/ui/card";
@@ -91,9 +90,7 @@ export function AnalyticsClientView({
       : 0;
 
   return (
-    <ApplicationShell
-      pageBreadcrumb={[orgName || "AI-Recruit360", "Analytics"]}
-    >
+    <div className="space-y-6">
       <PageHeader
         title="Analytics"
         description="Pipeline progression, stage conversion rates, and recruitment velocity metrics."
@@ -298,6 +295,6 @@ export function AnalyticsClientView({
           </div>
         </div>
       )}
-    </ApplicationShell>
+    </div>
   );
 }

@@ -2,6 +2,7 @@
 import { Menu, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/providers/auth-provider";
+import { useBreadcrumbs } from "@/providers/breadcrumb-provider";
 import { Button } from "@/components/ui/button";
 export interface TopBarProps {
   onMenuToggle?: () => void;
@@ -10,9 +11,12 @@ export interface TopBarProps {
 }
 export function TopBar({
   onMenuToggle,
-  pageBreadcrumb = ["Workspace", "Overview"],
+  pageBreadcrumb,
 }: TopBarProps) {
   const { userMetadata } = useAuth();
+  const { breadcrumbs: contextBreadcrumbs } = useBreadcrumbs();
+  const activeBreadcrumb = pageBreadcrumb || contextBreadcrumbs;
+
   return (
     <header className="flex min-h-16 items-center justify-between gap-4 border-b border-border bg-surface px-4 sm:px-8">
       <div className="flex min-w-0 items-center gap-3">
@@ -29,7 +33,7 @@ export function TopBar({
           aria-label="Breadcrumb"
           className="flex min-w-0 items-center gap-2 text-sm text-text-secondary"
         >
-          {pageBreadcrumb.map((part, i) => (
+          {activeBreadcrumb.map((part, i) => (
             <span
               key={`${part}-${i}`}
               className="flex min-w-0 items-center gap-2"

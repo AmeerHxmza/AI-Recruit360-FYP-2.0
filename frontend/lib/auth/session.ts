@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { AuthError, ForbiddenError, NotFoundError } from "@/lib/utils/errors";
@@ -24,6 +24,25 @@ interface JoinedMembershipRow extends OrganizationMemberRow {
 }
 
 export const getCurrentUser = cache(async (): Promise<User> => {
+  // Fast path: Check headers injected by proxy middleware to avoid duplicate remote HTTPS calls to Supabase Auth
+  const headerStore = await headers().catch(() => null);
+  const headerUserId = headerStore?.get("x-user-id");
+  const headerUserEmail = headerStore?.get("x-user-email");
+  const headerUserName = headerStore?.get("x-user-name");
+
+  if (headerUserId) {
+    return {
+      id: headerUserId,
+      email: headerUserEmail || undefined,
+      user_metadata: {
+        full_name: headerUserName ? decodeURIComponent(headerUserName) : undefined,
+      },
+      app_metadata: {},
+      aud: "authenticated",
+      created_at: new Date().toISOString(),
+    } as unknown as User;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

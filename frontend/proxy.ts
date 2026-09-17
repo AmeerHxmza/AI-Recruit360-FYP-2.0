@@ -81,13 +81,19 @@ export async function proxy(request: NextRequest) {
 
   // 2. Authenticated user checks organization membership status
   if (user && (isProtectedRoute || isAuthRoute || isOnboardingRoute)) {
-    const { data: members, error: membershipError } = await supabase
-      .from("organization_members")
-      .select("organization_id")
-      .eq("user_id", user.id)
-      .limit(1);
-    if (membershipError) return response;
-    const hasOrg = Boolean(members?.length);
+    const cookieOrg = request.cookies.get("air360_org_id")?.value;
+    let hasOrg = Boolean(cookieOrg);
+
+    // Only query database if user doesn't already have an active organization cookie
+    if (!hasOrg) {
+      const { data: members, error: membershipError } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .limit(1);
+      if (membershipError) return response;
+      hasOrg = Boolean(members?.length);
+    }
 
     // Authenticated user on auth routes (/login, /signup)
     if (isAuthRoute) {
@@ -109,6 +115,31 @@ export async function proxy(request: NextRequest) {
       redirectUrl.pathname = "/onboarding/organization";
       return redirectWithCookies(redirectUrl);
     }
+  }
+
+  // Forward verified user headers downstream to avoid duplicate auth.getUser() calls in Server Components
+  if (user) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-user-id", user.id);
+    if (user.email) requestHeaders.set("x-user-email", user.email);
+    if (user.user_metadata?.full_name) {
+      requestHeaders.set(
+        "x-user-name",
+        encodeURIComponent(user.user_metadata.full_name),
+      );
+    }
+
+    const nextResponse = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    response.cookies.getAll().forEach((cookie) => {
+      nextResponse.cookies.set(cookie);
+    });
+
+    return nextResponse;
   }
 
   return response;
