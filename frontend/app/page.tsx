@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { InteractiveShowcase } from "@/components/landing/interactive-showcase";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export default function Home() {
   return (
@@ -96,123 +97,137 @@ export default function Home() {
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
             <div className="mx-auto max-w-[940px] text-center">
               {/* Telemetry Status Pill */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#E4E4DF] bg-white/95 px-3.5 py-1 text-xs font-medium text-[#121212] shadow-2xs backdrop-blur-md">
-                <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
-                <span className="font-mono text-[11px] text-text-muted">ENGINE 2.0</span>
-                <span className="h-3 w-px bg-border" />
-                <span>Zero-Hallucination Evidence Grounding Active</span>
-              </div>
+              <ScrollReveal direction="down" distance={16} durationMs={600}>
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#E4E4DF] bg-white/95 px-3.5 py-1 text-xs font-medium text-[#121212] shadow-2xs backdrop-blur-md">
+                  <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
+                  <span className="font-mono text-[11px] text-text-muted">ENGINE 2.0</span>
+                  <span className="h-3 w-px bg-border" />
+                  <span>Zero-Hallucination Evidence Grounding Active</span>
+                </div>
+              </ScrollReveal>
 
               {/* High-Impact Headline */}
-              <h1 className="mx-auto mt-6 text-4xl font-[540] tracking-[-0.045em] text-[#121212] sm:text-6xl lg:text-[72px] lg:leading-[1.01]">
-                Precision hiring.
-                <br />
-                <span className="bg-gradient-to-r from-[#111111] via-[#2a2a2a] to-[#555555] bg-clip-text text-transparent">
-                  Verified at every stage.
-                </span>
-              </h1>
+              <ScrollReveal delayMs={100} distance={24} durationMs={700}>
+                <h1 className="mx-auto mt-6 text-4xl font-[540] tracking-[-0.045em] text-[#121212] sm:text-6xl lg:text-[72px] lg:leading-[1.01]">
+                  Precision hiring.
+                  <br />
+                  <span className="bg-gradient-to-r from-[#111111] via-[#2a2a2a] to-[#555555] bg-clip-text text-transparent">
+                    Verified at every stage.
+                  </span>
+                </h1>
+              </ScrollReveal>
 
               {/* Subtitle with High-Conviction Value Proposition */}
-              <p className="mx-auto mt-6 max-w-[680px] text-base leading-[1.6] text-[#555552] sm:text-lg">
-                Cross-reference resume claims against grounded text citations, generate leak-proof dynamic assessments, and conduct structured conversational interviews. Zero hallucinations. Complete audit trails.
-              </p>
+              <ScrollReveal delayMs={180} distance={20} durationMs={700}>
+                <p className="mx-auto mt-6 max-w-[680px] text-base leading-[1.6] text-[#555552] sm:text-lg">
+                  Cross-reference resume claims against grounded text citations, generate leak-proof dynamic assessments, and conduct structured conversational interviews. Zero hallucinations. Complete audit trails.
+                </p>
+              </ScrollReveal>
 
               {/* Action Buttons with Spring Hover Physics */}
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
-                <Link
-                  href="/signup"
-                  className="group flex items-center gap-2 rounded-[9px] bg-[#111111] px-6 py-3 text-[14px] font-medium text-white shadow-sm transition-all hover:bg-[#222222] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
-                >
-                  <span>Launch Recruiter Workspace</span>
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <a
-                  href="#pipeline"
-                  className="flex items-center gap-2 rounded-[9px] border border-[#D5D5CF] bg-white px-6 py-3 text-[14px] font-medium text-[#161616] shadow-2xs transition-all hover:bg-[#F4F4F0] hover:-translate-y-0.5 hover:border-black/25 active:scale-[0.98]"
-                >
-                  <span>Explore Evaluation Pipeline</span>
-                </a>
-              </div>
+              <ScrollReveal delayMs={240} distance={18} durationMs={700}>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+                  <Link
+                    href="/signup"
+                    className="group flex items-center gap-2 rounded-[9px] bg-[#111111] px-6 py-3 text-[14px] font-medium text-white shadow-sm transition-all hover:bg-[#222222] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                  >
+                    <span>Launch Recruiter Workspace</span>
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <a
+                    href="#pipeline"
+                    className="flex items-center gap-2 rounded-[9px] border border-[#D5D5CF] bg-white px-6 py-3 text-[14px] font-medium text-[#161616] shadow-2xs transition-all hover:bg-[#F4F4F0] hover:-translate-y-0.5 hover:border-black/25 active:scale-[0.98]"
+                  >
+                    <span>Explore Evaluation Pipeline</span>
+                  </a>
+                </div>
+              </ScrollReveal>
 
               {/* Key Verification Guarantees Bar */}
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-6 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
-                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                  <CheckCircle2 className="size-4 text-[#35C88A]" />
-                  40% Weight: Verified Resume Citations
-                </span>
-                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                  <CheckCircle2 className="size-4 text-[#35C88A]" />
-                  25% Weight: Server-Timed Dynamic MCQs
-                </span>
-                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                  <CheckCircle2 className="size-4 text-[#35C88A]" />
-                  35% Weight: Conversational Avatar Interview
-                </span>
-                <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                  <ShieldCheck className="size-4 text-[#111111]" />
-                  NYC LL144 &amp; EU AI Act Auditable
-                </span>
-              </div>
+              <ScrollReveal delayMs={300} distance={16} durationMs={700}>
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-6 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
+                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                    <CheckCircle2 className="size-4 text-[#35C88A]" />
+                    40% Weight: Verified Resume Citations
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                    <CheckCircle2 className="size-4 text-[#35C88A]" />
+                    25% Weight: Server-Timed Dynamic MCQs
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                    <CheckCircle2 className="size-4 text-[#35C88A]" />
+                    35% Weight: Conversational Avatar Interview
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                    <ShieldCheck className="size-4 text-[#111111]" />
+                    NYC LL144 &amp; EU AI Act Auditable
+                  </span>
+                </div>
+              </ScrollReveal>
             </div>
 
             {/* Interactive Product Cockpit Frame with Ambient Glow and Floating Telemetry Chips */}
-            <div id="interactive-demo" className="relative mt-14 scroll-mt-24 sm:mt-18">
-              {/* Atmospheric Glow */}
-              <div className="hero-glow pointer-events-none absolute -inset-6 -z-10 rounded-[32px] opacity-75" />
+            <ScrollReveal delayMs={350} distance={36} durationMs={850}>
+              <div id="interactive-demo" className="relative mt-14 scroll-mt-24 sm:mt-18">
+                {/* Atmospheric Glow */}
+                <div className="hero-glow pointer-events-none absolute -inset-6 -z-10 rounded-[32px] opacity-75" />
 
-              {/* Floating Telemetry Chip (Top Left) */}
-              <div className="animate-float-slow hidden lg:flex absolute -top-5 -left-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
-                <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
-                <span className="font-mono text-[11px] text-text-muted">CITATION ENGINE</span>
-                <span className="h-3 w-px bg-border" />
-                <span>0% Hallucination Isolation Verified</span>
-              </div>
-
-              {/* Floating Telemetry Chip (Bottom Right) */}
-              <div className="animate-float-delayed hidden lg:flex absolute -bottom-5 -right-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
-                <Clock className="size-3.5 text-[#FF4F62]" />
-                <span className="font-mono text-[11px] text-text-muted">ANTI-CHEAT LOCK</span>
-                <span className="h-3 w-px bg-border" />
-                <span>60s PostgreSQL Mutex Enforced</span>
-              </div>
-
-              {/* Cockpit Window Container */}
-              <div className="overflow-hidden rounded-[18px] border border-black/[0.08] bg-white shadow-[0_24px_70px_rgba(0,0,0,0.07)]">
-                {/* Browser-style Titlebar */}
-                <div className="flex h-11 items-center justify-between border-b border-[#E7E7E2] bg-[#F7F7F4] px-4">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
-                    <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
-                    <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
-                  </div>
-                  <div className="flex items-center gap-2 rounded-md border border-[#E2E2DC] bg-white px-3 py-1 text-[11px] font-mono text-[#7A7A75]">
-                    <Lock className="size-3 text-[#7A7A75]" />
-                    <span>ai-recruit360.workspace / evaluation-cockpit</span>
-                  </div>
-                  <div className="w-14" />
+                {/* Floating Telemetry Chip (Top Left) */}
+                <div className="animate-float-slow hidden lg:flex absolute -top-5 -left-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
+                  <span className="size-2 rounded-full bg-[#35C88A] animate-pulse-subtle" />
+                  <span className="font-mono text-[11px] text-text-muted">CITATION ENGINE</span>
+                  <span className="h-3 w-px bg-border" />
+                  <span>0% Hallucination Isolation Verified</span>
                 </div>
 
-                {/* Embedded Interactive Product Cockpit */}
-                <InteractiveShowcase />
+                {/* Floating Telemetry Chip (Bottom Right) */}
+                <div className="animate-float-delayed hidden lg:flex absolute -bottom-5 -right-5 z-20 items-center gap-2.5 rounded-full border border-black/[0.08] bg-white/95 px-4 py-2 text-xs font-medium text-[#111111] shadow-lg backdrop-blur-md">
+                  <Clock className="size-3.5 text-[#FF4F62]" />
+                  <span className="font-mono text-[11px] text-text-muted">ANTI-CHEAT LOCK</span>
+                  <span className="h-3 w-px bg-border" />
+                  <span>60s PostgreSQL Mutex Enforced</span>
+                </div>
+
+                {/* Cockpit Window Container */}
+                <div className="overflow-hidden rounded-[18px] border border-black/[0.08] bg-white shadow-[0_24px_70px_rgba(0,0,0,0.07)]">
+                  {/* Browser-style Titlebar */}
+                  <div className="flex h-11 items-center justify-between border-b border-[#E7E7E2] bg-[#F7F7F4] px-4">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
+                      <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
+                      <span className="size-2.5 rounded-full bg-[#E5E5DF]" />
+                    </div>
+                    <div className="flex items-center gap-2 rounded-md border border-[#E2E2DC] bg-white px-3 py-1 text-[11px] font-mono text-[#7A7A75]">
+                      <Lock className="size-3 text-[#7A7A75]" />
+                      <span>ai-recruit360.workspace / evaluation-cockpit</span>
+                    </div>
+                    <div className="w-14" />
+                  </div>
+
+                  {/* Embedded Interactive Product Cockpit */}
+                  <InteractiveShowcase />
+                </div>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* Connected Evaluation Pipeline Section */}
         <section id="pipeline" className="scroll-mt-20 border-t border-[#E7E7E2] bg-[#F6F6F2] py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <div className="text-center">
-              <p className="eyebrow">AUDITABLE HIRING PIPELINE</p>
-              <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
-                A Unified, Sequential Evaluation Protocol
-              </h2>
-              <p className="mx-auto mt-4 max-w-[620px] text-base leading-[1.6] text-[#555552]">
-                Every candidate moves through an immutable, multi-tier progression. No fragmented tools, no unverified claims, and zero manual spreadsheet grading.
-              </p>
-            </div>
+            <ScrollReveal distance={24} durationMs={700}>
+              <div className="text-center">
+                <p className="eyebrow">AUDITABLE HIRING PIPELINE</p>
+                <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
+                  A Unified, Sequential Evaluation Protocol
+                </h2>
+                <p className="mx-auto mt-4 max-w-[620px] text-base leading-[1.6] text-[#555552]">
+                  Every candidate moves through an immutable, multi-tier progression. No fragmented tools, no unverified claims, and zero manual spreadsheet grading.
+                </p>
+              </div>
+            </ScrollReveal>
 
-            {/* Connected Process Flow */}
+            {/* Connected Process Flow with Staggered Scroll Reveal */}
             <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
               {[
                 {
@@ -254,27 +269,28 @@ export default function Home() {
                   badge: "Final Decision",
                 },
               ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className={`interactive-card card-sheen group relative rounded-[14px] border bg-white p-5 shadow-2xs transition-all ${
-                    item.highlight ? "border-[#FF4F62]/35 bg-white ring-1 ring-[#FF4F62]/10" : "border-[#E4E4DF]"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono font-bold text-[#8C8C87]">
-                      {item.step}
-                    </span>
-                    <span className="rounded bg-black/[0.04] px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#555552]">
-                      {item.badge}
-                    </span>
+                <ScrollReveal key={idx} delayMs={idx * 75} distance={20} durationMs={650}>
+                  <div
+                    className={`interactive-card card-sheen group relative h-full rounded-[14px] border bg-white p-5 shadow-2xs transition-all ${
+                      item.highlight ? "border-[#FF4F62]/35 bg-white ring-1 ring-[#FF4F62]/10" : "border-[#E4E4DF]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-mono font-bold text-[#8C8C87]">
+                        {item.step}
+                      </span>
+                      <span className="rounded bg-black/[0.04] px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#555552]">
+                        {item.badge}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-sm font-semibold text-[#121212] group-hover:text-black">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-xs leading-[1.5] text-[#60605D]">
+                      {item.desc}
+                    </p>
                   </div>
-                  <h3 className="mt-3 text-sm font-semibold text-[#121212] group-hover:text-black">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 text-xs leading-[1.5] text-[#60605D]">
-                    {item.desc}
-                  </p>
-                </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -283,152 +299,162 @@ export default function Home() {
         {/* 3-Tier Architecture Section */}
         <section id="architecture" className="scroll-mt-20 border-t border-[#E7E7E2] bg-white py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <div className="text-center">
-              <p className="eyebrow">SYSTEM ARCHITECTURE</p>
-              <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
-                The 3-Tier Autonomous Intelligence Architecture
-              </h2>
-              <p className="mx-auto mt-4 max-w-[640px] text-base leading-[1.6] text-[#555552]">
-                Engineered to replace unverified resume keyword stuffing and leaked static question banks with deterministic evaluation.
-              </p>
-            </div>
+            <ScrollReveal distance={24} durationMs={700}>
+              <div className="text-center">
+                <p className="eyebrow">SYSTEM ARCHITECTURE</p>
+                <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
+                  The 3-Tier Autonomous Intelligence Architecture
+                </h2>
+                <p className="mx-auto mt-4 max-w-[640px] text-base leading-[1.6] text-[#555552]">
+                  Engineered to replace unverified resume keyword stuffing and leaked static question banks with deterministic evaluation.
+                </p>
+              </div>
+            </ScrollReveal>
 
             <div className="mt-14 grid gap-6 lg:grid-cols-3">
               {/* Feature 1 (Spans 2 columns) */}
-              <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 lg:col-span-2 border-border/90">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-[#FF4F62]/10 px-3 py-1 text-xs font-semibold text-[#FF4F62]">
-                      Tier 1 · 40% Composite Weight
-                    </span>
-                    <span className="text-xs font-mono text-[#8C8C87]">Grounded Text Citations</span>
-                  </div>
-
-                  <h3 className="mt-5 text-2xl font-[550] tracking-[-0.025em] text-[#121212]">
-                    Verifiable Resume Evidence Grounding
-                  </h3>
-                  <p className="mt-3 max-w-[620px] text-sm leading-[1.6] text-[#555552]">
-                    Standard keyword matchers reward candidates for stuffing technical buzzwords into their resumes. AI-Recruit360 extracts concrete quote citations directly from the resume to validate actual project achievements and architectural ownership.
-                  </p>
-
-                  <div className="mt-6 grid gap-3 sm:grid-cols-3 border-t border-[#E7E7E2] pt-6">
-                    <div className="rounded-xl bg-[#FAFAF8] p-4 border border-[#E7E7E2]">
-                      <span className="text-xs font-semibold text-[#121212]">Quote Extraction</span>
-                      <p className="mt-1 text-xs text-[#60605D]">Direct text evidence citations parsed verbatim</p>
+              <ScrollReveal delayMs={0} distance={26} durationMs={700} className="lg:col-span-2">
+                <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-[#FF4F62]/10 px-3 py-1 text-xs font-semibold text-[#FF4F62]">
+                        Tier 1 · 40% Composite Weight
+                      </span>
+                      <span className="text-xs font-mono text-[#8C8C87]">Grounded Text Citations</span>
                     </div>
-                    <div className="rounded-xl bg-[#FAFAF8] p-4 border border-[#E7E7E2]">
-                      <span className="text-xs font-semibold text-[#121212]">Threshold Gating</span>
-                      <p className="mt-1 text-xs text-[#60605D]">Automated 70% threshold gating before assessments</p>
-                    </div>
-                    <div className="rounded-xl bg-[#FAFAF8] p-4 border border-[#E7E7E2]">
-                      <span className="text-xs font-semibold text-[#121212]">Zero Hallucination</span>
-                      <p className="mt-1 text-xs text-[#60605D]">Pydantic schema isolation prevents fabrications</p>
+
+                    <h3 className="mt-5 text-2xl font-[550] tracking-[-0.025em] text-[#121212]">
+                      Verifiable Resume Evidence Grounding
+                    </h3>
+                    <p className="mt-3 max-w-[620px] text-sm leading-[1.6] text-[#555552]">
+                      Standard keyword matchers reward candidates for stuffing technical buzzwords into their resumes. AI-Recruit360 extracts concrete quote citations directly from the resume to validate actual project achievements and architectural ownership.
+                    </p>
+
+                    <div className="mt-6 grid gap-3 sm:grid-cols-3 border-t border-[#E7E7E2] pt-6">
+                      <div className="rounded-xl bg-[#FAFAF8] p-4 border border-[#E7E7E2]">
+                        <span className="text-xs font-semibold text-[#121212]">Quote Extraction</span>
+                        <p className="mt-1 text-xs text-[#60605D]">Direct text evidence citations parsed verbatim</p>
+                      </div>
+                      <div className="rounded-xl bg-[#FAFAF8] p-4 border border-[#E7E7E2]">
+                        <span className="text-xs font-semibold text-[#121212]">Threshold Gating</span>
+                        <p className="mt-1 text-xs text-[#60605D]">Automated 70% threshold gating before assessments</p>
+                      </div>
+                      <div className="rounded-xl bg-[#FAFAF8] p-4 border border-[#E7E7E2]">
+                        <span className="text-xs font-semibold text-[#121212]">Zero Hallucination</span>
+                        <p className="mt-1 text-xs text-[#60605D]">Pydantic schema isolation prevents fabrications</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
 
               {/* Feature 2 */}
-              <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-black/[0.05] px-3 py-1 text-xs font-semibold text-[#121212]">
-                      Tier 2 · 25% Weight
-                    </span>
-                    <span className="text-xs font-mono text-[#8C8C87]">Server Mutex Timer</span>
+              <ScrollReveal delayMs={100} distance={26} durationMs={700}>
+                <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-black/[0.05] px-3 py-1 text-xs font-semibold text-[#121212]">
+                        Tier 2 · 25% Weight
+                      </span>
+                      <span className="text-xs font-mono text-[#8C8C87]">Server Mutex Timer</span>
+                    </div>
+
+                    <h3 className="mt-5 text-xl font-[550] tracking-[-0.025em] text-[#121212]">
+                      Context-Aware Dynamic MCQs
+                    </h3>
+                    <p className="mt-3 text-xs leading-[1.6] text-[#555552]">
+                      Static testing question banks (iMocha, TestGorilla) are widely leaked on forums. AI-Recruit360 synthesizes 10 technical scenarios tailored specifically to the candidate&apos;s actual resume projects.
+                    </p>
+
+                    <ul className="mt-5 space-y-2.5 border-t border-[#E7E7E2] pt-4 text-xs text-[#555552]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>PostgreSQL 60s server-enforced timer</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Strict sequential question locking</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Immutable recorded answer history</span>
+                      </li>
+                    </ul>
                   </div>
-
-                  <h3 className="mt-5 text-xl font-[550] tracking-[-0.025em] text-[#121212]">
-                    Context-Aware Dynamic MCQs
-                  </h3>
-                  <p className="mt-3 text-xs leading-[1.6] text-[#555552]">
-                    Static testing question banks (iMocha, TestGorilla) are widely leaked on forums. AI-Recruit360 synthesizes 10 technical scenarios tailored specifically to the candidate&apos;s actual resume projects.
-                  </p>
-
-                  <ul className="mt-5 space-y-2.5 border-t border-[#E7E7E2] pt-4 text-xs text-[#555552]">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>PostgreSQL 60s server-enforced timer</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Strict sequential question locking</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Immutable recorded answer history</span>
-                    </li>
-                  </ul>
                 </div>
-              </div>
+              </ScrollReveal>
 
               {/* Feature 3 */}
-              <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-[#ED3F74]/10 px-3 py-1 text-xs font-semibold text-[#ED3F74]">
-                      Tier 3 · 35% Weight
-                    </span>
-                    <span className="text-xs font-mono text-[#8C8C87]">Real-Time WebRTC</span>
+              <ScrollReveal delayMs={150} distance={26} durationMs={700}>
+                <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-[#ED3F74]/10 px-3 py-1 text-xs font-semibold text-[#ED3F74]">
+                        Tier 3 · 35% Weight
+                      </span>
+                      <span className="text-xs font-mono text-[#8C8C87]">Real-Time WebRTC</span>
+                    </div>
+
+                    <h3 className="mt-5 text-xl font-[550] tracking-[-0.025em] text-[#121212]">
+                      Conversational Talking Avatar
+                    </h3>
+                    <p className="mt-3 text-xs leading-[1.6] text-[#555552]">
+                      Unlike passive one-way asynchronous video recordings (HireVue), AI-Recruit360 deploys an interactive talking avatar via WebSockets that listens, clarifies, and asks progressive technical follow-ups.
+                    </p>
+
+                    <ul className="mt-5 space-y-2.5 border-t border-[#E7E7E2] pt-4 text-xs text-[#555552]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>5-stage progressive technical probe</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Low-latency STT/TTS audio pipeline</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Objective rubric scoring without facial bias</span>
+                      </li>
+                    </ul>
                   </div>
-
-                  <h3 className="mt-5 text-xl font-[550] tracking-[-0.025em] text-[#121212]">
-                    Conversational Talking Avatar
-                  </h3>
-                  <p className="mt-3 text-xs leading-[1.6] text-[#555552]">
-                    Unlike passive one-way asynchronous video recordings (HireVue), AI-Recruit360 deploys an interactive talking avatar via WebSockets that listens, clarifies, and asks progressive technical follow-ups.
-                  </p>
-
-                  <ul className="mt-5 space-y-2.5 border-t border-[#E7E7E2] pt-4 text-xs text-[#555552]">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>5-stage progressive technical probe</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Low-latency STT/TTS audio pipeline</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Objective rubric scoring without facial bias</span>
-                    </li>
-                  </ul>
                 </div>
-              </div>
+              </ScrollReveal>
 
               {/* Feature 4 (Spans 2 columns) */}
-              <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 lg:col-span-2 border-border/90">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-[#35C88A]/10 px-3 py-1 text-xs font-semibold text-[#167348]">
-                      Final Synthesis
-                    </span>
-                    <span className="text-xs font-mono text-[#8C8C87]">100% Explainable</span>
-                  </div>
+              <ScrollReveal delayMs={200} distance={26} durationMs={700} className="lg:col-span-2">
+                <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 border-border/90 h-full">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-[#35C88A]/10 px-3 py-1 text-xs font-semibold text-[#167348]">
+                        Final Synthesis
+                      </span>
+                      <span className="text-xs font-mono text-[#8C8C87]">100% Explainable</span>
+                    </div>
 
-                  <h3 className="mt-5 text-2xl font-[550] tracking-[-0.025em] text-[#121212]">
-                    Explainable AI Analysis &amp; Ethical Compliance
-                  </h3>
-                  <p className="mt-3 max-w-[620px] text-sm leading-[1.6] text-[#555552]">
-                    Every decision recommendation is supported by full audit trails. Recruiter dashboards display exact score contributions, strengths, gaps, and grounded citations—fully compliant with NYC Local Law 144 and EU AI Act.
-                  </p>
+                    <h3 className="mt-5 text-2xl font-[550] tracking-[-0.025em] text-[#121212]">
+                      Explainable AI Analysis &amp; Ethical Compliance
+                    </h3>
+                    <p className="mt-3 max-w-[620px] text-sm leading-[1.6] text-[#555552]">
+                      Every decision recommendation is supported by full audit trails. Recruiter dashboards display exact score contributions, strengths, gaps, and grounded citations—fully compliant with NYC Local Law 144 and EU AI Act.
+                    </p>
 
-                  <div className="mt-6 flex flex-wrap items-center gap-5 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
-                    <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                      <CheckCircle2 className="size-4 text-[#35C88A]" />
-                      Human-in-the-Loop Override
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                      <CheckCircle2 className="size-4 text-[#35C88A]" />
-                      Multi-Tenant Row Level Security
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium text-[#121212]">
-                      <CheckCircle2 className="size-4 text-[#35C88A]" />
-                      Deterministic Mathematical Scoring
-                    </span>
+                    <div className="mt-6 flex flex-wrap items-center gap-5 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
+                      <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                        <CheckCircle2 className="size-4 text-[#35C88A]" />
+                        Human-in-the-Loop Override
+                      </span>
+                      <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                        <CheckCircle2 className="size-4 text-[#35C88A]" />
+                        Multi-Tenant Row Level Security
+                      </span>
+                      <span className="flex items-center gap-1.5 font-medium text-[#121212]">
+                        <CheckCircle2 className="size-4 text-[#35C88A]" />
+                        Deterministic Mathematical Scoring
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
             </div>
           </div>
         </section>
@@ -436,48 +462,56 @@ export default function Home() {
         {/* Deterministic Scoring Model Breakdown */}
         <section id="scoring" className="scroll-mt-20 border-t border-[#E7E7E2] bg-[#FAFAF8] py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <div className="text-center">
-              <p className="eyebrow">DETERMINISTIC FORMULATION</p>
-              <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
-                The Mathematical Composite Index
-              </h2>
-              <p className="mx-auto mt-4 max-w-[640px] text-base leading-[1.6] text-[#555552]">
-                No opaque black-box deep learning scores. Candidates are evaluated through a verified, transparent weighted formula.
-              </p>
-            </div>
+            <ScrollReveal distance={24} durationMs={700}>
+              <div className="text-center">
+                <p className="eyebrow">DETERMINISTIC FORMULATION</p>
+                <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
+                  The Mathematical Composite Index
+                </h2>
+                <p className="mx-auto mt-4 max-w-[640px] text-base leading-[1.6] text-[#555552]">
+                  No opaque black-box deep learning scores. Candidates are evaluated through a verified, transparent weighted formula.
+                </p>
+              </div>
+            </ScrollReveal>
 
             {/* Formula Pill */}
-            <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-[#E4E4DF] bg-white p-5 text-center shadow-xs">
-              <span className="text-xs font-mono font-medium text-[#8C8C87]">Composite Score Equation</span>
-              <div className="mt-2 text-lg sm:text-xl font-bold font-mono tracking-tight text-[#121212]">
-                S = (0.40 × CV) + (0.25 × MCQ) + (0.35 × Interview)
+            <ScrollReveal delayMs={100} distance={20} durationMs={700}>
+              <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-[#E4E4DF] bg-white p-5 text-center shadow-xs">
+                <span className="text-xs font-mono font-medium text-[#8C8C87]">Composite Score Equation</span>
+                <div className="mt-2 text-lg sm:text-xl font-bold font-mono tracking-tight text-[#121212]">
+                  S = (0.40 × CV) + (0.25 × MCQ) + (0.35 × Interview)
+                </div>
               </div>
-            </div>
+            </ScrollReveal>
 
             <div className="mt-10 grid gap-6 sm:grid-cols-3">
-              <div className="interactive-card panel p-6 text-center">
-                <span className="text-3xl font-bold font-mono text-[#121212]">40%</span>
-                <h3 className="mt-2 text-sm font-semibold text-[#121212]">CV Evidence Match</h3>
-                <p className="mt-2 text-xs text-[#555552] leading-relaxed">
-                  Measures alignment between verified resume experience and hard job requirements.
-                </p>
-              </div>
-
-              <div className="interactive-card panel p-6 text-center">
-                <span className="text-3xl font-bold font-mono text-[#121212]">25%</span>
-                <h3 className="mt-2 text-sm font-semibold text-[#121212]">Adaptive Project MCQs</h3>
-                <p className="mt-2 text-xs text-[#555552] leading-relaxed">
-                  Validates core domain competence with server-timed technical scenario questions.
-                </p>
-              </div>
-
-              <div className="interactive-card panel p-6 text-center">
-                <span className="text-3xl font-bold font-mono text-[#121212]">35%</span>
-                <h3 className="mt-2 text-sm font-semibold text-[#121212]">Interactive Avatar Interview</h3>
-                <p className="mt-2 text-xs text-[#555552] leading-relaxed">
-                  Assesses technical depth, problem-solving reasoning, and professional communication.
-                </p>
-              </div>
+              {[
+                {
+                  weight: "40%",
+                  title: "CV Evidence Match",
+                  desc: "Measures alignment between verified resume experience and hard job requirements.",
+                },
+                {
+                  weight: "25%",
+                  title: "Adaptive Project MCQs",
+                  desc: "Validates core domain competence with server-timed technical scenario questions.",
+                },
+                {
+                  weight: "35%",
+                  title: "Interactive Avatar Interview",
+                  desc: "Assesses technical depth, problem-solving reasoning, and professional communication.",
+                },
+              ].map((card, idx) => (
+                <ScrollReveal key={idx} delayMs={idx * 100} distance={24} durationMs={700}>
+                  <div className="interactive-card panel p-6 text-center h-full">
+                    <span className="text-3xl font-bold font-mono text-[#121212]">{card.weight}</span>
+                    <h3 className="mt-2 text-sm font-semibold text-[#121212]">{card.title}</h3>
+                    <p className="mt-2 text-xs text-[#555552] leading-relaxed">
+                      {card.desc}
+                    </p>
+                  </div>
+                </ScrollReveal>
+              ))}
             </div>
           </div>
         </section>
@@ -485,231 +519,243 @@ export default function Home() {
         {/* Competitive Matrix */}
         <section id="comparison" className="scroll-mt-20 border-t border-[#E7E7E2] bg-white py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <div className="text-center">
-              <p className="eyebrow">MARKET COMPARISON</p>
-              <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
-                How AI-Recruit360 Compares
-              </h2>
-              <p className="mx-auto mt-4 max-w-[620px] text-base leading-[1.6] text-[#555552]">
-                A unified 3-tier recruitment platform engineered specifically to outperform fragmented enterprise tools.
-              </p>
-            </div>
+            <ScrollReveal distance={24} durationMs={700}>
+              <div className="text-center">
+                <p className="eyebrow">MARKET COMPARISON</p>
+                <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
+                  How AI-Recruit360 Compares
+                </h2>
+                <p className="mx-auto mt-4 max-w-[620px] text-base leading-[1.6] text-[#555552]">
+                  A unified 3-tier recruitment platform engineered specifically to outperform fragmented enterprise tools.
+                </p>
+              </div>
+            </ScrollReveal>
 
-            <div className="mt-12 overflow-x-auto rounded-[16px] border border-[#E7E7E2] bg-white shadow-xs">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[#E7E7E2] bg-[#FAFAF8]">
-                    <th className="p-4.5 font-semibold text-[#121212]">Feature Capability</th>
-                    <th className="p-4.5 font-bold text-[#FF4F62] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
-                      AI-Recruit360
-                    </th>
-                    <th className="p-4.5 font-medium text-[#60605D]">Beatview.ai</th>
-                    <th className="p-4.5 font-medium text-[#60605D]">iMocha</th>
-                    <th className="p-4.5 font-medium text-[#60605D]">HireVue</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E7E7E2]">
-                  <tr className="hover:bg-[#FAFAF8] transition-colors">
-                    <td className="p-4.5 font-medium text-[#121212]">Grounded Resume Quote Extraction</td>
-                    <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="size-4 text-[#35C88A]" />
-                        Yes (100% Citations)
-                      </span>
-                    </td>
-                    <td className="p-4.5 text-[#60605D]">Basic Keyword Matching</td>
-                    <td className="p-4.5 text-[#60605D]">No (Testing Only)</td>
-                    <td className="p-4.5 text-[#60605D]">Generic Keyword Scan</td>
-                  </tr>
-                  <tr className="hover:bg-[#FAFAF8] transition-colors">
-                    <td className="p-4.5 font-medium text-[#121212]">Dynamic Project-Tailored MCQs</td>
-                    <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="size-4 text-[#35C88A]" />
-                        Yes (Resume-Specific)
-                      </span>
-                    </td>
-                    <td className="p-4.5 text-[#60605D]">No MCQs</td>
-                    <td className="p-4.5 text-[#60605D]">Static Question Bank (Leaked)</td>
-                    <td className="p-4.5 text-[#60605D]">No MCQs</td>
-                  </tr>
-                  <tr className="hover:bg-[#FAFAF8] transition-colors">
-                    <td className="p-4.5 font-medium text-[#121212]">Interactive Talking Avatar Interview</td>
-                    <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="size-4 text-[#35C88A]" />
-                        Yes (Live WebRTC Avatar)
-                      </span>
-                    </td>
-                    <td className="p-4.5 text-[#60605D]">Asynchronous One-Way</td>
-                    <td className="p-4.5 text-[#60605D]">None</td>
-                    <td className="p-4.5 text-[#60605D]">Asynchronous Video</td>
-                  </tr>
-                  <tr className="hover:bg-[#FAFAF8] transition-colors">
-                    <td className="p-4.5 font-medium text-[#121212]">Deterministic Formula Scorecard</td>
-                    <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="size-4 text-[#35C88A]" />
-                        Yes (40/25/35 Weights)
-                      </span>
-                    </td>
-                    <td className="p-4.5 text-[#60605D]">Qualitative Summaries</td>
-                    <td className="p-4.5 text-[#60605D]">Test Score Only</td>
-                    <td className="p-4.5 text-[#60605D]">Black-Box Predictive</td>
-                  </tr>
-                  <tr className="hover:bg-[#FAFAF8] transition-colors">
-                    <td className="p-4.5 font-medium text-[#121212]">Anti-Cheating Server Time Countdown</td>
-                    <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="size-4 text-[#35C88A]" />
-                        Yes (PostgreSQL Mutex)
-                      </span>
-                    </td>
-                    <td className="p-4.5 text-[#60605D]">N/A</td>
-                    <td className="p-4.5 text-[#60605D]">Proctoring Extension</td>
-                    <td className="p-4.5 text-[#60605D]">N/A</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <ScrollReveal delayMs={150} distance={28} durationMs={750}>
+              <div className="mt-12 overflow-x-auto rounded-[16px] border border-[#E7E7E2] bg-white shadow-xs">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[#E7E7E2] bg-[#FAFAF8]">
+                      <th className="p-4.5 font-semibold text-[#121212]">Feature Capability</th>
+                      <th className="p-4.5 font-bold text-[#FF4F62] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
+                        AI-Recruit360
+                      </th>
+                      <th className="p-4.5 font-medium text-[#60605D]">Beatview.ai</th>
+                      <th className="p-4.5 font-medium text-[#60605D]">iMocha</th>
+                      <th className="p-4.5 font-medium text-[#60605D]">HireVue</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E7E7E2]">
+                    <tr className="hover:bg-[#FAFAF8] transition-colors">
+                      <td className="p-4.5 font-medium text-[#121212]">Grounded Resume Quote Extraction</td>
+                      <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
+                        <span className="flex items-center gap-1.5">
+                          <CheckCircle2 className="size-4 text-[#35C88A]" />
+                          Yes (100% Citations)
+                        </span>
+                      </td>
+                      <td className="p-4.5 text-[#60605D]">Basic Keyword Matching</td>
+                      <td className="p-4.5 text-[#60605D]">No (Testing Only)</td>
+                      <td className="p-4.5 text-[#60605D]">Generic Keyword Scan</td>
+                    </tr>
+                    <tr className="hover:bg-[#FAFAF8] transition-colors">
+                      <td className="p-4.5 font-medium text-[#121212]">Dynamic Project-Tailored MCQs</td>
+                      <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
+                        <span className="flex items-center gap-1.5">
+                          <CheckCircle2 className="size-4 text-[#35C88A]" />
+                          Yes (Resume-Specific)
+                        </span>
+                      </td>
+                      <td className="p-4.5 text-[#60605D]">No MCQs</td>
+                      <td className="p-4.5 text-[#60605D]">Static Question Bank (Leaked)</td>
+                      <td className="p-4.5 text-[#60605D]">No MCQs</td>
+                    </tr>
+                    <tr className="hover:bg-[#FAFAF8] transition-colors">
+                      <td className="p-4.5 font-medium text-[#121212]">Interactive Talking Avatar Interview</td>
+                      <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
+                        <span className="flex items-center gap-1.5">
+                          <CheckCircle2 className="size-4 text-[#35C88A]" />
+                          Yes (Live WebRTC Avatar)
+                        </span>
+                      </td>
+                      <td className="p-4.5 text-[#60605D]">Asynchronous One-Way</td>
+                      <td className="p-4.5 text-[#60605D]">None</td>
+                      <td className="p-4.5 text-[#60605D]">Asynchronous Video</td>
+                    </tr>
+                    <tr className="hover:bg-[#FAFAF8] transition-colors">
+                      <td className="p-4.5 font-medium text-[#121212]">Deterministic Formula Scorecard</td>
+                      <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
+                        <span className="flex items-center gap-1.5">
+                          <CheckCircle2 className="size-4 text-[#35C88A]" />
+                          Yes (40/25/35 Weights)
+                        </span>
+                      </td>
+                      <td className="p-4.5 text-[#60605D]">Qualitative Summaries</td>
+                      <td className="p-4.5 text-[#60605D]">Test Score Only</td>
+                      <td className="p-4.5 text-[#60605D]">Black-Box Predictive</td>
+                    </tr>
+                    <tr className="hover:bg-[#FAFAF8] transition-colors">
+                      <td className="p-4.5 font-medium text-[#121212]">Anti-Cheating Server Time Countdown</td>
+                      <td className="p-4.5 font-semibold text-[#167348] bg-[#FF4F62]/5 border-x border-[#FF4F62]/20">
+                        <span className="flex items-center gap-1.5">
+                          <CheckCircle2 className="size-4 text-[#35C88A]" />
+                          Yes (PostgreSQL Mutex)
+                        </span>
+                      </td>
+                      <td className="p-4.5 text-[#60605D]">N/A</td>
+                      <td className="p-4.5 text-[#60605D]">Proctoring Extension</td>
+                      <td className="p-4.5 text-[#60605D]">N/A</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* Transparent Pricing Plans */}
         <section id="pricing" className="scroll-mt-20 border-t border-[#E7E7E2] bg-[#F6F6F2] py-20 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-6 sm:px-8">
-            <div className="text-center">
-              <p className="eyebrow">SIMPLE RECRUITMENT TIERS</p>
-              <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
-                Predictable Workspace Pricing
-              </h2>
-              <p className="mx-auto mt-4 max-w-[540px] text-base leading-[1.6] text-[#555552]">
-                Scale candidate screening, assessments, and AI avatar interviews with clear, transparent tiers.
-              </p>
-            </div>
+            <ScrollReveal distance={24} durationMs={700}>
+              <div className="text-center">
+                <p className="eyebrow">SIMPLE RECRUITMENT TIERS</p>
+                <h2 className="text-3xl font-[540] tracking-[-0.035em] text-[#121212] sm:text-5xl">
+                  Predictable Workspace Pricing
+                </h2>
+                <p className="mx-auto mt-4 max-w-[540px] text-base leading-[1.6] text-[#555552]">
+                  Scale candidate screening, assessments, and AI avatar interviews with clear, transparent tiers.
+                </p>
+              </div>
+            </ScrollReveal>
 
             <div className="mt-14 grid gap-6 sm:grid-cols-3">
               {/* Starter */}
-              <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 bg-white">
-                <div>
-                  <h3 className="text-base font-semibold text-[#121212]">Starter Workspace</h3>
-                  <p className="mt-1 text-xs text-[#60605D]">For boutique teams &amp; startups hiring monthly</p>
-                  <div className="mt-5 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$99</span>
-                    <span className="text-xs text-[#8C8C87]">/ month</span>
+              <ScrollReveal delayMs={0} distance={26} durationMs={700}>
+                <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 bg-white h-full">
+                  <div>
+                    <h3 className="text-base font-semibold text-[#121212]">Starter Workspace</h3>
+                    <p className="mt-1 text-xs text-[#60605D]">For boutique teams &amp; startups hiring monthly</p>
+                    <div className="mt-5 flex items-baseline gap-1">
+                      <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$99</span>
+                      <span className="text-xs text-[#8C8C87]">/ month</span>
+                    </div>
+
+                    <ul className="mt-6 space-y-3 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Up to 3 Active Job Openings</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>50 Grounded CV Screenings / mo</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>25 Dynamic MCQ Assessments</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>15 Conversational Avatar Interviews</span>
+                      </li>
+                    </ul>
                   </div>
 
-                  <ul className="mt-6 space-y-3 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Up to 3 Active Job Openings</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>50 Grounded CV Screenings / mo</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>25 Dynamic MCQ Assessments</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>15 Conversational Avatar Interviews</span>
-                    </li>
-                  </ul>
+                  <Link
+                    href="/signup"
+                    className="mt-8 flex w-full items-center justify-center rounded-[9px] border border-[#D5D5CF] bg-white py-2.5 text-xs font-medium text-[#121212] transition-colors hover:bg-[#F6F6F2] hover:border-black/30"
+                  >
+                    Start 14-Day Trial
+                  </Link>
                 </div>
-
-                <Link
-                  href="/signup"
-                  className="mt-8 flex w-full items-center justify-center rounded-[9px] border border-[#D5D5CF] bg-white py-2.5 text-xs font-medium text-[#121212] transition-colors hover:bg-[#F6F6F2] hover:border-black/30"
-                >
-                  Start 14-Day Trial
-                </Link>
-              </div>
+              </ScrollReveal>
 
               {/* Growth (Most Popular) */}
-              <div className="interactive-card card-sheen panel relative flex flex-col justify-between p-8 bg-white border-[#111111] shadow-lg ring-1 ring-[#111111]/10">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#111111] px-3.5 py-0.5 text-[10px] font-semibold text-white shadow-xs">
-                  Most Popular
-                </div>
-
-                <div>
-                  <h3 className="text-base font-semibold text-[#121212]">Growth Recruiter</h3>
-                  <p className="mt-1 text-xs text-[#60605D]">For scaling tech teams and active agencies</p>
-                  <div className="mt-5 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$299</span>
-                    <span className="text-xs text-[#8C8C87]">/ month</span>
+              <ScrollReveal delayMs={100} distance={26} durationMs={700}>
+                <div className="interactive-card card-sheen panel relative flex flex-col justify-between p-8 bg-white border-[#111111] shadow-lg ring-1 ring-[#111111]/10 h-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#111111] px-3.5 py-0.5 text-[10px] font-semibold text-white shadow-xs">
+                    Most Popular
                   </div>
 
-                  <ul className="mt-6 space-y-3 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Unlimited Active Job Openings</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>250 Grounded CV Screenings / mo</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>100 Dynamic MCQ Assessments</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>75 Conversational Avatar Interviews</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Audit Scorecards &amp; CSV Export</span>
-                    </li>
-                  </ul>
-                </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-[#121212]">Growth Recruiter</h3>
+                    <p className="mt-1 text-xs text-[#60605D]">For scaling tech teams and active agencies</p>
+                    <div className="mt-5 flex items-baseline gap-1">
+                      <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$299</span>
+                      <span className="text-xs text-[#8C8C87]">/ month</span>
+                    </div>
 
-                <Link
-                  href="/signup"
-                  className="mt-8 flex w-full items-center justify-center rounded-[9px] bg-[#111111] py-2.5 text-xs font-medium text-white transition-all hover:bg-[#222222] shadow-sm hover:-translate-y-0.5"
-                >
-                  Launch Growth Workspace
-                </Link>
-              </div>
+                    <ul className="mt-6 space-y-3 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Unlimited Active Job Openings</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>250 Grounded CV Screenings / mo</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>100 Dynamic MCQ Assessments</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>75 Conversational Avatar Interviews</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Audit Scorecards &amp; CSV Export</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <Link
+                    href="/signup"
+                    className="mt-8 flex w-full items-center justify-center rounded-[9px] bg-[#111111] py-2.5 text-xs font-medium text-white transition-all hover:bg-[#222222] shadow-sm hover:-translate-y-0.5"
+                  >
+                    Launch Growth Workspace
+                  </Link>
+                </div>
+              </ScrollReveal>
 
               {/* Enterprise */}
-              <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 bg-white">
-                <div>
-                  <h3 className="text-base font-semibold text-[#121212]">Enterprise Custom</h3>
-                  <p className="mt-1 text-xs text-[#60605D]">For enterprise talent teams &amp; custom pipelines</p>
-                  <div className="mt-5 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$999</span>
-                    <span className="text-xs text-[#8C8C87]">/ month</span>
+              <ScrollReveal delayMs={200} distance={26} durationMs={700}>
+                <div className="interactive-card card-sheen panel flex flex-col justify-between p-8 bg-white h-full">
+                  <div>
+                    <h3 className="text-base font-semibold text-[#121212]">Enterprise Custom</h3>
+                    <p className="mt-1 text-xs text-[#60605D]">For enterprise talent teams &amp; custom pipelines</p>
+                    <div className="mt-5 flex items-baseline gap-1">
+                      <span className="text-4xl font-bold font-mono tracking-tight text-[#121212]">$999</span>
+                      <span className="text-xs text-[#8C8C87]">/ month</span>
+                    </div>
+
+                    <ul className="mt-6 space-y-3 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Custom Candidate Evaluation Volume</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Dedicated Tenant Database Isolation</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>Custom Avatar Persona &amp; Voice Tuning</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-[#35C88A]" />
+                        <span>NYC LL144 Bias Audit Certification</span>
+                      </li>
+                    </ul>
                   </div>
 
-                  <ul className="mt-6 space-y-3 border-t border-[#E7E7E2] pt-6 text-xs text-[#555552]">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Custom Candidate Evaluation Volume</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Dedicated Tenant Database Isolation</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>Custom Avatar Persona &amp; Voice Tuning</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#35C88A]" />
-                      <span>NYC LL144 Bias Audit Certification</span>
-                    </li>
-                  </ul>
+                  <Link
+                    href="/signup"
+                    className="mt-8 flex w-full items-center justify-center rounded-[9px] border border-[#D5D5CF] bg-white py-2.5 text-xs font-medium text-[#121212] transition-colors hover:bg-[#F6F6F2] hover:border-black/30"
+                  >
+                    Contact Enterprise Sales
+                  </Link>
                 </div>
-
-                <Link
-                  href="/signup"
-                  className="mt-8 flex w-full items-center justify-center rounded-[9px] border border-[#D5D5CF] bg-white py-2.5 text-xs font-medium text-[#121212] transition-colors hover:bg-[#F6F6F2] hover:border-black/30"
-                >
-                  Contact Enterprise Sales
-                </Link>
-              </div>
+              </ScrollReveal>
             </div>
           </div>
         </section>
@@ -718,23 +764,25 @@ export default function Home() {
         <section className="relative overflow-hidden border-t border-[#E7E7E2] bg-white py-20 sm:py-28">
           <div className="hero-glow pointer-events-none absolute -inset-6 -z-10 opacity-70" />
 
-          <div className="mx-auto max-w-[820px] px-6 text-center">
-            <h2 className="text-3xl font-[540] tracking-[-0.04em] text-[#121212] sm:text-5xl">
-              Ready to Upgrade to Grounded, Auditable Hiring?
-            </h2>
-            <p className="mx-auto mt-4 max-w-[580px] text-base leading-[1.6] text-[#555552]">
-              Join recruitment teams making verifiable hiring decisions 10x faster with complete evidence citations and zero hallucinations.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
-              <Link
-                href="/signup"
-                className="group flex items-center gap-2 rounded-[9px] bg-[#111111] px-7 py-3 text-[14px] font-medium text-white shadow-sm transition-all hover:bg-[#222222] hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <span>Launch Recruiter Workspace</span>
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </Link>
+          <ScrollReveal distance={28} durationMs={750}>
+            <div className="mx-auto max-w-[820px] px-6 text-center">
+              <h2 className="text-3xl font-[540] tracking-[-0.04em] text-[#121212] sm:text-5xl">
+                Ready to Upgrade to Grounded, Auditable Hiring?
+              </h2>
+              <p className="mx-auto mt-4 max-w-[580px] text-base leading-[1.6] text-[#555552]">
+                Join recruitment teams making verifiable hiring decisions 10x faster with complete evidence citations and zero hallucinations.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+                <Link
+                  href="/signup"
+                  className="group flex items-center gap-2 rounded-[9px] bg-[#111111] px-7 py-3 text-[14px] font-medium text-white shadow-sm transition-all hover:bg-[#222222] hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <span>Launch Recruiter Workspace</span>
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         </section>
       </main>
 
