@@ -87,29 +87,40 @@ export function CandidatesClientView({
     React.useState<Candidate | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const loadCandidates = React.useCallback(async () => {
-    setLoading(true);
-    setErrorMsg(null);
+  const requestVersion = React.useRef(0);
+  const loadCandidates = React.useCallback(
+    async (refreshCounts = false) => {
+      const version = ++requestVersion.current;
+      setLoading(true);
+      setErrorMsg(null);
 
-    const [res, countsRes] = await Promise.all([
-      getCandidatesAction({ search: searchQuery, page, pageSize }),
-      getCandidateCountsAction(),
-    ]);
+      try {
+        const [res, countsRes] = await Promise.all([
+          getCandidatesAction({ search: searchQuery, page, pageSize }),
+          refreshCounts ? getCandidateCountsAction() : Promise.resolve(null),
+        ]);
 
-    if (res.success && res.data) {
-      setCandidates(res.data.data);
-      setTotalPages(res.data.totalPages);
-      setTotalCandidates(res.data.total);
-    } else {
-      setErrorMsg(res.error || "Unable to fetch candidate directory.");
-    }
+        if (version !== requestVersion.current) return;
+        if (res.success && res.data) {
+          setCandidates(res.data.data);
+          setTotalPages(res.data.totalPages);
+          setTotalCandidates(res.data.total);
+        } else {
+          setErrorMsg(res.error || "Unable to fetch candidate directory.");
+        }
 
-    if (countsRes.success && countsRes.data) {
-      setCounts(countsRes.data);
-    }
-
-    setLoading(false);
-  }, [searchQuery, page, pageSize]);
+        if (countsRes?.success && countsRes.data) {
+          setCounts(countsRes.data);
+        }
+      } catch {
+        if (version === requestVersion.current)
+          setErrorMsg("Could not load candidates. Please retry.");
+      } finally {
+        if (version === requestVersion.current) setLoading(false);
+      }
+    },
+    [searchQuery, page, pageSize],
+  );
 
   // Refetch ONLY when user explicitly types in search or changes pagination page
   const prevSearchRef = React.useRef(searchQuery);
@@ -117,6 +128,7 @@ export function CandidatesClientView({
   const prevPageSizeRef = React.useRef(pageSize);
 
   React.useEffect(() => {
+    const versionRef = requestVersion;
     const searchChanged = prevSearchRef.current !== searchQuery;
     const pageChanged = prevPageRef.current !== page;
     const pageSizeChanged = prevPageSizeRef.current !== pageSize;
@@ -126,7 +138,11 @@ export function CandidatesClientView({
     prevPageSizeRef.current = pageSize;
 
     if (searchChanged || pageChanged || pageSizeChanged) {
-      loadCandidates();
+      const timer = setTimeout(() => void loadCandidates(), 300);
+      return () => {
+        clearTimeout(timer);
+        ++versionRef.current;
+      };
     }
   }, [searchQuery, page, pageSize, loadCandidates]);
 
@@ -137,7 +153,7 @@ export function CandidatesClientView({
     const res = await deleteCandidateAction(candidateToDelete.id);
     if (res.success) {
       setCandidateToDelete(null);
-      loadCandidates();
+      void loadCandidates(true);
     } else {
       setErrorMsg(res.error || "Failed to delete candidate profile.");
     }
@@ -210,7 +226,7 @@ export function CandidatesClientView({
           <Button
             variant="ghost"
             size="sm"
-            onClick={loadCandidates}
+            onClick={() => void loadCandidates(true)}
             className="text-danger hover:bg-danger/20"
           >
             Retry

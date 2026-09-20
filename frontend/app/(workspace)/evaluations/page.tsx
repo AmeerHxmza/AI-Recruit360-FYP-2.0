@@ -30,7 +30,7 @@ function EvaluationsSkeleton() {
 
 async function EvaluationsServerData({ orgId }: { orgId: string }) {
   const evaluations = await getEvaluationsForOrgWithDetails(orgId);
-  return <EvaluationsClientView initialEvaluations={evaluations} />;
+  return <EvaluationsClientView key={orgId} initialEvaluations={evaluations} />;
 }
 
 export default async function EvaluationsPage() {

@@ -3,13 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { AuthIntroduction } from "@/components/layout/auth-introduction";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl =
     searchParams.get("next")?.startsWith("/") &&
@@ -22,6 +21,14 @@ function LoginForm() {
   const [password, setPassword] = React.useState("");
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const attempt = React.useRef(0);
+
+  React.useEffect(
+    () => () => {
+      ++attempt.current;
+    },
+    [],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +40,16 @@ function LoginForm() {
     }
 
     setLoading(true);
+    const currentAttempt = ++attempt.current;
+    // Also bound SDK initialization/session refresh before the password request.
+    const deadline = setTimeout(() => {
+      if (attempt.current !== currentAttempt) return;
+      ++attempt.current;
+      setErrorMsg(
+        "Sign-in took too long. Check your connection and try again.",
+      );
+      setLoading(false);
+    }, 25_000);
 
     try {
       const supabase = createClient();
@@ -40,6 +57,7 @@ function LoginForm() {
         email,
         password,
       });
+      if (attempt.current !== currentAttempt) return;
 
       if (error) {
         if (
@@ -57,18 +75,25 @@ function LoginForm() {
       }
 
       if (data.session) {
-        router.push(nextUrl);
-        router.refresh();
+        // Start a fresh authenticated document after Supabase writes the cookies.
+        // push + refresh races can reuse the unauthenticated router state.
+        window.location.assign(nextUrl);
       } else {
         setErrorMsg("Authentication session could not be established.");
         setLoading(false);
       }
     } catch (err: unknown) {
-      console.error("Login submission exception:", err);
+      if (attempt.current !== currentAttempt) return;
+      console.error(
+        "Login submission exception:",
+        err instanceof Error ? err.name : "UnknownError",
+      );
       setErrorMsg(
         "Unable to connect to sign in service. Please check your connection.",
       );
       setLoading(false);
+    } finally {
+      clearTimeout(deadline);
     }
   };
 
@@ -83,13 +108,17 @@ function LoginForm() {
           Welcome back
         </h1>
         <p className="text-sm text-[#60605D] leading-relaxed">
-          Sign in to access your recruitment pipeline and candidate intelligence.
+          Sign in to access your recruitment pipeline and candidate
+          intelligence.
         </p>
       </div>
 
       {/* Error Banner */}
       {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-xs text-red-600 animate-in fade-in duration-200">
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-xs text-red-600 animate-in fade-in duration-200"
+        >
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span className="font-medium leading-relaxed">{errorMsg}</span>
         </div>

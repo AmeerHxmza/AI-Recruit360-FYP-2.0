@@ -11,5 +11,28 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+    global: {
+      fetch: (input, init) => {
+        // Auth requests must finish or fail, rather than leave forms spinning.
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url;
+        if (!url.startsWith(`${supabaseUrl}/auth/v1/`))
+          return fetch(input, init);
+        const deadline = AbortSignal.timeout(15_000);
+        const originalSignal =
+          init?.signal ?? (input instanceof Request ? input.signal : undefined);
+        return fetch(input, {
+          ...init,
+          signal: originalSignal
+            ? AbortSignal.any([originalSignal, deadline])
+            : deadline,
+        });
+      },
+    },
+  });
 }

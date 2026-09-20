@@ -61,6 +61,11 @@ export function CandidateDocumentUploader({
 
   const handleUploadAndProcess = async () => {
     if (!file) return;
+    if (file.size === 0 || file.size > 4 * 1024 * 1024) {
+      setErrorMessage("Choose a PDF or DOCX file up to 4 MB.");
+      setStatusStep("error");
+      return;
+    }
 
     setIsUploading(true);
     setStatusStep("uploading");
@@ -73,7 +78,7 @@ export function CandidateDocumentUploader({
       formData.append("documentType", "resume");
       formData.append("file", file);
 
-      setTimeout(() => setStatusStep("extracting"), 1200);
+      // The server performs upload and extraction as one request.
 
       const res = await uploadAndIngestCandidateDocumentAction(formData);
 
@@ -123,7 +128,7 @@ export function CandidateDocumentUploader({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,.doc,.docx"
+          accept=".pdf,.docx"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -148,7 +153,7 @@ export function CandidateDocumentUploader({
                 Click to browse or drag & drop candidate document
               </span>
               <span className="text-xs text-text-muted block">
-                Supports PDF, DOC, DOCX up to 20 MB
+                PDF or DOCX, up to 4 MB
               </span>
             </div>
           )}

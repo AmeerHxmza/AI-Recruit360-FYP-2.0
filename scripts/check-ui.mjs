@@ -20,6 +20,20 @@ for (const width of [320,375,414,768,1440]) {
 }
 await page.setViewportSize({width:1440,height:1000});
 await page.goto('http://localhost:3100/',{waitUntil:'networkidle'});
+await page.getByRole('button',{name:/Sam Rivera/}).click();
+assert.match(await page.getByRole('tabpanel').textContent(),/inventory application/);
+await page.getByRole('tab',{name:'Assessment',exact:true}).click();
+assert.match(await page.getByRole('tabpanel').textContent(),/9 of 10/);
+await page.getByRole('tab',{name:'Assessment',exact:true}).press('ArrowRight');
+assert.equal(await page.getByRole('tab',{name:'Interview',exact:true}).getAttribute('aria-selected'),'true');
+assert.match(await page.getByRole('tabpanel').textContent(),/execution plan/);
+await page.emulateMedia({reducedMotion:'reduce'});
+assert.equal(await page.locator('[role="tabpanel"] > div').evaluate(el=>getComputedStyle(el).animationName),'none');
+await page.emulateMedia({reducedMotion:'no-preference'});
+await page.getByRole('button',{name:/Alex Morgan/}).click();
+await page.getByRole('tab',{name:'Resume',exact:true}).click();
+console.log('PASS preview selection, keyboard tabs, and reduced motion');
+
 await page.screenshot({path:new URL('../.artifacts/home-desktop.png',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1'),fullPage:true});
 await page.goto('http://localhost:3100/login',{waitUntil:'networkidle'});
 await page.screenshot({path:new URL('../.artifacts/login-desktop.png',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1'),fullPage:true});

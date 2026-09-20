@@ -33,11 +33,6 @@ class Settings(BaseSettings):
         "https://ai-recruit360-fyp.onrender.com",
     ]
 
-    # ── Keep-Alive / Anti-Sleep Configuration ────────────────────────────────────
-    RENDER_EXTERNAL_URL: str = "https://ai-recruit360-fyp.onrender.com"
-    KEEP_ALIVE_INTERVAL_MINUTES: int = 12
-    ENABLE_KEEP_ALIVE: bool = True
-
     @field_validator("ALLOWED_ORIGINS", mode="after")
     @classmethod
     def parse_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:

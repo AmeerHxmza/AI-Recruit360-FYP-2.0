@@ -31,7 +31,7 @@ async function JobsServerData({
 }) {
   const jobs = await getJobsForOrg(orgId);
 
-  return <JobsClientView initialJobs={jobs} role={role} />;
+  return <JobsClientView key={orgId} initialJobs={jobs} role={role} />;
 }
 
 export default async function JobsPage() {

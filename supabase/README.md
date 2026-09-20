@@ -6,7 +6,7 @@ The connected Supabase database has been inspected through read-only schema meta
 
 ## Existing project: preserve data
 
-Use a database backup/copy for the first migration run. In the Supabase SQL editor, execute **02 through 08 once, in numerical order**. Do not run `01_schema.sql` against the existing project and do not reset the database. Each file is transactional; if a file fails, its changes roll back. Stop and inspect the reported constraint/schema difference before proceeding.
+Use a database backup/copy for the first migration run. In the Supabase SQL editor, execute **pending migrations 02 through 09, in numerical order**. Do not run `01_schema.sql` against the existing project and do not reset the database. Each file is transactional; if a file fails, its changes roll back. Stop and inspect the reported constraint/schema difference before proceeding.
 
 - **02:** Align the old/new column layouts, preserve legacy evidence, and replace the FYP tables' policies with explicit organization/role rules. Existing rows remain; legacy columns are retained. Foreign-key constraints use `NOT VALID` so historical inconsistencies are not silently deleted. New writes are checked.
 - **03:** Atomically submit candidate, application, and document records, with a retry key.
@@ -15,12 +15,13 @@ Use a database backup/copy for the first migration run. In the Supabase SQL edit
 - **06:** Return dashboard aggregates without the PostgREST row limit truncating totals.
 - **07:** Search applications before pagination.
 - **08:** Restrict function permissions explicitly under Supabase defaults and fix the update trigger search path.
+- **09:** Add membership and workflow lookup indexes. Verify the live migration history before applying; September20 checks ran this in memory only.
 
 These migrations intentionally change FYP table access policies. Owners/admins/recruiters can manage recruitment records; viewers/interviewers can read their workspace. Candidate workflow writes go through the private server functions. No migration truncates tables or deletes candidate/application records.
 
 ## Empty Supabase project
 
-Run `01_schema.sql`, followed by `02` through `08`. The initial schema depends on Supabase-managed auth/storage schemas. Do not run it directly on a plain PostgreSQL installation without that infrastructure.
+Run `01_schema.sql`, followed by `02` through `09`. The initial schema depends on Supabase-managed auth/storage schemas. Do not run it directly on a plain PostgreSQL installation without that infrastructure.
 
 ## Verification
 

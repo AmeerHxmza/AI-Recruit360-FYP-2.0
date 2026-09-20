@@ -47,6 +47,7 @@ async function CandidatesServerData({
 
   return (
     <CandidatesClientView
+      key={orgId}
       initialCandidatesResult={candidatesResult}
       initialCounts={counts}
       role={role}

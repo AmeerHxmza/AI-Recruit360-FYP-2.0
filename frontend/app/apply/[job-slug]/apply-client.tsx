@@ -64,6 +64,13 @@ export default function ApplyPage({ initialJob: job }: { initialJob: Job }) {
     form.set("organization_id", job.organization_id);
     form.set("submission_key", key.current);
     try {
+      const file = form.get("cv_file");
+      if (
+        !(file instanceof File) ||
+        file.size === 0 ||
+        file.size > 4 * 1024 * 1024
+      )
+        throw new Error("Upload a PDF or DOCX file up to 4 MB.");
       const res = await submitPublicApplicationAction(form);
       if (!res.success || !res.data)
         throw new Error(res.error || "Could not save your application.");
@@ -199,7 +206,7 @@ export default function ApplyPage({ initialJob: job }: { initialJob: Job }) {
                 disabled={busy}
               />
               <span className="mt-2 block text-xs font-normal text-text-secondary">
-                PDF or DOCX, up to 10 MB. Use a text-based resume for reliable
+                PDF or DOCX, up to 4 MB. Use a text-based resume for reliable
                 extraction.
               </span>
             </label>

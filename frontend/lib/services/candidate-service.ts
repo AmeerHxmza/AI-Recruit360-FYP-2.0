@@ -360,25 +360,20 @@ export async function getCandidateDocuments(
 
     const adminClient = await createAdminClient();
 
-    // Sign URLs concurrently in parallel instead of sequential waterfall
-    const result = await Promise.all(
-      docs.map(async (doc) => {
-        let signedUrl: string | null = null;
-        try {
-          const { data: signedData } = await adminClient.storage
-            .from("candidate_documents")
-            .createSignedUrl(doc.storage_path, 3600);
-          signedUrl = signedData?.signedUrl || null;
-        } catch {
-          signedUrl = null;
-        }
-
-        return {
-          ...(doc as CandidateDocument),
-          signedUrl,
-        };
-      }),
+    // One storage request for the document list instead of one request per document.
+    const { data: signed } = await adminClient.storage
+      .from("candidate_documents")
+      .createSignedUrls(
+        docs.map((doc) => doc.storage_path),
+        3600,
+      );
+    const urls = new Map(
+      (signed || []).map((item) => [item.path, item.signedUrl]),
     );
+    const result = docs.map((doc) => ({
+      ...(doc as CandidateDocument),
+      signedUrl: urls.get(doc.storage_path) || null,
+    }));
 
     return result;
   })();
@@ -390,27 +385,31 @@ export async function getCandidateCounts(orgId: string): Promise<{
   withLinkedin: number;
   recentCount: number;
 }> {
-  return await (async () => {
-    const supabase = await createClient();
-
-    const { data } = await supabase
-      .from("candidates")
-      .select("location, linkedin_url, created_at")
-      .eq("organization_id", orgId);
-
-    if (!data) {
-      return { total: 0, withLocation: 0, withLinkedin: 0, recentCount: 0 };
-    }
-
-    const total = data.length;
-    const withLocation = data.filter((c) => Boolean(c.location)).length;
-    const withLinkedin = data.filter((c) => Boolean(c.linkedin_url)).length;
-    const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const recentCount = data.filter(
-      (c) => new Date(c.created_at).getTime() >= sevenDaysAgo,
-    ).length;
-
-    return { total, withLocation, withLinkedin, recentCount };
-  })();
+  await getCurrentOrganization(orgId);
+  const supabase = await createClient();
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("organizations")
+    .select(
+      "total:candidates(count), located:candidates(count), linked:candidates(count), recent:candidates(count)",
+    )
+    .eq("id", orgId)
+    .not("located.location", "is", null)
+    .neq("located.location", "")
+    .not("linked.linkedin_url", "is", null)
+    .neq("linked.linkedin_url", "")
+    .gte("recent.created_at", since)
+    .single();
+  if (error || !data)
+    throw new DatabaseError("Could not load candidate totals.");
+  const counts = data as unknown as Record<
+    "total" | "located" | "linked" | "recent",
+    { count: number }[]
+  >;
+  return {
+    total: counts.total[0]?.count ?? 0,
+    withLocation: counts.located[0]?.count ?? 0,
+    withLinkedin: counts.linked[0]?.count ?? 0,
+    recentCount: counts.recent[0]?.count ?? 0,
+  };
 }

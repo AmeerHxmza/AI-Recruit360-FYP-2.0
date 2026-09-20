@@ -1,363 +1,108 @@
-<p align="center">
-  <img src="frontend/public/brand/logo.png" alt="AI-Recruit360 Banner" width="460" />
-</p>
+# AI-Recruit360
 
-<h1 align="center">AI-Recruit360</h1>
+A BS Software Engineering final-year project for AI-assisted recruitment. Recruiters publish jobs, review applications, and make hiring decisions. Candidates submit a resume, complete an eligible skills assessment, and answer structured interview questions.
 
-<p align="center">
-  <strong>Autonomous AI-Powered Recruitment Workspace & Multi-Stage Candidate Evaluation Platform</strong>
-</p>
+## Implemented workflow
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js" alt="Next.js 16" />
-  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
-  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase" alt="Supabase" />
-  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/OpenAI-GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI" />
-  <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" />
-</p>
+1. **Application:** an active job link accepts contact details and a PDF/DOCX resume (up to 4 MB). Private storage and an atomic database function preserve retry-safe submissions.
+2. **CV screening:** the backend extracts text when needed and requests one structured AI evaluation against the job criteria. It stores scores, resume excerpts, and reasoning. The configured pass threshold is 70% by default. AI excerpts are not a guarantee of factual accuracy.
+3. **Assessment:** ten role/profile-related MCQs. PostgreSQL enforces question ownership, order, deadlines, answer immutability, and finalization. Candidates must meet the configured pass threshold to advance.
+4. **Interview:** five structured questions. Candidates type answers or record up to three minutes within a 4 MB limit, review the transcript, then submit. Simli provides optional avatar playback with a configured face; OpenAI speech uses the configured voice (default `nova`).
+5. **Evaluation:** a deterministic weighted score combines CV (40%), assessment (25%), and interview (35%) results. Recruiters review the evidence and control the final hiring decision.
 
----
+The active implementation uses structured AI calls. It does not use a vector database, LangGraph, a task queue, or a zero-hallucination verification engine. The optional Gemini adapter is selected through configuration; it is not an automatic fallback. The Activity log UI and its writers have been removed; historical database tables remain to preserve data.
 
-## 📌 Overview
+## Architecture and folders
 
-**AI-Recruit360** is an enterprise-grade, multi-tenant recruitment intelligence platform designed as a BS Software Engineering Final Year Project (FYP). It automates the end-to-end talent acquisition lifecycle:
+| Location | Responsibility |
+| --- | --- |
+| `frontend/` | Next.js 16, React, TypeScript, Tailwind 4; pages, server actions, authenticated Supabase access |
+| `ai-service/` | FastAPI, Pydantic, OpenAI integration, document extraction and AI workflow |
+| `supabase/migrations/` | PostgreSQL schema, RLS, atomic workflow functions, indexes |
+| `scripts/` | Local regression, database and browser checks |
+| `HANDOVER.md` | Change history, current state and continuation instructions |
+| `FINAL_AUDIT.md` | Final audit evidence, limitations and acceptance checklist |
 
-1. **Intelligent Resume Screening:** Extracts unstructured text from PDF/DOCX resumes, maps skills against job requirements, and computes semantic vector match scores.
-2. **Anti-Cheating Timed Skills Assessment:** Dynamically generates targeted technical questions enforced with strict database-level countdown deadlines.
-3. **Interactive AI Avatar Interviews:** Conducts voice- and video-driven candidate interviews using a live conversational avatar (Simli + WebRTC) and speech recognition (Whisper).
-4. **Autonomous Hiring Scorecards:** Synthesizes candidate performance across all three stages using a weighted multi-factor formula (**40% CV + 25% Assessment + 35% Interview**) with detailed strength/weakness evidence for recruiter decision-making.
+Recruiter browser → Next.js server actions → Supabase (authenticated RLS).
+Candidate browser → Next.js candidate-session checks → private database operations / FastAPI.
+FastAPI → Supabase and configured AI provider. Simli playback connects from the browser using a short-lived server-issued token.
 
----
+Candidate sessions use signed, HttpOnly, 24-hour cookies. Backend routes require a server-only shared bearer secret. Database service credentials and AI keys must never use the `NEXT_PUBLIC_` prefix.
 
-## 🏛️ System Architecture
+## Local setup
 
-AI-Recruit360 separates high-speed transactional CRUD and multi-tenant security (Next.js + Supabase) from heavy AI processing pipelines (FastAPI + LangGraph + OpenAI):
+Use Node.js supported by Next.js 16 and Python 3.12. Keep npm dependencies inside `frontend` and the Python environment inside `ai-service`.
 
-```mermaid
-graph TD
-    subgraph Client Layer
-        Browser["🌐 Candidate & Recruiter Browsers"]
-    end
-
-    subgraph Frontend - Next.js 16 [Vercel]
-        RSC["⚡ Next.js App Router (RSC & Server Actions)"]
-        Layout["🖥️ Persistent (workspace) Layout & Shell"]
-        AuthMiddleware["🛡️ Proxy & Auth Session Resolver"]
-    end
-
-    subgraph Database & Storage [Supabase Cloud]
-        Postgres[("🐘 PostgreSQL (Multi-Tenant RLS)")]
-        Storage["📁 Secure Resume & Document Storage"]
-        Auth["🔑 Supabase Auth & JWT"]
-    end
-
-    subgraph AI Service - FastAPI [Render]
-        FastAPI["🚀 FastAPI Microservice"]
-        CVExtractor["📄 PyMuPDF Resume Parsing"]
-        EmbeddingEngine["🧠 OpenAI Embeddings & Semantic Scoring"]
-        AssessmentGen["📝 Dynamic Assessment Generator"]
-        InterviewAgent["🎙️ AI Interview Engine & STT"]
-    end
-
-    subgraph External AI Providers
-        OpenAI["🤖 OpenAI (GPT-4o & Whisper)"]
-        Gemini["✨ Google Gemini AI (Fallback)"]
-        Simli["👤 Simli WebRTC Video Avatar"]
-    end
-
-    Browser -->|HTTP / WebSocket| RSC
-    RSC --> AuthMiddleware
-    AuthMiddleware --> Auth
-    RSC -->|Direct CRUD & Server Actions| Postgres
-    RSC -->|File Uploads| Storage
-
-    RSC -->|Internal HMAC-Signed AI Tasks| FastAPI
-    FastAPI --> CVExtractor
-    FastAPI --> EmbeddingEngine
-    FastAPI --> AssessmentGen
-    FastAPI --> InterviewAgent
-
-    FastAPI --> OpenAI
-    FastAPI --> Gemini
-    Browser -.->|Live Avatar Streaming| Simli
-```
-
----
-
-## 🔄 3-Stage Candidate Evaluation Pipeline
-
-```mermaid
-flowchart TD
-    Start([Candidate Applies]) --> Upload[Upload Resume & Profile]
-    
-    subgraph Stage1 ["Stage 1: CV Screening"]
-        P1[Extract Resume Text via PyMuPDF] --> P2[Generate OpenAI Embeddings]
-        P2 --> P3[Semantic Match vs Job Criteria]
-    end
-    
-    Upload --> Stage1
-    
-    P3 -->|< 70% Match| KO1[Knocked Out]
-    P3 -->|>= 70% Match| Stage2
-    
-    subgraph Stage2 ["Stage 2: Timed Skills Assessment"]
-        A1[10 Dynamic Technical Questions] --> A2[Strict 60s Countdown via DB Lock]
-        A2 --> A3[Compute Objective Assessment Score]
-    end
-    
-    A3 -->|< 60% Score| KO2[Knocked Out]
-    A3 -->|>= 60% Score| Stage3
-    
-    subgraph Stage3 ["Stage 3: Live AI Avatar Interview"]
-        I1[WebRTC Live Video Avatar - Simli] --> I2[5 Dynamic Behavioral & Tech Prompts]
-        I2 --> I3[Voice Input & Whisper Transcription]
-        I3 --> I4[Multi-Dimensional Response Scoring]
-    end
-    
-    Stage3 --> Synthesis
-    
-    subgraph Synthesis ["Stage 4: Multi-Factor Hiring Scorecard"]
-        S1["Weighted Formula: 40% CV + 25% Assessment + 35% Interview"]
-        S1 --> S2[Synthesize Strengths, Gaps & Evidence]
-    end
-    
-    S2 --> Review{Recruiter Review}
-    Review -->|Approve| Shortlisted([Shortlisted for Hire])
-    Review -->|Reject| Rejected([Rejected])
-    KO1 --> KnockedOut([Application Closed])
-    KO2 --> KnockedOut
-```
-
----
-
-## ⚡ Engineering & Performance Highlights
-
-* **Persistent Workspace Layout (`app/(workspace)/layout.tsx`):**
-  Moved the recruiter chrome (`ApplicationShell`, sidebar, navigation, workspace switcher) to a shared Next.js Route Group layout. Switching between tabs (**Overview → Jobs → Applications → Candidates → Interviews → Evaluations → Analytics**) does not unmount or rebuild the DOM.
-* **Optimized Middleware (`proxy.ts`):**
-  Eliminated redundant database roundtrips by verifying active workspace cookies (`air360_org_id`) and injecting verified user headers downstream. Middleware execution dropped from **1,735ms to ~290ms** (~82% reduction).
-* **Multi-Tenant Row-Level Security (RLS) Indexes:**
-  Custom B-tree indexes on `organization_members(user_id)`, `organization_members(organization_id, user_id)`, and application foreign keys accelerate multi-tenant policy checks across all queries.
-* **Granular Suspense Streaming:**
-  Pages load instant loading skeletons while server data streams concurrently via React 19 Suspense boundaries.
-* **Direct Database CRUD:**
-  Standard recruiter actions talk directly to Supabase via `@supabase/ssr`, avoiding redundant backend-to-backend hops. FastAPI is dedicated strictly to heavy AI workloads.
-
----
-
-## 🛠️ Technology Stack
-
-| Layer | Technologies | Purpose |
-| :--- | :--- | :--- |
-| **Frontend UI** | Next.js 16 (App Router), React 19, TypeScript | Server Components, Server Actions, Client Shell |
-| **Styling** | Tailwind CSS, Lucide React, Glassmorphism design | Modern, responsive, dark-mode ready recruitment dashboard |
-| **Backend AI** | FastAPI, Python 3.12, Pydantic v2, Uvicorn | High-concurrency async AI microservice |
-| **Database & Auth** | Supabase (PostgreSQL 15), Supabase Auth | Multi-tenant RLS isolation, session management, signed storage |
-| **AI & NLP** | OpenAI (GPT-4o, text-embedding-3-small, Whisper) | Resume analysis, assessment generation, speech recognition |
-| **Interview Avatar** | Simli Client (WebRTC), LiveKit | Real-time interactive AI video & audio avatar interviewer |
-| **Document Processing** | PyMuPDF (fitz), Mammoth | Fast PDF and DOCX resume extraction |
-
----
-
-## 📁 Repository Structure
-
-```text
-AI-Recruit360/
-├── frontend/                     # Next.js 16 App Router Frontend
-│   ├── app/
-│   │   ├── (workspace)/          # Persistent Recruiter Dashboard Route Group
-│   │   │   ├── layout.tsx        # Persistent ApplicationShell & TopBar
-│   │   │   ├── loading.tsx       # Content-area Suspense skeleton
-│   │   │   ├── dashboard/        # Workspace Overview & Metrics
-│   │   │   ├── jobs/             # Job creation & management
-│   │   │   ├── applications/     # Candidate pipeline kanban & lists
-│   │   │   ├── candidates/       # Candidate directory & detail profiles
-│   │   │   ├── interviews/       # AI Interview rooms & logs
-│   │   │   ├── evaluations/      # Multi-factor scorecards & recommendations
-│   │   │   ├── analytics/        # Hiring funnel & velocity analytics
-│   │   │   └── settings/         # Workspace preferences & security
-│   │   ├── apply/[job-slug]/     # Public candidate job application portal
-│   │   ├── assessment/           # Candidate anti-cheating timed testing room
-│   │   ├── interview-room/       # Candidate live AI avatar interview room
-│   │   └── proxy.ts              # High-performance Next.js auth & routing middleware
-│   ├── components/               # Reusable UI controls, cards, and modals
-│   ├── lib/
-│   │   ├── auth/                 # Session resolution & organization context
-│   │   ├── services/             # Supabase data services
-│   │   └── supabase/             # Browser and Server SSR Supabase clients
-│   └── providers/                # AuthProvider & BreadcrumbProvider
-│
-├── ai-service/                   # FastAPI Python AI Microservice
-│   ├── app/
-│   │   ├── api/routes/           # API endpoints (screening, assessments, interviews)
-│   │   ├── core/                 # App configuration, security, & rate limiters
-│   │   ├── providers/            # OpenAI & Gemini provider adapters
-│   │   └── services/
-│   │       ├── screening/        # CV parsing, embedding, & criteria matching
-│   │       ├── assessment/       # Dynamic question generator & validator
-│   │       └── interview/        # Interview question prompter & scoring
-│   ├── requirements.txt          # Python dependencies
-│   └── tests/                    # Pytest test suite
-│
-├── supabase/
-│   ├── migrations/               # PostgreSQL schema, RLS policies, & stored functions
-│   │   ├── 01_schema.sql         # Base multi-tenant schema & RLS policies
-│   │   ├── 02_data_contract.sql  # Pipeline state constraints & indexes
-│   │   └── 09_performance_indexes.sql # RLS & foreign-key B-tree indexes
-│   └── README.md                 # Migration setup documentation
-│
-├── render.yaml                   # Render deployment blueprint for ai-service
-└── README.md                     # Project documentation
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-* **Node.js** 20.x or 22.x
-* **Python** 3.12+
-* **Supabase** account (Free tier supported)
-* **OpenAI API Key** (for GPT-4o, embeddings, & Whisper)
-
----
-
-### 1. Database Setup (Supabase)
-1. Create a new project in [Supabase](https://supabase.com).
-2. Go to **SQL Editor** and run the migrations in sequential order from `supabase/migrations/`:
-   - `01_schema.sql` through `09_performance_indexes.sql`.
-3. In **Storage**, ensure the `resumes` bucket is created with private access.
-4. In **Authentication → URL Configuration**, add `http://localhost:3000/auth/callback` to **Redirect URLs**.
-
----
-
-### 2. AI Microservice Setup (`ai-service`)
-```bash
-# Navigate to the ai-service directory
-cd ai-service
-
-# Create and activate a virtual environment
-python -m venv .venv
-# On Windows:
-.venv\Scripts\activate
-# On macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create your .env file
-cp .env.example .env
-```
-
-Configure `ai-service/.env`:
-```ini
-ENVIRONMENT=development
-OPENAI_API_KEY=sk-...
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
-AI_SERVICE_SHARED_SECRET=your-secure-random-32-char-secret
-ALLOWED_ORIGINS=http://localhost:3000
-```
-
-Start the FastAPI server:
-```bash
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-*Health Check:* `http://127.0.0.1:8000/api/v1/health`
-
----
-
-### 3. Frontend Setup (`frontend`)
-```bash
-# Navigate to the frontend directory
+```powershell
 cd frontend
-
-# Install packages
-npm install
-
-# Create your .env.local file
-cp .env.example .env.local
+npm ci
+Copy-Item .env.example .env.local
 ```
 
-Configure `frontend/.env.local`:
-```ini
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
-AI_SERVICE_URL=http://127.0.0.1:8000/api/v1
-AI_SERVICE_SHARED_SECRET=your-secure-random-32-char-secret
-CANDIDATE_SESSION_SECRET=your-random-candidate-session-secret
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+Fill in the local environment file without committing credentials. If it already exists, edit it instead of overwriting it.
 
-# Optional Simli Avatar
-SIMLI_API_KEY=your-simli-api-key
-SIMLI_FACE_ID=your-simli-face-id
+```powershell
+cd ..\ai-service
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Run the development server:
-```bash
+Configure `ai-service/.env` using its example. Start each service in a separate terminal:
+
+```powershell
+# From frontend
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 🌐 Production Deployment
-
-| Service | Recommended Platform | Configuration |
-| :--- | :--- | :--- |
-| **Frontend** | **Vercel** | Set Root Directory to `frontend`, add environment variables, and deploy. |
-| **AI Service** | **Render** | Use pre-configured `render.yaml` (Free Web Service), Python 3.12 runtime. |
-| **Database** | **Supabase** | Cloud PostgreSQL with RLS and automated backups. |
-
-> **Pro-Tip for Render Free Tier:** Render spins down free web services after 15 minutes of inactivity. Set up a free 10-minute ping using [cron-job.org](https://cron-job.org/) or [UptimeRobot](https://uptimerobot.com/) pointing to `https://your-backend.onrender.com/api/v1/health` to keep the Python AI engine warm 24/7.
-
----
-
-## 🧪 Testing & Verification
-
-Run the comprehensive test suite:
-
-```bash
-# 1. Typecheck and lint frontend
-npm --prefix frontend run typecheck
-npm --prefix frontend run lint
-
-# 2. Test production build
-npm --prefix frontend run build
-
-# 3. Run AI service unit & integration tests
-cd ai-service
-pytest tests/ -v
+```powershell
+# From ai-service
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
----
+Next.js uses Webpack for compatibility with this Windows environment. The Simli 3.0.2 package case-sensitivity workaround is intentional for Linux deployments. Run one backend worker; concurrency locks and rate limits are process-local.
 
-## ⚖️ Final Score Calculation
+For realistic frontend timing, use a production build instead of the development compiler:
 
-The candidate's cumulative score is derived from transparent, multi-factor weighting:
+```powershell
+cd frontend
+npm run build
+npm run start -- --port 3100
+```
 
-$$\text{Final Score} = (\text{CV Score} \times 0.40) + (\text{Assessment Score} \times 0.25) + (\text{Interview Score} \times 0.35)$$
+## Database
 
-- **CV Screening:** Minimum 70% threshold required to unlock Assessment.
-- **Skills Assessment:** Minimum 60% threshold required to unlock Interview.
-- **Final Evaluation:** Evidence-based breakdown including AI-identified strengths, flagged gaps, and verified candidate answers.
+Follow [supabase/README.md](supabase/README.md). Apply only pending migrations. Never rerun the initial schema or reset an existing database to fix an error. Migration09 adds indexes; the September20 audit tested it locally but did not change the hosted database.
 
----
+## Verification
 
-## 👨‍💻 Author & Final Year Project Information
+From the repository root:
 
-* **Degree:** Bachelor of Science in Software Engineering (BS SE)
-* **Project:** AI-Recruit360 — FYP 2.0
-* **Repository:** [AI-Recruit360-FYP-2.0](https://github.com/AmeerHxmza/AI-Recruit360-FYP-2.0)
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check.ps1 -Build
+```
 
----
+This runs lint, TypeScript, backend unit/regression tests, auth regressions, two isolated PostgreSQL migration/workflow suites, and the production build. Database tests use synthetic records in memory, not the hosted database or paid AI providers.
 
-<p align="center">
-  <sub>Built with ❤️ using Next.js 16, FastAPI, Supabase, and OpenAI.</sub>
-</p>
+With the production frontend running at `http://localhost:3100`:
+
+```powershell
+node scripts/check-ui.mjs
+node scripts/check-dashboard.cjs
+node scripts/check-interview-layout.cjs
+node scripts/check-auth-browser.cjs
+```
+
+These browser tests use Microsoft Edge. Layout screenshots under `.artifacts` are QA fixtures, not final thesis evidence. Auth browser checks use intercepted synthetic data.
+
+## Hosting and limitations
+
+Frontend: https://ai-recruit360.vercel.app/
+Backend: https://ai-recruit360-fyp.onrender.com/
+
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for environment settings, upload limits, timeouts, and cold-start considerations. Local edits do not change these deployments until redeployed.
+
+AI output needs human review. Scanned/image-only resumes need OCR, which is not implemented. The system has no automatic data-retention policy. A free backend may sleep; AI generation and network round trips have variable latency. Automated tests do not establish production load capacity or model accuracy.
+
+## Thesis preparation
+
+Preserve `Project Report template-3.0.docx`, `GlucoSense_AI_Thesis_Final.pdf`, and the existing `Final_FYP_Thesis.docx`. The final thesis will use the university template, original project-specific prose, verified sources, actual implementation details, and measured test results. Reference-project material is a structural example, not text to copy. Final screen captures, diagrams, and `Thesis.docx` follow the user's acceptance of the updated project.

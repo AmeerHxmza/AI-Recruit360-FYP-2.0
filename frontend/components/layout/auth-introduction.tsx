@@ -11,7 +11,7 @@ export function AuthIntroduction() {
       <div className="relative max-w-md py-14">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#E7E7E2] bg-white px-3 py-1 text-xs font-medium text-[#121212] shadow-2xs">
           <span className="size-1.5 rounded-full bg-[#35C88A]" />
-          <span>Intelligent Multi-Modal Hiring</span>
+          <span>Your recruitment workspace</span>
         </div>
 
         <h2 className="text-4xl font-[520] tracking-[-0.04em] leading-[1.08] text-[#121212]">
@@ -21,14 +21,15 @@ export function AuthIntroduction() {
         </h2>
 
         <p className="mt-5 text-sm leading-relaxed text-[#60605D]">
-          Bring verifiable resume quote parsing, project-tailored dynamic assessments, and conversational AI interviews into one cohesive recruitment engine.
+          Review resumes, assess skills, and conduct structured interviews in
+          one place.
         </p>
 
         <ol className="mt-8 border-t border-[#E7E7E2]">
           {[
-            "Publish a role with grounded qualification criteria",
-            "Screen evidence quotes with 0% hallucination isolation",
-            "Evaluate candidates via adaptive talking avatar interviews",
+            "Publish a role and share its application link",
+            "Review skills alongside resume evidence",
+            "Compare assessment and interview results",
           ].map((item, index) => (
             <li
               key={item}
@@ -42,7 +43,7 @@ export function AuthIntroduction() {
       </div>
 
       <p className="text-xs text-[#8C8C87]">
-        AI-Recruit360 · Autonomous Multi-Modal Hiring Platform
+        AI-Recruit360 · AI-assisted recruitment
       </p>
     </aside>
   );

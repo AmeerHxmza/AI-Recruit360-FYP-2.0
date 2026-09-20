@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  experimental: { serverActions: { bodySizeLimit: "11mb" } },
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   // Transpile client-side WebRTC and avatar dependencies for SSR compatibility
   serverExternalPackages: ["pdf-parse", "mammoth"],
 
@@ -35,21 +35,6 @@ const nextConfig: NextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
         ],
-      },
-      // Cache the AI service health proxy for 10s at edge (reduces cold-start load)
-      {
-        source: "/api/py/health",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=10, s-maxage=30, stale-while-revalidate=60",
-          },
-        ],
-      },
-      // Public job listing pages — allow ISR results to be cached at edge
-      {
-        source: "/jobs/:path*",
-        headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
     ];
   },

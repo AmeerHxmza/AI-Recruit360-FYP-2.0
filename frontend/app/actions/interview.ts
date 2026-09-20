@@ -84,6 +84,15 @@ export async function transcribeAudioAction(
 ): Promise<ActionResult<{ transcript: string }>> {
   try {
     await requireCandidateSession(String(formData.get("applicationId") || ""));
+    const audio = formData.get("audio");
+    if (
+      !(audio instanceof File) ||
+      audio.size === 0 ||
+      audio.size > 4 * 1024 * 1024
+    )
+      throw new Error(
+        "Recording must be between 1 byte and 4 MB. Please record a shorter answer.",
+      );
     const data = await aiServiceClient.transcribeAudioFile(formData);
     return { success: true, data };
   } catch (err: unknown) {

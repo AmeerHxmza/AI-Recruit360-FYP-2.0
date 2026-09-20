@@ -32,7 +32,11 @@ async function ApplicationsServerData({
   const applications = await getApplicationsForOrgWithDetails(orgId);
 
   return (
-    <ApplicationsClientView initialApplications={applications} role={role} />
+    <ApplicationsClientView
+      key={orgId}
+      initialApplications={applications}
+      role={role}
+    />
   );
 }
 

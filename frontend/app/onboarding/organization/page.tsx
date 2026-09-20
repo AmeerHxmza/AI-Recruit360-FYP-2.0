@@ -143,8 +143,8 @@ export default function OrganizationOnboardingPage() {
               Create your organization
             </h1>
             <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-              Set up your team workspace to start running autonomous candidate
-              evaluations and adaptive AI interviews.
+              Set up your team workspace to start managing candidate evaluations
+              and adaptive AI interviews.
             </p>
           </div>
 

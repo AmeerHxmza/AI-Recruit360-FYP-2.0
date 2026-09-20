@@ -95,9 +95,9 @@ async def process_speech_to_text(request: Request, audio: UploadFile = File(...)
     """Transcribe audio bytes to text using OpenAI Whisper."""
     try:
         from app.services.interview.stt import transcribe_audio_file
-        content = await audio.read(10 * 1024 * 1024 + 1)
-        if len(content) > 10 * 1024 * 1024:
-            raise ValueError("Recording exceeds 10 MB. Please use a shorter answer.")
+        content = await audio.read(4 * 1024 * 1024 + 1)
+        if len(content) > 4 * 1024 * 1024:
+            raise ValueError("Recording exceeds 4 MB. Please use a shorter answer.")
         transcript = await transcribe_audio_file(content, audio.filename)
         return {"transcript": transcript}
     except Exception as e:

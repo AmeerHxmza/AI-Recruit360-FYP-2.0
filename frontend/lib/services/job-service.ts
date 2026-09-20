@@ -69,8 +69,15 @@ export async function getJobsForOrg(
         let query = supabase
           .from("jobs")
           .select(
-            "id, organization_id, title, slug, department, location, employment_type, workplace_type, status, published_at, created_at, updated_at",
+            "id, organization_id, title, slug, department, location, employment_type, workplace_type, status, published_at, created_at, updated_at, applicants:applications(count), qualified:applications(count)",
           )
+          .in("qualified.status", [
+            "assessment",
+            "interview",
+            "evaluation",
+            "shortlisted",
+            "hired",
+          ])
           .eq("organization_id", orgId)
           .order("created_at", { ascending: false });
 
@@ -111,39 +118,18 @@ export async function getJobsForOrg(
 
         if (jobs.length === 0) return [];
 
-        // Fetch applications for these jobs to calculate counts
-        const { data: apps } = await supabase
-          .from("applications")
-          .select("job_id, status")
-          .eq("organization_id", orgId)
-          .in(
-            "job_id",
-            jobs.map((j) => j.id),
-          );
-
-        const qualifiedStatuses = [
-          "assessment",
-          "interview",
-          "evaluation",
-          "shortlisted",
-          "hired",
-        ];
-
-        const enrichedJobs = jobs.map((job) => {
-          const jobApps = (apps || []).filter((a) => a.job_id === job.id);
-          const applicantsCount = jobApps.length;
-          const qualifiedCount = jobApps.filter((a) =>
-            qualifiedStatuses.includes(a.status),
-          ).length;
-
-          return {
+        // Count in PostgreSQL, avoiding row-limit truncation and application payloads.
+        type JobWithCounts = Job & {
+          applicants: { count: number }[];
+          qualified: { count: number }[];
+        };
+        return (jobs as unknown as JobWithCounts[]).map(
+          ({ applicants, qualified, ...job }) => ({
             ...job,
-            applicantsCount,
-            qualifiedCount,
-          } as Job;
-        });
-
-        return enrichedJobs;
+            applicantsCount: applicants[0]?.count ?? 0,
+            qualifiedCount: qualified[0]?.count ?? 0,
+          }),
+        );
       },
     );
 
@@ -333,28 +319,26 @@ export async function getJobCounts(orgId: string): Promise<{
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("jobs")
-    .select("status")
-    .eq("organization_id", orgId);
-
-  if (error || !data) {
-    return { total: 0, active: 0, draft: 0, paused: 0, closed: 0 };
-  }
-
-  const counts = {
-    total: data.length,
-    active: 0,
-    draft: 0,
-    paused: 0,
-    closed: 0,
+    .from("organizations")
+    .select(
+      "total:jobs(count), active:jobs(count), draft:jobs(count), paused:jobs(count), closed:jobs(count)",
+    )
+    .eq("id", orgId)
+    .eq("active.status", "active")
+    .eq("draft.status", "draft")
+    .eq("paused.status", "paused")
+    .eq("closed.status", "closed")
+    .single();
+  if (error || !data) throw new DatabaseError("Could not load job totals.");
+  const counts = data as unknown as Record<
+    "total" | "active" | "draft" | "paused" | "closed",
+    { count: number }[]
+  >;
+  return {
+    total: counts.total[0]?.count ?? 0,
+    active: counts.active[0]?.count ?? 0,
+    draft: counts.draft[0]?.count ?? 0,
+    paused: counts.paused[0]?.count ?? 0,
+    closed: counts.closed[0]?.count ?? 0,
   };
-
-  data.forEach((j) => {
-    if (j.status === "active") counts.active++;
-    else if (j.status === "draft") counts.draft++;
-    else if (j.status === "paused") counts.paused++;
-    else if (j.status === "closed") counts.closed++;
-  });
-
-  return counts;
 }

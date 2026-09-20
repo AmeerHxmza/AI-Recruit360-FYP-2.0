@@ -32,6 +32,17 @@ export async function uploadAndIngestCandidateDocumentAction(
       };
     }
 
+    if (
+      !(file instanceof File) ||
+      file.size === 0 ||
+      file.size > 4 * 1024 * 1024
+    ) {
+      return {
+        success: false,
+        error: "Upload a PDF or DOCX file up to 4 MB.",
+        code: "VALIDATION_ERROR",
+      };
+    }
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = Buffer.from(arrayBuffer);
 

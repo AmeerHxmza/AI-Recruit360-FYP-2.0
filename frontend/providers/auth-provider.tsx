@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = React.useState<OrganizationRole | null>(null);
 
   const router = useRouter();
+  const contextVersion = React.useRef(0);
 
   // Create a memoized Supabase browser client
   const supabase = React.useMemo(() => {
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchContextData = React.useCallback(
     async (currentUser: User | null) => {
+      const version = ++contextVersion.current;
       if (!supabase || !currentUser) {
         setProfile(null);
         setOrganization(null);
@@ -92,7 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq("user_id", currentUser.id),
         ]);
 
-        if (prof) setProfile(prof as ProfileRow);
+        if (version !== contextVersion.current) return;
+        setProfile(prof as ProfileRow | null);
 
         if (memberRows && memberRows.length > 0) {
           // Extract organizations from the joined data (no 3rd query needed)
@@ -107,11 +110,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setOrganizations(orgs);
 
             // Determine active organization (respect preferred cookie if set)
-            const matchCookie = typeof document !== "undefined"
-              ? document.cookie.match(/(?:^|;\s*)air360_org_id=([^;]+)/)?.[1]
-              : null;
+            const matchCookie =
+              typeof document !== "undefined"
+                ? document.cookie.match(/(?:^|;\s*)air360_org_id=([^;]+)/)?.[1]
+                : null;
             const activeMember =
-              (matchCookie && memberRows.find((m: Record<string, unknown>) => m.organization_id === matchCookie)) ||
+              (matchCookie &&
+                memberRows.find(
+                  (m: Record<string, unknown>) =>
+                    m.organization_id === matchCookie,
+                )) ||
               memberRows[0];
             const activeOrg =
               orgs.find((o) => o.id === activeMember.organization_id) ||
@@ -120,6 +128,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setRole(activeMember.role as OrganizationRole);
             setOrganization(activeOrg);
           } else {
+            setMembership(null);
+            setRole(null);
             setOrganizations([]);
             setOrganization(null);
           }
@@ -178,44 +188,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const versionRef = contextVersion;
     let isMounted = true;
+    let lastUserId: string | null | undefined;
+    let pending: ReturnType<typeof setTimeout> | undefined;
 
-    supabase.auth
-      .getSession()
-      .then(async ({ data: { session: initialSession } }) => {
-        if (isMounted) {
-          setSession(initialSession);
-          const currentUser = initialSession?.user ?? null;
-          setUser(currentUser);
-          if (currentUser) {
-            await fetchContextData(currentUser);
-          }
-          setLoading(false);
-        }
-      });
-
+    // Supabase emits INITIAL_SESSION. A second getSession loader duplicates queries.
+    // Return synchronously so database requests never wait on the auth callback lock.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      if (isMounted) {
-        setSession(currentSession);
-        const currentUser = currentSession?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          await fetchContextData(currentUser);
-        } else {
-          setProfile(null);
-          setOrganization(null);
-          setMembership(null);
-          setOrganizations([]);
-          setRole(null);
-        }
-        setLoading(false);
-      }
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (!isMounted) return;
+      setSession(currentSession);
+      const currentUser = currentSession?.user ?? null;
+      setUser(currentUser);
+      const userId = currentUser?.id ?? null;
+      if (userId === lastUserId && event !== "USER_UPDATED") return;
+      lastUserId = userId;
+      ++contextVersion.current;
+      clearTimeout(pending);
+      setLoading(true);
+      pending = setTimeout(() => {
+        if (!isMounted) return;
+        void fetchContextData(currentUser).finally(() => {
+          if (isMounted && lastUserId === userId) setLoading(false);
+        });
+      }, 0);
     });
 
     return () => {
       isMounted = false;
+      ++versionRef.current;
+      clearTimeout(pending);
       subscription.unsubscribe();
     };
   }, [supabase, fetchContextData]);

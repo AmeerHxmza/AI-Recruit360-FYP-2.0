@@ -83,23 +83,32 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
     WorkplaceType | "all"
   >("all");
 
+  const requestVersion = React.useRef(0);
   const loadJobs = React.useCallback(async () => {
+    const version = ++requestVersion.current;
     setLoading(true);
     setErrorMsg(null);
 
-    const res = await getJobsAction({
-      status: statusFilter,
-      employment_type: employmentFilter,
-      workplace_type: workplaceFilter,
-      search: searchQuery,
-    });
+    try {
+      const res = await getJobsAction({
+        status: statusFilter,
+        employment_type: employmentFilter,
+        workplace_type: workplaceFilter,
+        search: searchQuery,
+      });
 
-    if (res.success && res.data) {
-      setJobs(res.data);
-    } else {
-      setErrorMsg(res.error || "Unable to fetch job positions.");
+      if (version !== requestVersion.current) return;
+      if (res.success && res.data) {
+        setJobs(res.data);
+      } else {
+        setErrorMsg(res.error || "Unable to fetch job positions.");
+      }
+    } catch {
+      if (version === requestVersion.current)
+        setErrorMsg("Could not load jobs. Please retry.");
+    } finally {
+      if (version === requestVersion.current) setLoading(false);
     }
-    setLoading(false);
   }, [statusFilter, employmentFilter, workplaceFilter, searchQuery]);
 
   // Refetch ONLY when user explicitly changes search query or dropdown filters
@@ -109,6 +118,7 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
   const prevWorkplaceRef = React.useRef(workplaceFilter);
 
   React.useEffect(() => {
+    const versionRef = requestVersion;
     const searchChanged = prevSearchRef.current !== searchQuery;
     const statusChanged = prevStatusRef.current !== statusFilter;
     const employmentChanged = prevEmploymentRef.current !== employmentFilter;
@@ -125,7 +135,11 @@ export function JobsClientView({ initialJobs, role }: JobsClientViewProps) {
       employmentChanged ||
       workplaceChanged
     ) {
-      loadJobs();
+      const timer = setTimeout(() => void loadJobs(), 300);
+      return () => {
+        clearTimeout(timer);
+        ++versionRef.current;
+      };
     }
   }, [searchQuery, statusFilter, employmentFilter, workplaceFilter, loadJobs]);
 

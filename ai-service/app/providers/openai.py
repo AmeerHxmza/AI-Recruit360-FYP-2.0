@@ -45,9 +45,3 @@ class OpenAIProvider:
         except Exception as error:
             raise AIProviderError("AI processing is temporarily unavailable. Please retry.") from error
 
-# Compatibility helper for the retained legacy screening module.
-def cosine_similarity(v1: list[float], v2: list[float]) -> float:
-    dot=sum(x*y for x,y in zip(v1,v2))
-    norm1=sum(x*x for x in v1)**0.5
-    norm2=sum(x*x for x in v2)**0.5
-    return dot/(norm1*norm2) if norm1 and norm2 else 0.0

@@ -3,16 +3,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-blue focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0D10] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer select-none",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-[background-color,border-color,box-shadow,transform] duration-150 motion-reduce:transition-none motion-safe:active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer select-none",
   {
     variants: {
       variant: {
         primary:
-          "bg-action-blue text-primary-foreground hover:bg-action-blue active:bg-action-blue font-medium shadow-xs",
+          "bg-action-blue text-primary-foreground hover:bg-action-blue/85 active:bg-action-blue/90 font-medium shadow-xs",
         secondary:
-          "bg-hover text-text-primary border border-border hover:bg-hover hover:border-border active:bg-hover",
+          "bg-hover text-text-primary border border-border hover:bg-surface-muted hover:border-border-strong active:bg-hover",
         outline:
-          "bg-transparent text-text-primary border border-border hover:bg-surface hover:border-border",
+          "bg-transparent text-text-primary border border-border hover:bg-hover hover:border-border-strong",
         ghost:
           "bg-transparent text-text-secondary hover:text-text-primary hover:bg-hover",
         danger:

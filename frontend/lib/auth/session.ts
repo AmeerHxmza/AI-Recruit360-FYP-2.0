@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { AuthError, ForbiddenError, NotFoundError } from "@/lib/utils/errors";
@@ -24,25 +24,6 @@ interface JoinedMembershipRow extends OrganizationMemberRow {
 }
 
 export const getCurrentUser = cache(async (): Promise<User> => {
-  // Fast path: Check headers injected by proxy middleware to avoid duplicate remote HTTPS calls to Supabase Auth
-  const headerStore = await headers().catch(() => null);
-  const headerUserId = headerStore?.get("x-user-id");
-  const headerUserEmail = headerStore?.get("x-user-email");
-  const headerUserName = headerStore?.get("x-user-name");
-
-  if (headerUserId) {
-    return {
-      id: headerUserId,
-      email: headerUserEmail || undefined,
-      user_metadata: {
-        full_name: headerUserName ? decodeURIComponent(headerUserName) : undefined,
-      },
-      app_metadata: {},
-      aud: "authenticated",
-      created_at: new Date().toISOString(),
-    } as unknown as User;
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -91,36 +72,40 @@ interface UserWorkspaceBundle {
   cookieOrgId: string | null;
 }
 
-const loadUserWorkspaceBundle = cache(async (): Promise<UserWorkspaceBundle | null> => {
-  try {
-    const user = await getCurrentUser();
-    const supabase = await createClient();
+const loadUserWorkspaceBundle = cache(
+  async (): Promise<UserWorkspaceBundle | null> => {
+    try {
+      const user = await getCurrentUser();
+      const supabase = await createClient();
 
-    // Parallel fetch: cookieStore + memberships with joined organizations + profile
-    const [cookieStore, { data: membershipsData }, profile] = await Promise.all([
-      cookies().catch(() => null),
-      supabase
-        .from("organization_members")
-        .select(
-          "id, organization_id, user_id, role, created_at, organizations(id, name, slug, created_by, created_at, updated_at)",
-        )
-        .eq("user_id", user.id),
-      getCurrentProfile(),
-    ]);
+      // Parallel fetch: cookieStore + memberships with joined organizations + profile
+      const [cookieStore, { data: membershipsData }, profile] =
+        await Promise.all([
+          cookies().catch(() => null),
+          supabase
+            .from("organization_members")
+            .select(
+              "id, organization_id, user_id, role, created_at, organizations(id, name, slug, created_by, created_at, updated_at)",
+            )
+            .eq("user_id", user.id),
+          getCurrentProfile(),
+        ]);
 
-    const memberships = (membershipsData || []) as unknown as JoinedMembershipRow[];
-    const cookieOrgId = cookieStore?.get("air360_org_id")?.value || null;
+      const memberships = (membershipsData ||
+        []) as unknown as JoinedMembershipRow[];
+      const cookieOrgId = cookieStore?.get("air360_org_id")?.value || null;
 
-    return {
-      user,
-      profile,
-      memberships,
-      cookieOrgId,
-    };
-  } catch {
-    return null;
-  }
-});
+      return {
+        user,
+        profile,
+        memberships,
+        cookieOrgId,
+      };
+    } catch {
+      return null;
+    }
+  },
+);
 
 export const getUserOrganizations = cache(
   async (): Promise<OrganizationRow[]> => {

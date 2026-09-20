@@ -44,6 +44,6 @@ export function getParserForDocument(
   }
 
   throw new UnsupportedDocumentError(
-    `No supported document parser found for file format: '${mimeType || filename}'. Supported formats are PDF, DOC, and DOCX.`,
+    `No supported document parser found for file format: '${mimeType || filename}'. Supported formats are PDF and DOCX.`,
   );
 }

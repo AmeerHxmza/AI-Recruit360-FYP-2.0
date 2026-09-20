@@ -5,7 +5,7 @@ import { DocumentExtractionError } from "./errors";
 
 export class DocxDocumentParser implements DocumentParser {
   public readonly name = "DocxDocumentParser";
-  public readonly version = "mammoth@1.11.0";
+  public readonly version = "mammoth@1.12";
 
   public supports(mimeType: string, filename: string): boolean {
     const lowerMime = mimeType.toLowerCase();
@@ -13,9 +13,8 @@ export class DocxDocumentParser implements DocumentParser {
 
     const isDocxMime =
       lowerMime ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      lowerMime === "application/msword";
-    const isDocxExt = lowerName.endsWith(".docx") || lowerName.endsWith(".doc");
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    const isDocxExt = lowerName.endsWith(".docx");
 
     return isDocxMime || isDocxExt;
   }

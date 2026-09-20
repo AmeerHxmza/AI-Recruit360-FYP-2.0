@@ -34,7 +34,12 @@ async function InterviewsServerData() {
 
   const interviews = await getInterviewsForOrgWithDetails(ctx.organization.id);
 
-  return <InterviewsClientView initialInterviews={interviews} />;
+  return (
+    <InterviewsClientView
+      key={ctx.organization.id}
+      initialInterviews={interviews}
+    />
+  );
 }
 
 export default async function InterviewsPage() {

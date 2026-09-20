@@ -26,10 +26,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col justify-between rounded-xl p-5 border transition-colors duration-150 cursor-default",
+        "flex flex-col justify-between rounded-xl p-5 border transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none cursor-default",
         highlight
           ? "bg-hover border-border"
-          : "bg-surface border-border hover:border-border",
+          : "bg-surface border-border hover:border-border-strong hover:shadow-sm",
         className,
       )}
     >

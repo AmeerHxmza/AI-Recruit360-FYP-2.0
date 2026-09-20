@@ -24,7 +24,7 @@ import { PdfDocumentParser } from "./pdf-parser";
 import { DocxDocumentParser } from "./docx-parser";
 import { normalizeExtractedText } from "./text-normalizer";
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024; // 4 MB
 
 const registeredParsers: DocumentParser[] = [
   new PdfDocumentParser(),
@@ -58,7 +58,7 @@ export async function ingestCandidateDocument(
 
   if (fileBuffer.length > MAX_FILE_SIZE_BYTES) {
     throw new DocumentValidationError(
-      "Uploaded document exceeds the maximum 10 MB size limit.",
+      "Uploaded document exceeds the maximum 4 MB size limit.",
     );
   }
 

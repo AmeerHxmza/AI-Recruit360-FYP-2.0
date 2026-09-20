@@ -96,35 +96,50 @@ export function ApplicationsClientView({
     exportJobCandidatesToCsv(jobFilter, targetJobApps);
   };
 
+  const requestVersion = React.useRef(0);
   const loadApplications = React.useCallback(async () => {
+    const version = ++requestVersion.current;
     setLoading(true);
     setErrorMsg(null);
 
     const request = ++requestNumber.current;
-    const res = await getApplicationsAction({
-      stage: stageFilter,
-      search: searchQuery,
-      page,
-      pageSize: 50,
-    });
-    if (request !== requestNumber.current) return;
+    try {
+      const res = await getApplicationsAction({
+        stage: stageFilter,
+        search: searchQuery,
+        page,
+        pageSize: 50,
+      });
+      if (request !== requestNumber.current) return;
 
-    if (res.success && res.data) {
-      setApplications(res.data);
-    } else {
-      setErrorMsg(res.error || "Failed to load pipeline applications.");
+      if (version !== requestVersion.current) return;
+      if (res.success && res.data) {
+        setApplications(res.data);
+      } else {
+        setErrorMsg(res.error || "Failed to load pipeline applications.");
+      }
+    } catch {
+      if (version === requestVersion.current)
+        setErrorMsg("Could not load applications. Please retry.");
+    } finally {
+      if (version === requestVersion.current) setLoading(false);
     }
-    setLoading(false);
   }, [stageFilter, searchQuery, page]);
 
+  const previousFilters = React.useRef(
+    JSON.stringify([stageFilter, searchQuery, page]),
+  );
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadApplications();
-    }, 250);
+    const versionRef = requestVersion;
+    const filters = JSON.stringify([stageFilter, searchQuery, page]);
+    if (previousFilters.current === filters) return;
+    previousFilters.current = filters;
+    const timer = setTimeout(() => void loadApplications(), 300);
     return () => {
       clearTimeout(timer);
+      ++versionRef.current;
     };
-  }, [loadApplications]);
+  }, [stageFilter, searchQuery, page, loadApplications]);
 
   const openShareModal = async () => {
     setIsShareModalOpen(true);

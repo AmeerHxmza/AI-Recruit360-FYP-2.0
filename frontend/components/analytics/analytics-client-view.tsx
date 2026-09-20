@@ -25,10 +25,7 @@ interface AnalyticsClientViewProps {
   orgName: string;
 }
 
-export function AnalyticsClientView({
-  initialData,
-  orgName,
-}: AnalyticsClientViewProps) {
+export function AnalyticsClientView({ initialData }: AnalyticsClientViewProps) {
   const router = useRouter();
   const data = initialData;
 

@@ -136,7 +136,7 @@ export default function InterviewPage() {
         try {
           if (
             chunks.reduce((size, chunk) => size + chunk.size, 0) >
-            10 * 1024 * 1024
+            4 * 1024 * 1024
           )
             throw new Error(
               "Recording is too large. Please record a shorter answer or type it below.",
@@ -186,7 +186,10 @@ export default function InterviewPage() {
           error.toLowerCase().includes("invalid application session") ? (
             <div className="mt-3 space-y-2 text-xs leading-relaxed text-text-secondary">
               <p>
-                Candidate interview sessions expire after 24 hours for security and candidate privacy. If you were disconnected or need an extension, please contact your recruitment team and share your reference ID:
+                Candidate interview sessions expire after 24 hours for security
+                and candidate privacy. If you were disconnected or need an
+                extension, please contact your recruitment team and share your
+                reference ID:
               </p>
               <div className="flex items-center gap-2 pt-1 font-mono text-xs">
                 <span className="text-text-muted">Application Ref:</span>

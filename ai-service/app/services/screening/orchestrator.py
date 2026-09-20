@@ -59,7 +59,8 @@ async def run_screening_pipeline(application_id: str) -> Optional[ScreeningDecis
         cv_text = extracted or await run_sync(lambda: extract_text_from_bytes(content, filename, mime_type))
         if not cv_text or not cv_text.strip():
             raise ValueError("Empty resume text")
-        await run_sync(lambda: supabase.table("candidate_documents").update({"extracted_text": cv_text, "extraction_status": "completed"}).eq("application_id", application_id).execute())
+        if not extracted:
+            await run_sync(lambda: supabase.table("candidate_documents").update({"extracted_text": cv_text, "extraction_status": "completed"}).eq("application_id", application_id).execute())
     except Exception as error:
         raise ValueError("Could not read the resume. Your application is saved; please retry or contact the recruitment team.") from error
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Dict, Any, Tuple, Optional
 from app.db.supabase import get_supabase_client, run_sync
@@ -26,26 +27,21 @@ async def get_application_context(application_id: str) -> Tuple[Dict[str, Any], 
     job_id = app_data.get("job_id")
     candidate_id = app_data.get("candidate_id")
 
-    # 2. Fetch Job
-    job_res = await run_sync(
-        lambda: supabase.table("jobs")
-        .select("id, title, description, requirements")
-        .eq("id", job_id).eq("organization_id", app_data["organization_id"])
-        .limit(1)
-        .execute()
+    # Both records depend on the application, but not on each other.
+    job_res, candidate_res = await asyncio.gather(
+        run_sync(lambda: supabase.table("jobs")
+            .select("id, title, description, requirements")
+            .eq("id", job_id).eq("organization_id", app_data["organization_id"])
+            .limit(1).execute()),
+        run_sync(lambda: supabase.table("candidates")
+            .select("id, full_name, email")
+            .eq("id", candidate_id).eq("organization_id", app_data["organization_id"])
+            .limit(1).execute()),
     )
-    if not job_res.data or len(job_res.data) == 0:
+    if not job_res.data:
         raise ValueError(f"Job {job_id} for application {application_id} not found.")
     job_data = job_res.data[0]
 
-    # 3. Fetch Candidate
-    candidate_res = await run_sync(
-        lambda: supabase.table("candidates")
-        .select("id, full_name, email")
-        .eq("id", candidate_id).eq("organization_id", app_data["organization_id"])
-        .limit(1)
-        .execute()
-    )
     if not candidate_res.data or len(candidate_res.data) == 0:
         raise ValueError(f"Candidate {candidate_id} for application {application_id} not found.")
     candidate_data = candidate_res.data[0]
@@ -93,9 +89,3 @@ async def get_candidate_cv_data(application_id: str) -> Tuple[bytes, str, str, O
         logger.error(f"Failed to download CV file '{storage_path}': {e}")
         raise ValueError(f"Failed to download CV file from storage: {e}")
 
-async def get_candidate_cv_bytes(application_id: str) -> bytes:
-    """Backward-compatible helper."""
-    file_bytes, _, _, pre_extracted = await get_candidate_cv_data(application_id)
-    if pre_extracted:
-        return pre_extracted.encode("utf-8")
-    return file_bytes

@@ -15,7 +15,7 @@ CREATE FUNCTION auth.role() RETURNS TEXT LANGUAGE sql STABLE AS $$ SELECT curren
 CREATE TABLE storage.buckets(id TEXT PRIMARY KEY,name TEXT,public BOOLEAN,file_size_limit BIGINT,allowed_mime_types TEXT[]);
 CREATE TABLE storage.objects(id UUID DEFAULT gen_random_uuid(),bucket_id TEXT,name TEXT);
 CREATE FUNCTION storage.foldername(TEXT) RETURNS TEXT[] LANGUAGE sql AS $$ SELECT string_to_array($1,'/') $$;`);
-for (const file of ['01_schema.sql','02_data_contract.sql','03_candidate_submission.sql','04_assessment_integrity.sql','05_pipeline_persistence.sql','06_dashboard.sql','07_application_search.sql','08_function_permissions.sql']) {
+for (const file of ['01_schema.sql','02_data_contract.sql','03_candidate_submission.sql','04_assessment_integrity.sql','05_pipeline_persistence.sql','06_dashboard.sql','07_application_search.sql','08_function_permissions.sql','09_performance_indexes.sql']) {
   const sql = readFileSync(new URL(`../supabase/migrations/${file}`, import.meta.url), 'utf8').replace(/^CREATE EXTENSION .*;$/gm, '');
   try {
     await db.exec(sql); console.log(`PASS migration ${file}`);

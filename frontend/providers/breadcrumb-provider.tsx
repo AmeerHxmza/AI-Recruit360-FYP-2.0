@@ -9,9 +9,9 @@ interface BreadcrumbContextType {
   setCustomBreadcrumbs: (crumbs: string[] | null) => void;
 }
 
-const BreadcrumbContext = React.createContext<BreadcrumbContextType | undefined>(
-  undefined,
-);
+const BreadcrumbContext = React.createContext<
+  BreadcrumbContextType | undefined
+>(undefined);
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Overview",
@@ -32,14 +32,16 @@ export function BreadcrumbProvider({
 }) {
   const pathname = usePathname();
   const { organization } = useAuth();
-  const [customBreadcrumbs, setCustomBreadcrumbs] = React.useState<
-    string[] | null
-  >(null);
-
-  // Reset custom breadcrumbs whenever the route changes
-  React.useEffect(() => {
-    setCustomBreadcrumbs(null);
-  }, [pathname]);
+  const [custom, setCustom] = React.useState<{
+    path: string;
+    crumbs: string[] | null;
+  } | null>(null);
+  const setCustomBreadcrumbs = React.useCallback(
+    (crumbs: string[] | null) => {
+      setCustom({ path: pathname, crumbs });
+    },
+    [pathname],
+  );
 
   const defaultBreadcrumbs = React.useMemo(() => {
     const orgName = organization?.name || "AI-Recruit360";
@@ -58,12 +60,11 @@ export function BreadcrumbProvider({
     return crumbList.length > 1 ? crumbList : [orgName, "Workspace"];
   }, [pathname, organization?.name]);
 
-  const breadcrumbs = customBreadcrumbs || defaultBreadcrumbs;
+  const breadcrumbs =
+    (custom?.path === pathname ? custom.crumbs : null) || defaultBreadcrumbs;
 
   return (
-    <BreadcrumbContext.Provider
-      value={{ breadcrumbs, setCustomBreadcrumbs }}
-    >
+    <BreadcrumbContext.Provider value={{ breadcrumbs, setCustomBreadcrumbs }}>
       {children}
     </BreadcrumbContext.Provider>
   );

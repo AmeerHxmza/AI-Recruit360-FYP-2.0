@@ -8,6 +8,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Type check failed' }
     & '.\ai-service\.venv\Scripts\python.exe' -m pytest ai-service/tests -q
     if ($LASTEXITCODE -ne 0) { throw 'Python tests failed' }
+    node scripts/check-auth.cjs
+    if ($LASTEXITCODE -ne 0) { throw 'Auth regressions failed' }
     node scripts/check-database.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Legacy schema tests failed' }
     node scripts/check-database.mjs --current-layout

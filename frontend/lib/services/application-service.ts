@@ -126,8 +126,8 @@ export async function submitPublicCandidateApplication(input: {
     throw new ValidationError("Enter your name and a valid phone number.");
   }
   const file = input.cv_file;
-  if (!file || file.size === 0 || file.size > 10 * 1024 * 1024)
-    throw new ValidationError("Upload a PDF or DOCX file up to 10 MB.");
+  if (!file || file.size === 0 || file.size > 4 * 1024 * 1024)
+    throw new ValidationError("Upload a PDF or DOCX file up to 4 MB.");
   const mime = file.name.toLowerCase().endsWith(".pdf")
     ? "application/pdf"
     : file.name.toLowerCase().endsWith(".docx")

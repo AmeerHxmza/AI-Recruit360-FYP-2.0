@@ -2,21 +2,6 @@
  * Lightweight performance measurement utility.
  */
 
-export interface PerfMetric {
-  route: string;
-  authMs: number;
-  orgMs: number;
-  dbMs: number;
-  redisMs: number;
-  aiMs: number;
-  externalApiMs: number;
-  serializationMs: number;
-  renderMs: number;
-  totalMs: number;
-  queryCount: number;
-  waterfalls: number;
-}
-
 export async function measurePerformance<T>(
   label: string,
   fn: () => Promise<T>,
@@ -35,8 +20,4 @@ export async function withPerfProfile<T>(
   fn: () => Promise<T>,
 ): Promise<T> {
   return await fn();
-}
-
-export function logPerfSummary(_metric: PerfMetric): void {
-  void _metric;
 }

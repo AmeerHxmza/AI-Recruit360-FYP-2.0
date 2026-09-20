@@ -24,7 +24,7 @@ def extract_text_from_bytes(file_bytes: bytes, file_name: str, mime_type: str | 
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     """High-performance PDF text extraction using PyMuPDF (fitz) with fallback to pypdf."""
-    # 1. Try PyMuPDF (fitz) - 100x faster, layout & multi-column aware
+    # 1. Extract text with PyMuPDF; retain pypdf as a compatibility fallback.
     try:
         import fitz
         doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -63,8 +63,16 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
     try:
         from docx import Document
         doc = Document(io.BytesIO(file_bytes))
-        paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-        extracted = "\n".join(paragraphs).strip()
+        from docx.text.paragraph import Paragraph
+        blocks = []
+        for block in doc.iter_inner_content():
+            if isinstance(block, Paragraph):
+                blocks.append(block.text)
+            else:
+                # Resume templates often put all experience/skills inside tables.
+                for row in block.rows:
+                    blocks.append(" | ".join(cell.text for cell in row.cells))
+        extracted = "\n".join(text for text in blocks if text.strip()).strip()
         if not extracted:
             raise DocumentExtractionError("DOCX file returned empty text.")
         return extracted
