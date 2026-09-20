@@ -1,5 +1,12 @@
 # Recruit360 continuation handover
 
+## Live thesis screenshots (2026-09-20)
+
+Owner signed in to the deployed Vercel app in the Codex browser. Saved 12 authentic captures to website_screenshots/live_*.png: dashboard, jobs, applications, candidates, interviews, evaluations, analytics, settings, new-job form, job detail, candidate dossier and completed interview detail. README distinguishes these from earlier current_ fixture images. Captures were read-only; no records, decisions, credentials, environment files or application source were changed. Current live metrics observed: 2 active jobs, 7 applications, 3 completed interviews. These observations are not performance benchmarks or a new end-to-end acceptance run.
+
+Thesis.docx remains a draft awaiting incorporation of these live screenshots and final rendered-page review. Builder and evidence are under .artifacts/thesis. Do not present fixture captures as live records. The existing draft's Appendix C statement that authenticated captures are pending must be revised when incorporating this pack. Actual account/candidate contact details appear in live images, so review disclosure before public submission. Local sign-in failure reported by user has not been reproduced or resolved in this screenshot task.
+
+
 ## Sign-in loading repair (2026-09-20)
 
 User reported the Signing In button remained loading. Inspection found unbounded browser Auth requests and a success path that called router.push and router.refresh together while retaining loading state. Updated login to navigate with window.location.assign after the SDK saves session cookies. Browser Supabase Auth requests now abort after 15 seconds; a 25-second form watchdog also covers SDK initialization/refresh, restores retry, and ignores stale completion. Error banner is announced accessibly. No credentials, records, RLS policies or authentication checks changed. A read-only Supabase Auth settings probe returned HTTP 200 in 740 ms; this is not proof of the user's exact failing request. The exact original network trigger was not captured. New synthetic browser regressions passed for invalid credentials, successful cookie-backed document navigation and a never-responding auth endpoint. Lint and production build passed; auth startup regression passed. Updated local preview uses port3100 (session53172); no deployment performed. User should refresh/restart their local frontend to load the fix. Real-account acceptance is still needed.
