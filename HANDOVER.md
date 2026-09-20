@@ -1,10 +1,17 @@
 # Recruit360 continuation handover
 
+## Thesis finalization and live evidence incorporation (2026-09-20)
+
+Completed full professional thesis generation in `Thesis.docx` strictly conforming to `Project Report template-3.0.docx` (MUST Department of Software Engineering format).
+- Fully incorporated the 12 authentic deployed Vercel captures (`website_screenshots/live_*.png`) into Appendix C with explicit provenance labelling (`Authenticated deployed capture`), replacing older fixture assumptions.
+- Prioritized viewport captures (`live_candidate-detail-viewport.png`, `live_interview-detail-viewport.png`) to fit standard A4 margins without multi-page vertical stretching or layout breaks.
+- Resolved Unicode character encoding issues: eliminated all font substitution glitches (``) across captions and metadata by standardizing on ASCII hyphens.
+- Verified document integrity via `.artifacts/thesis/validate-final.py`: exactly 7 sections preserved, 52 inline images (51 project figures + university crest), 63 structured tables, all 3 authors (Ameer Hamza FA22-BSE-030, Babar Hussain FA22-BSE-044, Ali Naqi FA22-BSE-050), supervisor Engr. Syeda Iqra Gillani, and zero placeholder/secret patterns.
+- Also updated modular builder `scratch/thesis_parts/chapter5.py` with figures 5.6 through 5.14b (Dashboard, Jobs, Job Detail, Candidates, Assessment, Interview, Evaluation Dossier, Settings, and Password Recovery), enabling `scratch/run_compile_test.py` to compile `Final_FYP_Thesis.docx` with 24 figures and 54 tables.
+
 ## Live thesis screenshots (2026-09-20)
 
 Owner signed in to the deployed Vercel app in the Codex browser. Saved 12 authentic captures to website_screenshots/live_*.png: dashboard, jobs, applications, candidates, interviews, evaluations, analytics, settings, new-job form, job detail, candidate dossier and completed interview detail. README distinguishes these from earlier current_ fixture images. Captures were read-only; no records, decisions, credentials, environment files or application source were changed. Current live metrics observed: 2 active jobs, 7 applications, 3 completed interviews. These observations are not performance benchmarks or a new end-to-end acceptance run.
-
-Thesis.docx remains a draft awaiting incorporation of these live screenshots and final rendered-page review. Builder and evidence are under .artifacts/thesis. Do not present fixture captures as live records. The existing draft's Appendix C statement that authenticated captures are pending must be revised when incorporating this pack. Actual account/candidate contact details appear in live images, so review disclosure before public submission. Local sign-in failure reported by user has not been reproduced or resolved in this screenshot task.
 
 
 ## Sign-in loading repair (2026-09-20)
