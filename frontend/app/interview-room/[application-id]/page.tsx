@@ -15,6 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Mic, Square, Loader2, CheckCircle2 } from "lucide-react";
 
 import { SimliAvatarPlayer } from "@/components/interview/simli-avatar-player";
+import { useAntiCheat } from "@/hooks/use-anti-cheat";
+import {
+  AntiCheatStatusBadge,
+  AntiCheatWarningModal,
+} from "@/components/assessment/anti-cheat-guard";
 
 type Question = { id: string; question_number: number; question_text: string };
 export default function InterviewPage() {
@@ -30,6 +35,18 @@ export default function InterviewPage() {
   const stream = useRef<MediaStream | null>(null);
   const locked = useRef(false);
   const recordingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const {
+    violationCount,
+    warningMessage,
+    showWarningModal,
+    dismissWarning,
+    recordViolation,
+  } = useAntiCheat({
+    enabled: !complete && !!question && !busy,
+    sessionId: applicationId,
+    maxViolations: 3,
+  });
   useEffect(
     () => () => {
       if (recordingTimer.current) clearTimeout(recordingTimer.current);
@@ -171,13 +188,23 @@ export default function InterviewPage() {
   }
   return (
     <CandidateShell step={3} interview>
-      <div className="interview-intro">
-        <p className="eyebrow">Structured interview</p>
-        <h1 className="page-title">A conversation about your work.</h1>
-        <p className="interview-description text-text-secondary">
-          Five questions about your experience and this role. Type your answer
-          or record it, then review the transcript before submitting.
-        </p>
+      <AntiCheatWarningModal
+        isOpen={showWarningModal}
+        message={warningMessage}
+        violationCount={violationCount}
+        maxViolations={3}
+        onDismiss={dismissWarning}
+      />
+      <div className="interview-intro flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p className="eyebrow">Structured interview</p>
+          <h1 className="page-title">A conversation about your work.</h1>
+          <p className="interview-description text-text-secondary mt-2">
+            Five questions about your experience and this role. Type your answer
+            or record it, then review the transcript before submitting.
+          </p>
+        </div>
+        <AntiCheatStatusBadge violationCount={violationCount} maxViolations={3} />
       </div>
       {error && (
         <div role="alert" className="interview-error notice-error">
@@ -257,9 +284,23 @@ export default function InterviewPage() {
           </div>
           <div className="interview-answer panel">
             <div
-              className="interview-question"
+              className="interview-question select-none"
               tabIndex={0}
               aria-label="Current interview question"
+              onCopy={(e) => {
+                e.preventDefault();
+                recordViolation(
+                  "COPY_ATTEMPT",
+                  "Copying interview questions is disabled to preserve evaluation integrity.",
+                );
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                recordViolation(
+                  "COPY_ATTEMPT",
+                  "Right-click context menu is disabled on interview questions.",
+                );
+              }}
             >
               <div className="mb-2 flex items-center justify-between gap-3">
                 <span className="eyebrow">
@@ -282,6 +323,16 @@ export default function InterviewPage() {
               maxLength={5000}
               disabled={busy || recording}
               value={answer}
+              onPaste={(e) => {
+                const pastedText = e.clipboardData?.getData("text") || "";
+                if (pastedText.trim().length > 10) {
+                  e.preventDefault();
+                  recordViolation(
+                    "PASTE_ATTEMPT",
+                    "Pasting pre-generated text into your response is disabled. Please type or speak your answer naturally.",
+                  );
+                }
+              }}
               onChange={(e) => {
                 setAnswer(e.target.value);
                 sessionStorage.setItem(`answer:${question.id}`, e.target.value);

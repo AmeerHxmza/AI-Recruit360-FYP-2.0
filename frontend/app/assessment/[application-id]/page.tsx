@@ -13,6 +13,11 @@ import type {
 import { CandidateShell } from "@/components/layout/candidate-shell";
 import { Button } from "@/components/ui/button";
 import { Loader2, Clock, CheckCircle2 } from "lucide-react";
+import { useAntiCheat } from "@/hooks/use-anti-cheat";
+import {
+  AntiCheatStatusBadge,
+  AntiCheatWarningModal,
+} from "@/components/assessment/anti-cheat-guard";
 
 export default function AssessmentPage() {
   const applicationId = String(useParams()["application-id"]);
@@ -27,6 +32,26 @@ export default function AssessmentPage() {
     null,
   );
   const lock = useRef(false);
+
+  const {
+    violationCount,
+    warningMessage,
+    showWarningModal,
+    dismissWarning,
+    recordViolation,
+  } = useAntiCheat({
+    enabled: !result && !busy && !!question,
+    sessionId: applicationId,
+    maxViolations: 3,
+    onMaxViolationsReached: () => {
+      // Force auto-advance/submit on severe repeated violations
+      if (selected) {
+        void submit(selected);
+      } else {
+        void submit("TIMEOUT");
+      }
+    },
+  });
   const load = useCallback(async () => {
     try {
       const res = await getOrGenerateAssessmentAction(applicationId);
@@ -111,13 +136,23 @@ export default function AssessmentPage() {
   }, [deadline, question, busy, error, submit]);
   return (
     <CandidateShell step={2}>
-      <div className="mb-8">
-        <p className="eyebrow">Skills assessment</p>
-        <h1 className="page-title">Show what you know.</h1>
-        <p className="mt-3 text-text-secondary">
-          10 role-specific questions. You have 60 seconds per question. Answers
-          are saved as you go.
-        </p>
+      <AntiCheatWarningModal
+        isOpen={showWarningModal}
+        message={warningMessage}
+        violationCount={violationCount}
+        maxViolations={3}
+        onDismiss={dismissWarning}
+      />
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p className="eyebrow">Skills assessment</p>
+          <h1 className="page-title">Show what you know.</h1>
+          <p className="mt-2 text-text-secondary">
+            10 role-specific questions. You have 60 seconds per question. Answers
+            are saved as you go.
+          </p>
+        </div>
+        <AntiCheatStatusBadge violationCount={violationCount} maxViolations={3} />
       </div>
       {error && (
         <div role="alert" className="notice-error mb-5">
@@ -178,7 +213,23 @@ export default function AssessmentPage() {
         </div>
       ) : (
         question && (
-          <section className="panel p-5 sm:p-8">
+          <section
+            className="panel p-5 sm:p-8 select-none"
+            onCopy={(e) => {
+              e.preventDefault();
+              recordViolation(
+                "COPY_ATTEMPT",
+                "Copying assessment questions is disabled to protect test integrity.",
+              );
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              recordViolation(
+                "COPY_ATTEMPT",
+                "Right-click context menu is disabled on assessment questions.",
+              );
+            }}
+          >
             <div className="mb-6 flex items-center justify-between gap-3 text-sm">
               <span className="text-text-secondary">
                 Question {question.question_number} of 10 ·{" "}
