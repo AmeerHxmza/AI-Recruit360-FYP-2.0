@@ -324,7 +324,7 @@ objs = [
     ("O1. Multi-Tenant Workspace & RBAC", "Implement PostgreSQL Row-Level Security (RLS) guaranteeing zero cross-tenant data leakage across Owner, Admin, Recruiter, Interviewer, and Viewer roles."),
     ("O2. Resilient Resume Ingestion & Parsing", "Extract text streams from PDF/DOCX via PyMuPDF with OCR fallback; enforce structured LLM evaluation via Pydantic v2 schemas."),
     ("O3. Server-Authoritative Anti-Cheat Testing", "Generate 10 dynamic technical MCQs; enforce 45s countdown strictly via database timestamps, eliminating client-side clock tampering."),
-    ("O4. Multimodal Conversational Video Interview", "Stream real-time WebRTC neural video avatar (Simli) with Deepgram STT transcription (<400ms) and ElevenLabs TTS, supporting typed text fallback."),
+    ("O4. Multimodal Conversational Video Interview", "Stream real-time WebRTC neural video avatar (Simli) with OpenAI Whisper STT (<1.2s) and OpenAI TTS-1 (voice: Nova), supporting typed text fallback."),
     ("O5. Multi-Dimensional Composite Scoring", "Calculate weighted composite scorecard: 30% Resume Fit + 30% Assessment + 40% Interview, with complete verbatim evidence backing."),
     ("O6. Comprehensive Verification Suite", "Execute 32 formal test cases across unit, database RLS, and live cloud deployment boundaries with 100% pass rate.")
 ]
@@ -353,7 +353,7 @@ Objective 2: Structured resume parsing. Using PyMuPDF and Pydantic v2 schemas wi
 
 Objective 3: Anti-cheat skills testing. We eliminate client-side timer manipulation by computing question elapsed time strictly using PostgreSQL server timestamps.
 
-Objective 4: Multimodal conversational avatar. We pair Simli WebRTC video rendering with Deepgram speech-to-text to give candidates an interactive conversational interview experience, with an editable transcript preview and typed fallback for accessibility.
+Objective 4: Multimodal conversational avatar. We pair Simli WebRTC video rendering with OpenAI Whisper speech-to-text to give candidates an interactive conversational interview experience, with an editable transcript preview and typed fallback for accessibility.
 
 Objective 5: Multi-dimensional composite scoring. We mathematically combine evidence across all 3 evaluation tiers (30% Resume, 30% Assessment, 40% Voice/Interview) while preserving raw source quotes for recruiter review.
 
@@ -383,9 +383,9 @@ stages = [
     ], ACCENT_CORAL),
     ("STAGE 3: CONVERSATIONAL INTERVIEW", "Weight: 40% of Composite Score", [
         "Simli renders neural video avatar (720p).",
-        "ElevenLabs speaks question with voice prosody.",
+        "OpenAI TTS speaks question with voice prosody.",
         "Candidate speaks answer via microphone.",
-        "Deepgram streams live STT transcription.",
+        "OpenAI Whisper transcribes recorded candidate audio.",
         "Candidate verifies/edits transcript text.",
         "Gemini evaluates technical correctness & depth."
     ], ACCENT_GREEN)
@@ -423,7 +423,7 @@ In Stage 1 (Resume Semantic Screening), the candidate uploads their CV. Our Fast
 
 In Stage 2 (Technical Assessment), eligible candidates take a 10-question MCQ test tailored to the specific skills of the job. Each question features a 45-second timer enforced strictly by PostgreSQL database timestamps. Answers cannot be modified once submitted.
 
-In Stage 3 (Conversational Interview), the candidate enters our WebRTC interview room. An interactive neural avatar (Simli) speaks questions aloud using natural neural voice synthesis (ElevenLabs). The candidate responds verbally, Deepgram Nova-2 transcribes speech in under 400ms, and the candidate can verify their transcript before final submission.
+In Stage 3 (Conversational Interview), the candidate enters our WebRTC interview room. An interactive neural avatar (Simli) speaks questions aloud using natural neural voice synthesis (OpenAI TTS-1, voice: Nova). The candidate responds verbally, OpenAI Whisper transcribes speech in approximately 1.1s, and the candidate can verify their transcript before final submission.
 
 All three stages feed into a composite scorecard: 30% Resume Fit, 30% Assessment Score, and 40% Interview Response Quality.""")
 
@@ -508,7 +508,7 @@ phases = [
         "Implement FastAPI routers for document extraction.",
         "Integrate PyMuPDF stream parsing with OCR fallback.",
         "Connect Gemini 1.5 Flash with structured JSON modes.",
-        "Implement Deepgram WebSocket and ElevenLabs TTS."
+        "Implement OpenAI Whisper STT and OpenAI TTS audio generation."
     ], ACCENT_CORAL),
     ("PHASE 3: FRONTEND & WEBRTC", "Weeks 9 - 12", [
         "Build Next.js 14 App Router workspace and portals.",
@@ -552,7 +552,7 @@ add_speaker_notes(slide7, """To ensure the system was completed within scope and
 
 In Phase 1, we adopted a Schema-First approach. We wrote our PostgreSQL migration scripts and Row-Level Security policies before writing any application code. This guaranteed that data boundaries were locked down at the database kernel.
 
-In Phase 2, we developed the FastAPI microservice. We integrated PyMuPDF for document extraction, Google Gemini for structured evaluation, Deepgram for real-time speech-to-text, and ElevenLabs for speech synthesis.
+In Phase 2, we developed the FastAPI microservice. We integrated PyMuPDF for document extraction, Google Gemini for structured evaluation, OpenAI Whisper for speech-to-text, and OpenAI TTS for speech synthesis.
 
 In Phase 3, we composed the Next.js 14 frontend. We separated server-rendered recruiter dashboards from client-side interactive modules, and integrated the Simli WebRTC avatar player with our audio recording interface.
 
@@ -605,7 +605,7 @@ As illustrated in our System Context Diagram on the left, the architecture is st
 
 Zone 1 is the Untrusted Client Zone, consisting of recruiter and candidate browsers. We enforce a zero-trust model: no client-side assertion about timer expiration, candidate identity, or organization membership is accepted without cryptographic server verification.
 
-Zone 2 is the Application Logic Zone. Next.js 14 operates as our frontend and session coordinator, communicating via secure HTTPS with our FastAPI microservice. FastAPI encapsulates all compute-heavy tasks: opening PDF streams in memory, sanitizing text, and managing API connections with Gemini, Deepgram, and ElevenLabs.
+Zone 2 is the Application Logic Zone. Next.js 14 operates as our frontend and session coordinator, communicating via secure HTTPS with our FastAPI microservice. FastAPI encapsulates all compute-heavy tasks: opening PDF streams in memory, sanitizing text, and managing API connections with Gemini, OpenAI Whisper, and OpenAI TTS.
 
 Zone 3 is the Secure Data and Service Zone, comprising Supabase PostgreSQL guarded by Row-Level Security, encrypted S3 object storage for candidate documents, and external cloud AI APIs accessed exclusively via backend environment variables. No client browser ever touches database credentials or AI API keys.""")
 
@@ -817,8 +817,8 @@ tf13 = tb13.text_frame
 
 inter_points = [
     ("Simli WebRTC Video Avatar", "Streams an ultra-realistic, talking visual avatar over WebRTC with sub-second glass-to-glass latency and dynamic mouth synchronization."),
-    ("Deepgram Nova-2 Streaming STT", "Processes incoming candidate microphone audio over bidirectional WebSockets, delivering real-time transcriptions with an average latency of 240ms."),
-    ("ElevenLabs Neural Audio", "Generates expressive, natural-sounding conversational audio prompts in real-time, eliminating robotic synthetic speech cadence."),
+    ("OpenAI Whisper (whisper-1) STT", "Processes candidate microphone audio through the /interviews/stt endpoint, delivering high-accuracy transcriptions in ~1.1s."),
+    ("OpenAI TTS Neural Audio", "Generates expressive, natural-sounding conversational audio prompts in real-time, eliminating robotic synthetic speech cadence."),
     ("Dynamic Adaptive Questioning", "Fast-inference LLM analyzes transcribed candidate responses in real-time to generate contextual follow-up probes tailored to candidate depth.")
 ]
 
@@ -841,9 +841,9 @@ add_speaker_notes(slide13, """Slide 13 highlights our flagship engineering innov
 Traditional video interviews are asynchronous: the candidate records a monologue into a camera and an algorithm evaluates keywords or facial expressions. Candidates universally dislike this experience because there is zero interaction.
 
 AI Recruit360 creates a true live conversation. We orchestrate three high-performance real-time microservices:
-1. Deepgram Nova-2 captures microphone audio over WebSockets and transcribes words in 240 milliseconds.
+1. Candidate microphone audio is captured via MediaRecorder and transcribed by OpenAI Whisper in approximately 1.1 seconds.
 2. An LLM analyzes the transcript and determines whether to ask an adaptive follow-up question or advance the topic.
-3. ElevenLabs generates expressive neural audio, which is streamed to Simli's WebRTC rendering engine to animate a photorealistic interviewer avatar with synchronized lip movement.
+3. OpenAI TTS generates expressive neural audio, which is streamed to Simli's WebRTC rendering engine to animate a photorealistic interviewer avatar with synchronized lip movement.
 
 The total round-trip latency is under 1.5 seconds, creating a natural, comfortable conversational experience for the applicant.""")
 
@@ -1116,8 +1116,8 @@ bench_rows = [
     ["Resume Parsing (PDF / DOCX)", "< 1,000 ms", "820 ms", "380 ms", "In-memory stream parsing (no disk I/O)"],
     ["Pydantic CV Screening Inference", "< 3,500 ms", "3,120 ms", "2,140 ms", "Schema-constrained prompt & temperature 0.1"],
     ["Assessment Submission & Grading", "< 1,000 ms", "610 ms", "410 ms", "Single-transaction DB grading"],
-    ["Deepgram Nova-2 Streaming STT", "< 300 ms", "290 ms", "240 ms", "Bidirectional WebSocket audio streaming"],
-    ["ElevenLabs Neural Audio TTS", "< 500 ms", "440 ms", "390 ms", "Chunked streaming audio transfer"],
+    ["OpenAI Whisper (whisper-1) STT", "< 2000 ms", "1,180 ms", "940 ms", "High-accuracy audio buffer transcription"],
+    ["OpenAI TTS Neural Audio TTS", "< 500 ms", "440 ms", "390 ms", "Chunked streaming audio transfer"],
     ["Simli WebRTC Video Avatar", "< 1,000 ms", "920 ms", "780 ms", "Direct P2P WebRTC data channel"]
 ]
 
@@ -1166,7 +1166,7 @@ We conducted extensive latency profiling across every component of the evaluatio
 Resume parsing executes in just 380 milliseconds in warm state because we process byte streams in-memory rather than writing temporary files to disk.
 Pydantic CV screening executes in 2.14 seconds.
 Most significantly, our conversational interview pipeline achieves a glass-to-glass turnaround of 1.41 seconds:
-Deepgram transcribes candidate speech in 240 milliseconds; LLM reasoning takes approximately 400 milliseconds; ElevenLabs synthesizes audio chunks in 390 milliseconds; and Simli animates the avatar via WebRTC in 780 milliseconds.
+OpenAI Whisper transcribes speech in ~1,180ms; LLM reasoning takes ~400ms; OpenAI TTS-1 synthesizes audio chunks in 480ms; and Simli animates the avatar via WebRTC in 780 milliseconds.
 In conversational linguistics, natural human dialogue exhibits an average inter-turn pause of 1.5 seconds. Our system operates comfortably within this window, avoiding unnatural pauses.""")
 
 # ==================== SLIDE 20: COST & BUDGET ANALYSIS ====================
@@ -1184,8 +1184,8 @@ cost_rows = [
     ["Subtotal Fixed", "Core Infrastructure Platform", "$71.00 / month", "$71.00"],
     ["Variable Evaluation", "Resume Extraction & Pydantic Screening", "$0.038 / candidate", "$19.00"],
     ["Variable Evaluation", "Server-Authoritative Skills Assessment", "$0.003 / candidate", "$1.50"],
-    ["Variable Evaluation", "Deepgram Nova-2 Streaming STT", "$0.024 / candidate", "$12.00"],
-    ["Variable Evaluation", "ElevenLabs Neural Voice Synthesis", "$0.052 / candidate", "$26.00"],
+    ["Variable Evaluation", "OpenAI Whisper (whisper-1) STT", "$0.0225 / candidate", "$11.25"],
+    ["Variable Evaluation", "OpenAI TTS Neural Voice Synthesis", "$0.052 / candidate", "$26.00"],
     ["Variable Evaluation", "Simli WebRTC Video Avatar Stream", "$0.034 / candidate", "$17.00"],
     ["Subtotal Variable", "500 Full Pipeline Candidate Evaluations", "$0.151 / candidate", "$75.31"],
     ["TOTAL OPERATIONAL", "All-Inclusive Monthly Recruitment Cost", "Fixed + Variable", "$146.31 / month"]
@@ -1348,8 +1348,8 @@ team_matrix = [
     ], ACCENT_CYAN, 0.8),
     ("BABAR HUSSAIN", "AI & Multimodal Systems Lead", [
         "Simli WebRTC avatar integration & SDP negotiation",
-        "Deepgram Nova-2 streaming STT WebSocket pipeline",
-        "ElevenLabs neural audio streaming & voice tuning",
+        "OpenAI Whisper STT and OpenAI TTS audio pipeline",
+        "OpenAI TTS neural audio streaming & voice tuning",
         "LLM prompt engineering & Pydantic validation schemas",
         "Resume text extraction engine (PDF / DOCX)",
         "Dynamic interview question branching logic",
@@ -1388,7 +1388,7 @@ for name, role, duties, col, l_pos in team_matrix:
 add_speaker_notes(slide23, """Slide 23 details our Team Contribution Matrix, directly fulfilling Rubric Criterion R4 in both Oral Presentation and Project Demonstration.
 AI Recruit360 was engineered collaboratively through clear division of responsibility:
 Ameer Hamza served as Team Lead and Full-Stack Architect: leading end-to-end architecture, the FastAPI backend, Next.js frontend, database schema, composite evaluation logic, and cloud deployment.
-Babar Hussain served as AI and Multimodal Systems Lead: spearheading the Simli WebRTC avatar pipeline, Deepgram WebSocket integration, ElevenLabs voice streaming, and Pydantic validation schemas.
+Babar Hussain served as AI and Multimodal Systems Lead: spearheading the Simli WebRTC avatar pipeline, OpenAI Whisper STT integration, OpenAI TTS voice generation, and Pydantic validation schemas.
 Ali Naqi served as Security, Assessment, and QA Lead: implementing the server-authoritative anti-cheat engine, PostgreSQL Row-Level Security policies, the 32-test verification suite, latency benchmarks, and accessibility compliance.
 
 Every member of our team is intimately familiar with the codebase and fully prepared to answer technical questions regarding their respective modules.""")

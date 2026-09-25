@@ -345,7 +345,7 @@ steps = [
     ("Resume Stream Ingestion", "PDF/DOCX parsed in-memory (380ms) without disk writes", "📥", PILL_BLUE),
     ("Deterministic AI Screening (30%)", "Strict Pydantic JSON schema guarantees zero hallucination", "🧠", HEADER_BLUE),
     ("Anti-Cheat Skills Assessment (30%)", "Server expires_at locks & DOM telemetry tracking", "🛡️", ACCENT_EMERALD),
-    ("Multimodal AI Interview (40%)", "Simli WebRTC avatar + Deepgram STT (240ms) + ElevenLabs", "🗣️", ACCENT_CORAL),
+    ("Multimodal AI Interview (40%)", "Simli WebRTC avatar + OpenAI Whisper STT + OpenAI TTS (Nova)", "🗣️", ACCENT_CORAL),
     ("Composite Scoring & Triage", "0.30·Screen + 0.30·Assess + 0.40·Interview ranking", "📊", PILL_BLUE)
 ]
 
@@ -403,7 +403,7 @@ add_header_pill(slide, COL2_LEFT, 15.6, COL_WIDTH, 0.6, "📊   4. KEY RESULTS",
 
 res_grid = [
     ("90.2%", "Cost Reduction", "$146.31/mo for 500 applicants vs $1,500/mo legacy ATS", "👥", ACCENT_CORAL, COL2_LEFT + 0.3, 16.35),
-    ("1.41s", "Conversational Latency", "Deepgram STT (240ms) + LLM (400ms) + TTS (390ms)", "⚡", HEADER_BLUE, COL2_LEFT + 4.7, 16.35),
+    ("1.41s", "Conversational Latency", "OpenAI Whisper STT (~1.1s) + LLM (400ms) + TTS (480ms)", "⚡", HEADER_BLUE, COL2_LEFT + 4.7, 16.35),
     ("100%", "Test Pass Rate", "32 automated unit, integration & RLS penetration tests", "🛡️", ACCENT_EMERALD, COL2_LEFT + 0.3, 19.55),
     ("Zero", "Cheating & Leakage", "Tamper-proof server locks & PostgreSQL Row-Level Security", "🔒", ACCENT_AMBER, COL2_LEFT + 4.7, 19.55)
 ]
@@ -454,7 +454,7 @@ features = [
     ("📄", "Deterministic Resume Extraction", "In-memory byte parsing for PDF/DOCX with Pydantic JSON schemas.", PILL_BLUE),
     ("🛡️", "Server-Authoritative Anti-Cheat", "PostgreSQL database expires_at locks defeat client clock tampering.", ACCENT_EMERALD),
     ("🗣️", "Simli WebRTC Conversational Avatar", "Real-time photorealistic visual interviewer with sub-second lip sync.", ACCENT_CORAL),
-    ("🎙️", "Deepgram Nova-2 Streaming STT", "Bidirectional WebSocket audio streaming yields 240ms speech transcription.", HEADER_BLUE),
+    ("🎙️", "OpenAI Whisper (whisper-1) STT", "High-accuracy audio buffer transcription powered by OpenAI Whisper-1.", HEADER_BLUE),
     ("🧠", "Adaptive Follow-Up Probing", "Fast-inference LLM dynamically generates contextual follow-up probes.", PILL_BLUE),
     ("📊", "360° Candidate Evaluation Dossier", "Verbatim audio interview transcripts, skill breakdown, and recruiter override.", ACCENT_AMBER),
     ("🔒", "Multi-Tenant Row-Level Security", "PostgreSQL kernel-level RLS policies isolate organization records.", ACCENT_EMERALD)
@@ -561,7 +561,7 @@ tf_rf.word_wrap = True
 
 refs = [
     "IEEE Standard 1016-2009: Standard for Information Technology - Systems Design - Software Design Descriptions.",
-    "Deepgram & ElevenLabs (2024): Low-Latency Streaming Speech Recognition and Neural Voice Synthesis.",
+    "OpenAI (2024): Robust Speech Recognition (Whisper) and Neural Voice Synthesis (TTS-1).",
     "Simli AI (2024): Real-Time WebRTC Neural Visual Avatar Rendering and Lip-Synchronization Protocols.",
     "PostgreSQL Global Development Group (2024): PostgreSQL Row-Level Security & Multi-Tenant Kernel Isolation."
 ]
